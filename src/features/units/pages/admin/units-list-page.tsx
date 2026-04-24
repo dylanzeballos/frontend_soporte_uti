@@ -1,18 +1,23 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-
-type UnitItem = {
-  id: number;
-  name: string;
-};
-
-const staticUnits: UnitItem[] = [
-  { id: 1, name: 'Dirección de carrera de Ingeniería Financiera' },
-  { id: 2, name: 'Dirección de carrera de Ingeniería Industrial' },
-  { id: 3, name: 'Coordinación de Laboratorios de Informática' },
-  { id: 4, name: 'Secretaría Académica de la Facultad' },
-];
+import { staticUnits, type UnitItem } from '@/features/units/data/static-units';
 
 export function UnitsListPage() {
+  const navigate = useNavigate();
+  const [units, setUnits] = useState<UnitItem[]>(staticUnits);
+
+  const handleDelete = (unit: UnitItem) => {
+    const confirmed = confirm(`¿Seguro que deseas eliminar la unidad "${unit.name}"?`);
+    if (!confirmed) return;
+
+    setUnits((prev) => prev.filter((item) => item.id !== unit.id));
+    toast.success('Unidad eliminada correctamente');
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -25,22 +30,47 @@ export function UnitsListPage() {
       <Card>
         <CardHeader>
           <CardTitle>Unidades registradas</CardTitle>
-          <CardDescription>{staticUnits.length} unidades encontradas</CardDescription>
+          <CardDescription>{units.length} unidades encontradas</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[460px] border-collapse text-sm">
+            <table className="w-full min-w-160 border-collapse text-sm">
               <thead>
                 <tr className="border-b text-left">
                   <th className="px-3 py-2 font-semibold text-foreground">ID</th>
                   <th className="px-3 py-2 font-semibold text-foreground">Nombre</th>
+                  <th className="px-3 py-2 font-semibold text-foreground">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {staticUnits.map((unit) => (
+                {units.map((unit) => (
                   <tr key={unit.id} className="border-b last:border-b-0">
                     <td className="px-3 py-2 text-muted-foreground">{unit.id}</td>
                     <td className="px-3 py-2">{unit.name}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/admin/units/${unit.id}/edit`)}
+                          aria-label={`Editar unidad ${unit.id}`}
+                        >
+                          <Pencil data-icon="inline-start" />
+                          Editar
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(unit)}
+                          aria-label={`Eliminar unidad ${unit.id}`}
+                        >
+                          <Trash2 data-icon="inline-start" />
+                          Eliminar
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

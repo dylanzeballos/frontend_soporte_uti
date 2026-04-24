@@ -38,6 +38,11 @@ export const routes: AppRoute[] = [
     protected: true,
   },
   {
+    path: '/admin/units/:id/edit',
+    element: <UnitCreatePage />,
+    protected: true,
+  },
+  {
     path: '/admin/units',
     element: <UnitsListPage />,
     protected: true,
