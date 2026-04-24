@@ -18,50 +18,11 @@ interface AuthContextValue extends AuthState {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-const AUTH_USER_KEY = 'authUser';
-
-type ApiUser = Partial<User> & {
-  role?: User['role'] | { name?: string | null } | null;
-  firstName?: string | null;
-  lastName?: string | null;
-};
-
-function normalizeUser(apiUser: ApiUser): User {
-  const roleFromObject =
-    typeof apiUser.role === 'object' && apiUser.role !== null
-      ? apiUser.role.name
-      : apiUser.role;
-
-  const normalizedRole: User['role'] =
-    roleFromObject === 'admin' || roleFromObject === 'agent' || roleFromObject === 'user'
-      ? roleFromObject
-      : 'user';
-
-  const fallbackName = [apiUser.firstName, apiUser.lastName].filter(Boolean).join(' ').trim();
-
-  return {
-    id: Number(apiUser.id ?? 0),
-    email: String(apiUser.email ?? ''),
-    name: String(apiUser.name ?? fallbackName ?? 'Usuario'),
-    role: normalizedRole,
-    isActive: Boolean(apiUser.isActive ?? true),
-    createdAt: apiUser.createdAt ? String(apiUser.createdAt) : undefined,
-    updatedAt: apiUser.updatedAt ? String(apiUser.updatedAt) : undefined,
-  };
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
-    user: (() => {
-      try {
-        const stored = localStorage.getItem(AUTH_USER_KEY);
-        if (!stored) return null;
-        return normalizeUser(JSON.parse(stored) as ApiUser);
-      } catch {
-        return null;
-      }
-    })(),
-    isAuthenticated: Boolean(localStorage.getItem('accessToken')),
+    user: null,
+    isAuthenticated: false,
     isLoading: true,
   });
 
@@ -78,18 +39,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.ok) {
-        const rawUser = (await response.json()) as ApiUser;
-        const user = normalizeUser(rawUser);
-        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+        const user = await response.json();
         setState({ user, isAuthenticated: true, isLoading: false });
       } else {
         localStorage.removeItem('accessToken');
-        localStorage.removeItem(AUTH_USER_KEY);
         setState({ user: null, isAuthenticated: false, isLoading: false });
       }
     } catch {
       localStorage.removeItem('accessToken');
-      localStorage.removeItem(AUTH_USER_KEY);
       setState({ user: null, isAuthenticated: false, isLoading: false });
     }
   }, []);
@@ -116,13 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (profileRes.ok) {
-      const rawUser = (await profileRes.json()) as ApiUser;
-      const user = normalizeUser(rawUser);
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      const user = await profileRes.json();
       setState({ user, isAuthenticated: true, isLoading: false });
       toast.success(`Bienvenido, ${user.name || user.email}`);
     } else {
-      localStorage.removeItem(AUTH_USER_KEY);
       setState({ user: null, isAuthenticated: false, isLoading: false });
     }
   }, []);
@@ -141,7 +95,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     localStorage.removeItem('accessToken');
-    localStorage.removeItem(AUTH_USER_KEY);
     setState({ user: null, isAuthenticated: false, isLoading: false });
     toast.info('Sesión cerrada');
   }, []);
