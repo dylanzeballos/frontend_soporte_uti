@@ -20,7 +20,7 @@ import {
   type TicketStatus,
 } from '@/features/tickets/schemas/ticket.schema';
 import type { User } from '@/features/users/schemas';
-import { useTickets, useUsers } from '@/hooks/useApi';
+import { useServices, useTickets, useUsers } from '@/hooks/useApi';
 
 type TicketFilterState = {
   search: string;
@@ -45,29 +45,12 @@ function getUserDisplayName(user: ApiLikeUser): string {
 function buildUserOptions(users: User[]): TicketSelectOption[] {
   return users.map((user) => {
     const apiUser = user as ApiLikeUser;
-    const roleLabel = apiUser.role?.name;
-
     return {
       value: user.id,
       label: getUserDisplayName(apiUser),
-      description: roleLabel || user.email,
+      description: apiUser.role?.name || user.email,
     };
   });
-}
-
-function buildServiceOptions(tickets: Ticket[]): TicketSelectOption[] {
-  const serviceMap = new Map<number, TicketSelectOption>();
-
-  tickets.forEach((ticket) => {
-    if (ticket.service) {
-      serviceMap.set(ticket.service.id, {
-        value: ticket.service.id,
-        label: ticket.service.name,
-      });
-    }
-  });
-
-  return Array.from(serviceMap.values());
 }
 
 function toFormValues(ticket: Ticket): TicketFormValues {
@@ -87,6 +70,7 @@ export function TicketsAdminPage() {
   const queryClient = useQueryClient();
   const { list, update } = useTickets();
   const { list: listUsers } = useUsers();
+  const { list: listServices } = useServices();
 
   const [showForm, setShowForm] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -101,9 +85,20 @@ export function TicketsAdminPage() {
     queryFn: list,
   });
 
-  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
+  const { data: users = [] } = useQuery<User[]>({
     queryKey: ['ticket-form-users'],
     queryFn: listUsers,
+  });
+
+  const { data: serviceOptions = [] } = useQuery<TicketSelectOption[]>({
+    queryKey: ['services'],
+    queryFn: async () => {
+      const services = await listServices();
+      return services.map((service) => ({
+        value: service.id,
+        label: service.name,
+      }));
+    },
   });
 
   const updateMutation = useMutation({
@@ -117,8 +112,6 @@ export function TicketsAdminPage() {
   });
 
   const userOptions = buildUserOptions(users);
-  const serviceOptions = buildServiceOptions(tickets);
-
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch =
       filters.search.trim().length === 0 ||
@@ -130,8 +123,6 @@ export function TicketsAdminPage() {
 
     return matchesSearch && matchesStatus && matchesPriority;
   });
-
-  const isSubmitting = updateMutation.isPending;
 
   const handleEditClick = (ticket: Ticket) => {
     setSelectedTicket(ticket);
@@ -149,74 +140,55 @@ export function TicketsAdminPage() {
     }
   };
 
-  const formServiceOptions =
-    selectedTicket?.service && !serviceOptions.some((option) => option.value === selectedTicket.service?.id)
-      ? [...serviceOptions, { value: selectedTicket.service.id, label: selectedTicket.service.name }]
-      : serviceOptions;
-
   return (
     <div className="space-y-6">
-      <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            Gestion administrativa
-          </div>
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Recepcion y gestion de tickets</h1>
-            <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-              Esta vista es para el admin o agente cuando recibe un ticket y necesita registrar datos internos como prioridad, asignacion, estado o SLA.
-            </p>
-          </div>
+      <section className="editorial-surface rounded-md px-6 py-6 sm:px-8 sm:py-8">
+        <div className="editorial-kicker">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Gestion administrativa
         </div>
+        <h1 className="mt-5 text-[clamp(1.8rem,2.9vw,2.8rem)] font-bold tracking-[-0.02em] text-foreground">
+          Gestionar tickets
+        </h1>
       </section>
 
       {showForm ? (
         <TicketForm
           variant="admin"
-          mode={selectedTicket ? 'edit' : 'create'}
+          mode="edit"
           initialValues={selectedTicket ? toFormValues(selectedTicket) : undefined}
           assigneeOptions={userOptions}
           emitterOptions={userOptions}
-          serviceOptions={formServiceOptions}
-          isSubmitting={isSubmitting}
-          submitLabel={selectedTicket ? 'Guardar ticket' : 'Registrar recepcion'}
+          serviceOptions={serviceOptions}
+          isSubmitting={updateMutation.isPending}
+          submitLabel="Guardar ticket"
+          className="rounded-md"
           onSubmit={handleSubmit}
           onCancel={handleCloseForm}
         />
       ) : null}
 
-      <Card className="border border-primary/10 shadow-sm">
-        <CardHeader className="gap-3 border-b border-primary/10">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <CardTitle>Panel administrativo</CardTitle>
-              <CardDescription>
-                Revisa tickets recibidos, filtra el backlog y abre cualquier registro para editar su gestion interna.
-              </CardDescription>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {usersLoading ? 'Cargando responsables...' : `${userOptions.length} usuarios disponibles para asignacion`}
-            </div>
+      <Card className="rounded-md">
+        <CardHeader className="px-6 pb-0 pt-6 sm:px-8 sm:pt-8">
+          <div className="space-y-2">
+            <CardTitle>Panel administrativo</CardTitle>
+            <CardDescription>Revisa tickets y abre cualquier registro para editarlo.</CardDescription>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-5 pt-6">
+        <CardContent className="space-y-5 px-6 pb-6 pt-6 sm:px-8 sm:pb-8">
           <div className="grid gap-3 lg:grid-cols-[1.2fr_0.4fr_0.4fr]">
             <Input
               value={filters.search}
               onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
               placeholder="Buscar por titulo o descripcion"
-              className="bg-card"
             />
 
             <Select
               value={filters.status}
-              onValueChange={(value) =>
-                setFilters((current) => ({ ...current, status: value as TicketFilterState['status'] }))
-              }
+              onValueChange={(value) => setFilters((current) => ({ ...current, status: value as TicketFilterState['status'] }))}
             >
-              <SelectTrigger className="w-full bg-card">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Estado">
                   {filters.status === 'all' ? 'Todos los estados' : getStatusLabel(filters.status)}
                 </SelectValue>
@@ -233,11 +205,9 @@ export function TicketsAdminPage() {
 
             <Select
               value={filters.priority}
-              onValueChange={(value) =>
-                setFilters((current) => ({ ...current, priority: value as TicketFilterState['priority'] }))
-              }
+              onValueChange={(value) => setFilters((current) => ({ ...current, priority: value as TicketFilterState['priority'] }))}
             >
-              <SelectTrigger className="w-full bg-card">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Prioridad">
                   {filters.priority === 'all' ? 'Todas las prioridades' : getPriorityLabel(filters.priority)}
                 </SelectValue>
@@ -253,9 +223,7 @@ export function TicketsAdminPage() {
           </div>
 
           {ticketsLoading ? (
-            <div className="rounded-xl border border-dashed border-primary/15 bg-primary/5 py-12 text-center text-muted-foreground">
-              Cargando tickets...
-            </div>
+            <div className="editorial-inset rounded-md py-14 text-center text-muted-foreground">Cargando tickets...</div>
           ) : filteredTickets.length > 0 ? (
             <div className="grid gap-4 xl:grid-cols-2">
               {filteredTickets.map((ticket) => {
@@ -263,23 +231,15 @@ export function TicketsAdminPage() {
                 const emitter = ticket.emitter ? getUserDisplayName(ticket.emitter as ApiLikeUser) : 'No definido';
 
                 return (
-                  <Card
-                    key={ticket.id}
-                    className="border border-primary/10 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    <CardHeader className="gap-4 border-b border-primary/10">
+                  <Card key={ticket.id} className="rounded-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-2)]">
+                    <CardHeader className="px-5 pb-0 pt-5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-2">
                           <CardTitle className="text-lg">{ticket.title}</CardTitle>
                           <CardDescription className="line-clamp-2 leading-6">{ticket.description}</CardDescription>
                         </div>
 
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={`Editar ticket ${ticket.id}`}
-                          onClick={() => handleEditClick(ticket)}
-                        >
+                        <Button variant="ghost" size="icon-sm" aria-label={`Editar ticket ${ticket.id}`} onClick={() => handleEditClick(ticket)}>
                           <PencilLine className="h-4 w-4" />
                         </Button>
                       </div>
@@ -290,25 +250,23 @@ export function TicketsAdminPage() {
                       </div>
                     </CardHeader>
 
-                    <CardContent className="grid gap-3 pt-6 text-sm">
+                    <CardContent className="grid gap-3 px-5 pb-5 pt-4 text-sm">
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-xl bg-muted/60 p-3">
-                          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Asignado</div>
+                        <div className="editorial-inset rounded-md p-3.5">
+                          <div className="editorial-label">Asignado</div>
                           <div className="mt-1 font-medium text-foreground">{assignee}</div>
                         </div>
-                        <div className="rounded-xl bg-muted/60 p-3">
-                          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Emisor</div>
+                        <div className="editorial-inset rounded-md p-3.5">
+                          <div className="editorial-label">Emisor</div>
                           <div className="mt-1 font-medium text-foreground">{emitter}</div>
                         </div>
-                        <div className="rounded-xl bg-muted/60 p-3">
-                          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Servicio</div>
+                        <div className="editorial-inset rounded-md p-3.5">
+                          <div className="editorial-label">Servicio</div>
                           <div className="mt-1 font-medium text-foreground">{ticket.service?.name ?? 'No definido'}</div>
                         </div>
-                        <div className="rounded-xl bg-muted/60 p-3">
-                          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">SLA</div>
-                          <div className="mt-1 font-medium text-foreground">
-                            {ticket.slaMinutes ? `${ticket.slaMinutes} min` : 'Sin SLA'}
-                          </div>
+                        <div className="editorial-inset rounded-md p-3.5">
+                          <div className="editorial-label">SLA</div>
+                          <div className="mt-1 font-medium text-foreground">{ticket.slaMinutes ? `${ticket.slaMinutes} min` : 'Sin SLA'}</div>
                         </div>
                       </div>
 
@@ -325,11 +283,8 @@ export function TicketsAdminPage() {
               })}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-primary/15 bg-primary/5 py-12 text-center">
+            <div className="editorial-inset rounded-md py-14 text-center">
               <p className="text-base font-medium text-foreground">No hay tickets para mostrar</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Ajusta los filtros para revisar el backlog administrativo.
-              </p>
             </div>
           )}
         </CardContent>

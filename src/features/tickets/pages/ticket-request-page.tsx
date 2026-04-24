@@ -5,33 +5,25 @@ import { toast } from 'sonner';
 
 import { useAuth } from '@/components/auth-context';
 import { TicketForm, type TicketSelectOption } from '@/features/tickets/components';
-import type { Ticket, TicketFormValues } from '@/features/tickets/schemas/ticket.schema';
-import { useTickets } from '@/hooks/useApi';
-
-function buildServiceOptions(tickets: Ticket[]): TicketSelectOption[] {
-  const serviceMap = new Map<number, TicketSelectOption>();
-
-  tickets.forEach((ticket) => {
-    if (ticket.service) {
-      serviceMap.set(ticket.service.id, {
-        value: ticket.service.id,
-        label: ticket.service.name,
-      });
-    }
-  });
-
-  return Array.from(serviceMap.values());
-}
+import type { TicketFormValues } from '@/features/tickets/schemas/ticket.schema';
+import { useServices, useTickets } from '@/hooks/useApi';
 
 export function TicketRequestPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { list, create } = useTickets();
+  const { create } = useTickets();
+  const { list: listServices } = useServices();
   const [formKey, setFormKey] = useState(0);
 
-  const { data: tickets = [] } = useQuery<Ticket[]>({
-    queryKey: ['tickets'],
-    queryFn: list,
+  const { data: serviceOptions = [] } = useQuery<TicketSelectOption[]>({
+    queryKey: ['services'],
+    queryFn: async () => {
+      const services = await listServices();
+      return services.map((service) => ({
+        value: service.id,
+        label: service.name,
+      }));
+    },
   });
 
   const createMutation = useMutation({
@@ -42,8 +34,6 @@ export function TicketRequestPage() {
       void queryClient.invalidateQueries({ queryKey: ['tickets'] });
     },
   });
-
-  const serviceOptions = buildServiceOptions(tickets);
 
   const handleSubmit = async (values: TicketFormValues) => {
     await createMutation.mutateAsync({
@@ -57,18 +47,15 @@ export function TicketRequestPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <section className="space-y-3">
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+    <div className="mx-auto max-w-4xl space-y-6">
+      <section className="editorial-surface rounded-md px-6 py-6 sm:px-8 sm:py-8">
+        <div className="editorial-kicker">
           <ClipboardPenLine className="h-3.5 w-3.5" />
           Solicitud
         </div>
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Solicitar ticket</h1>
-          <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-            Esta vista es para el usuario que reporta un problema. Solo pide la informacion necesaria para registrar la solicitud y dejar la clasificacion interna al equipo admin.
-          </p>
-        </div>
+        <h1 className="mt-5 text-[clamp(1.8rem,2.9vw,2.8rem)] font-bold tracking-[-0.02em] text-foreground">
+          Solicitar ticket
+        </h1>
       </section>
 
       <TicketForm
@@ -77,6 +64,7 @@ export function TicketRequestPage() {
         isSubmitting={createMutation.isPending}
         serviceOptions={serviceOptions}
         submitLabel="Enviar solicitud"
+        className="rounded-md"
         onSubmit={handleSubmit}
       />
     </div>

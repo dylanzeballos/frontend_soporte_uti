@@ -6,6 +6,12 @@ import type { UpdateTicketInput } from '@/features/tickets/schemas/ticket.schema
 import type { User, CreateUserInput } from '@/features/users/schemas';
 import type { LoginInput } from '@/features/auth/schemas/login.schema';
 
+export interface ServiceItem {
+  id: number;
+  name: string;
+  isActive?: boolean;
+}
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const getToken = () => {
@@ -136,6 +142,24 @@ export function useUsers() {
   }, []);
 
   return { list, create, remove, isLoading };
+}
+
+export function useServices() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const list = useCallback(async (): Promise<ServiceItem[]> => {
+    setIsLoading(true);
+    const result = await fetchApi<ServiceItem[] | { data: ServiceItem[] } | null>('/services');
+    setIsLoading(false);
+    if (!result) return [];
+    if (Array.isArray(result)) return result;
+    if (result && typeof result === 'object' && 'data' in result) {
+      return (result.data as ServiceItem[]) ?? [];
+    }
+    return [];
+  }, []);
+
+  return { list, isLoading };
 }
 
 export function useAuthApi() {

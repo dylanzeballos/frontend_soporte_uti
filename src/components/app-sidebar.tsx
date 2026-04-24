@@ -254,13 +254,13 @@ function AppShell({ children }: { children?: React.ReactNode }) {
   const activeParents = React.useMemo(() => {
     const next = new Set<string>()
 
-    visibleSections.forEach((section) => {
-      section.items.forEach((item) => {
-        if (item.children?.some((child) => isPathActive(pathname, child.to))) {
-          next.add(item.title)
-        }
-      })
-    })
+	    visibleSections.forEach((section) => {
+	      section.items.forEach((item) => {
+	        if (item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))) {
+	          next.add(item.title)
+	        }
+	      })
+	    })
 
     return next
   }, [pathname, visibleSections])
@@ -324,10 +324,10 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                     const hasChildren = Boolean(item.children?.length)
                     const sectionOpen =
                       activeParents.has(item.title) || Boolean(expandedSections[item.title])
-                    const directActive = item.to ? isPathActive(pathname, item.to) : false
-                    const childActive = Boolean(
-                      item.children?.some((child) => isPathActive(pathname, child.to))
-                    )
+	                    const directActive = item.to ? isPathActive(pathname, item.to) : false
+	                    const childActive = Boolean(
+	                      item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))
+	                    )
                     const active = directActive || childActive
 
                     return (

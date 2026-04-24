@@ -28,15 +28,29 @@ export function TicketsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-3">
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-          Tickets
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(16rem,0.8fr)]">
+        <div className="editorial-surface rounded-md px-6 py-6 sm:px-8 sm:py-8">
+          <div className="editorial-kicker">Tickets</div>
+          <div className="mt-5 space-y-4">
+            <h1 className="editorial-display max-w-4xl">Elige el flujo correcto antes de entrar al formulario</h1>
+            <p className="max-w-3xl text-base leading-7 text-muted-foreground">
+              Separamos la experiencia para que el usuario final vea una solicitud limpia y el equipo administrativo trabaje con una superficie enfocada en clasificacion y seguimiento.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Vistas de Tickets</h1>
-          <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-            Separé el flujo en dos experiencias distintas para que no se mezclen los campos de solicitud con los de recepcion y gestion administrativa.
-          </p>
+
+        <div className="editorial-inset rounded-md p-5 sm:p-6">
+          <p className="editorial-label mb-4">Criterio</p>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">Solicitud</p>
+              <p className="text-sm leading-6 text-muted-foreground">Para clientes o usuarios que necesitan pedir ayuda.</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">Gestion admin</p>
+              <p className="text-sm leading-6 text-muted-foreground">Para agentes o administradores que gestionan el backlog.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -44,11 +58,11 @@ export function TicketsPage() {
         {ticketViews.map((view) => (
           <Card
             key={view.href}
-            className="border border-primary/10 bg-[linear-gradient(180deg,rgba(128,0,28,0.05),transparent_35%),var(--card)] shadow-sm"
+            className="rounded-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-2)]"
           >
-            <CardHeader className="border-b border-primary/10">
+            <CardHeader className="px-6 pt-6 sm:px-7 sm:pt-7">
               <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-primary/10 p-2 text-primary">
+                <div className="rounded-md bg-accent px-2.5 py-2 text-accent-foreground shadow-[var(--shadow-1)]">
                   <view.icon className="h-5 w-5" />
                 </div>
                 <div className="space-y-1">
@@ -57,11 +71,8 @@ export function TicketsPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-6">
-              <Button
-                className="transition-transform duration-200 hover:-translate-y-0.5"
-                onClick={() => navigate(view.href)}
-              >
+            <CardContent className="px-6 pb-6 pt-1 sm:px-7 sm:pb-7">
+              <Button variant="outline" onClick={() => navigate(view.href)}>
                 {view.cta}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
