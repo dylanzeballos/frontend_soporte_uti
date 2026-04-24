@@ -27,10 +27,11 @@ type ApiUser = Partial<User> & {
 };
 
 function normalizeUser(apiUser: ApiUser): User {
+  const roleValue = apiUser.role as User['role'] | { name?: string | null } | null | undefined;
   const roleFromObject =
-    typeof apiUser.role === 'object' && apiUser.role !== null
-      ? apiUser.role.name
-      : apiUser.role;
+    typeof roleValue === 'object' && roleValue !== null
+      ? roleValue.name
+      : roleValue;
 
   const normalizedRole: User['role'] =
     roleFromObject === 'admin' || roleFromObject === 'agent' || roleFromObject === 'user'
