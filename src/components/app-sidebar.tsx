@@ -171,7 +171,8 @@ const navSections: NavSection[] = [
         icon: Building2Icon,
         roles: ["admin"],
         children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
+          { title: "Lista de unidades", to: "/admin/units", roles: ["admin"] },
+          { title: "Registrar unidad", to: "/admin/units/create", roles: ["admin"] },
         ],
       },
       {
@@ -209,6 +210,7 @@ function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/dashboard")) return "Dashboard"
   if (isPathActive(pathname, "/tickets")) return "Tickets"
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
+  if (isPathActive(pathname, "/admin/units")) return "Unidades"
   return "Panel"
 }
 
@@ -255,9 +257,10 @@ function AppShell({ children }: { children?: React.ReactNode }) {
     const next = new Set<string>()
 
     visibleSections.forEach((section) => {
-      section.items.forEach((item) => {
+      section.items.forEach((item, itemIndex) => {
+        const itemKey = `${section.label}-${itemIndex}-${item.title}`
         if (item.children?.some((child) => isPathActive(pathname, child.to))) {
-          next.add(item.title)
+          next.add(itemKey)
         }
       })
     })
@@ -319,11 +322,14 @@ function AppShell({ children }: { children?: React.ReactNode }) {
 
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {section.items.map((item) => {
+                  {section.items.map((item, itemIndex) => {
                     const Icon = item.icon
+                    const itemKey = `${section.label}-${itemIndex}-${item.title}`
                     const hasChildren = Boolean(item.children?.length)
-                    const sectionOpen =
-                      activeParents.has(item.title) || Boolean(expandedSections[item.title])
+                    const hasManualState = Object.hasOwn(expandedSections, itemKey)
+                    const sectionOpen = hasManualState
+                      ? Boolean(expandedSections[itemKey])
+                      : activeParents.has(itemKey)
                     const directActive = item.to ? isPathActive(pathname, item.to) : false
                     const childActive = Boolean(
                       item.children?.some((child) => isPathActive(pathname, child.to))
@@ -331,7 +337,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                     const active = directActive || childActive
 
                     return (
-                      <SidebarMenuItem key={item.title}>
+                      <SidebarMenuItem key={itemKey}>
                         {hasChildren ? (
                           <>
                             <SidebarMenuButton
@@ -349,7 +355,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                               onClick={() =>
                                 setExpandedSections((prev) => ({
                                   ...prev,
-                                  [item.title]: !sectionOpen,
+                                  [itemKey]: !sectionOpen,
                                 }))
                               }
                             >
@@ -373,7 +379,9 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                               <div className="overflow-hidden">
                                 <SidebarMenuSub>
                                   {item.children?.map((child, index) => {
-                                    const isActive = child.to ? isPathActive(pathname, child.to) : false
+                                    const isActive = child.to
+                                      ? pathname === child.to || pathname === `${child.to}/`
+                                      : false
                                     const childDisabled =
                                       Boolean(child.disabled) ||
                                       (Boolean(child.statusAware) && !canMutateRequest)

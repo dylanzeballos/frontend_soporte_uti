@@ -1,6 +1,7 @@
 import { LoginPage } from '@/features/auth/pages';
 import { DashboardPage } from '@/features/dashboard/pages';
 import { TicketsPage } from '@/features/tickets/pages';
+import { UnitCreatePage, UnitsListPage } from '@/features/units/pages';
 import { UsersAdminPage } from '@/features/users/pages';
 import type { ReactNode } from 'react';
 
@@ -29,6 +30,16 @@ export const routes: AppRoute[] = [
   {
     path: '/admin/users',
     element: <UsersAdminPage />,
+    protected: true,
+  },
+  {
+    path: '/admin/units/create',
+    element: <UnitCreatePage />,
+    protected: true,
+  },
+  {
+    path: '/admin/units',
+    element: <UnitsListPage />,
     protected: true,
   },
 ];
