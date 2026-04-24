@@ -69,6 +69,13 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Shell tokens (8px grid) */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --shell-header-height: 3.5rem;
+  --shell-content-padding: var(--space-2);
 }
 
 @theme inline {
@@ -175,5 +182,38 @@
   }
   html {
     font-family: var(--font-sans);
+  }
+
+  .skip-link {
+    position: fixed;
+    left: var(--space-2);
+    top: var(--space-2);
+    z-index: 60;
+    border-radius: var(--radius);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    padding: 0.375rem 0.75rem;
+    transform: translateY(-140%);
+    transition: transform 150ms ease;
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --shell-content-padding: var(--space-3);
+  }
+}
+
+@layer components {
+  .shell-header {
+    min-height: var(--shell-header-height);
+  }
+
+  .shell-content {
+    padding: var(--shell-content-padding);
   }
 }
