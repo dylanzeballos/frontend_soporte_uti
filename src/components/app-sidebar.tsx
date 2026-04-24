@@ -105,7 +105,7 @@ const navSections: NavSection[] = [
       },
       {
         title: "Tablero Kanban",
-        to: "/tickets",
+        to: "/kanban",
         icon: SquareKanbanIcon,
         roles: ["admin"],
       },
@@ -207,6 +207,7 @@ function isPathActive(pathname: string, target: string) {
 function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/")) return "Inicio"
   if (isPathActive(pathname, "/dashboard")) return "Dashboard"
+  if (isPathActive(pathname, "/kanban")) return "Tablero Kanban"
   if (isPathActive(pathname, "/tickets")) return "Tickets"
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
   return "Panel"
