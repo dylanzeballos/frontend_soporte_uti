@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { Ticket } from '@/features/tickets/schemas/ticket.schema';
 import type { CreateTicketInput, UpdateTicketStatusInput, AssignTicketInput } from '@/features/tickets/schemas/ticket.schema';
+import type { UpdateTicketInput } from '@/features/tickets/schemas/ticket.schema';
 import type { User, CreateUserInput } from '@/features/users/schemas';
 import type { LoginInput } from '@/features/auth/schemas/login.schema';
 
@@ -46,6 +47,14 @@ export async function fetchApi<T>(endpoint: string, method = 'GET', body?: unkno
   }
 }
 
+function ensureData<T>(response: T | null, fallbackMessage: string): T {
+  if (response === null) {
+    throw new Error(fallbackMessage);
+  }
+
+  return response;
+}
+
 export function useTickets() {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -63,10 +72,22 @@ export function useTickets() {
 
   const create = useCallback(async (data: CreateTicketInput) => {
     setIsLoading(true);
-    const result = await fetchApi<Ticket>('/tickets', 'POST', data);
-    setIsLoading(false);
-    toast.success('Ticket creado');
-    return result;
+    try {
+      const result = await fetchApi<Ticket>('/tickets', 'POST', data);
+      return ensureData(result, 'No se pudo crear el ticket');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: number, data: UpdateTicketInput) => {
+    setIsLoading(true);
+    try {
+      const result = await fetchApi<Ticket>(`/tickets/${id}`, 'PATCH', data);
+      return ensureData(result, 'No se pudo actualizar el ticket');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const updateStatus = useCallback(async (id: number, data: UpdateTicketStatusInput) => {
@@ -77,7 +98,7 @@ export function useTickets() {
     return await fetchApi<Ticket>(`/tickets/${id}/assign`, 'PATCH', data);
   }, []);
 
-  return { list, create, updateStatus, assign, isLoading };
+  return { list, create, update, updateStatus, assign, isLoading };
 }
 
 export function useUsers() {
@@ -97,18 +118,21 @@ export function useUsers() {
 
   const create = useCallback(async (data: CreateUserInput) => {
     setIsLoading(true);
-    const result = await fetchApi<User>('/users', 'POST', data);
-    setIsLoading(false);
-    toast.success('Usuario creado');
-    return result;
+    try {
+      const result = await fetchApi<User>('/users', 'POST', data);
+      return ensureData(result, 'No se pudo crear el usuario');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const remove = useCallback(async (id: number) => {
     setIsLoading(true);
-    const result = await fetchApi<null>(`/users/${id}`, 'DELETE');
-    setIsLoading(false);
-    toast.success('Usuario eliminado');
-    return result;
+    try {
+      await fetchApi<null>(`/users/${id}`, 'DELETE');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   return { list, create, remove, isLoading };

@@ -1,6 +1,6 @@
 import { LoginPage } from '@/features/auth/pages';
 import { DashboardPage } from '@/features/dashboard/pages';
-import { TicketsPage } from '@/features/tickets/pages';
+import { TicketRequestPage, TicketsAdminPage, TicketsPage } from '@/features/tickets/pages';
 import { UsersAdminPage } from '@/features/users/pages';
 import type { ReactNode } from 'react';
 
@@ -24,6 +24,16 @@ export const routes: AppRoute[] = [
   {
     path: '/tickets',
     element: <TicketsPage />,
+    protected: true,
+  },
+  {
+    path: '/tickets/request',
+    element: <TicketRequestPage />,
+    protected: true,
+  },
+  {
+    path: '/tickets/admin',
+    element: <TicketsAdminPage />,
     protected: true,
   },
   {
