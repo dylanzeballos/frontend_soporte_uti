@@ -1,6 +1,7 @@
 import { LoginPage } from '@/features/auth/pages';
 import { DashboardPage } from '@/features/dashboard/pages';
 import { TicketRequestPage, TicketsAdminPage, TicketsPage } from '@/features/tickets/pages';
+import { KanbanPage } from '@/features/kanban/pages';
 import { UsersAdminPage } from '@/features/users/pages';
 import type { ReactNode } from 'react';
 
@@ -34,6 +35,8 @@ export const routes: AppRoute[] = [
   {
     path: '/tickets/admin',
     element: <TicketsAdminPage />,
+    path: '/kanban',
+    element: <KanbanPage />,
     protected: true,
   },
   {
