@@ -1,23 +1,18 @@
 import * as React from "react"
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
 import {
-  BriefcaseBusinessIcon,
-  Building2Icon,
   ChevronDownIcon,
   FileTextIcon,
-  HouseIcon,
   LayoutDashboardIcon,
   SendIcon,
   SquareKanbanIcon,
   TicketIcon,
-  UserCogIcon,
-  UserPlusIcon,
   UsersIcon,
-  WrenchIcon,
 } from "lucide-react"
 
 import { useAuth } from "@/components/auth-context"
 import { ModeToggle } from "@/components/mode-toggle"
+import { NotificationCenter } from "@/components/notification-center"
 import { UserNav } from "@/components/user-nav"
 import type { UserRole } from "@/features/users/schemas"
 import { cn } from "@/lib/utils"
@@ -68,14 +63,14 @@ const navSections: NavSection[] = [
     label: "General",
     items: [
       {
-        title: "Inicio",
+        title: "Dashboard",
         to: "/dashboard",
-        icon: HouseIcon,
-        roles: ["user"],
+        icon: LayoutDashboardIcon,
+        roles: ["admin", "agent", "user"],
       },
       {
-        title: "Enviar solicitud",
-        to: "/tickets",
+        title: "Nueva solicitud",
+        to: "/tickets/request",
         icon: SendIcon,
         roles: ["user"],
       },
@@ -90,18 +85,29 @@ const navSections: NavSection[] = [
             roles: ["user"],
           },
           {
-            title: "Editar",
+            title: "Editar solicitud",
             to: "/tickets",
             statusAware: true,
             roles: ["user"],
           },
           {
-            title: "Cancelar",
+            title: "Cancelar solicitud",
             to: "/tickets",
             statusAware: true,
             roles: ["user"],
           },
         ],
+      },
+    ],
+  },
+  {
+    label: "Administración",
+    items: [
+      {
+        title: "Gestión de tickets",
+        to: "/tickets/admin",
+        icon: TicketIcon,
+        roles: ["admin", "agent"],
       },
       {
         title: "Tablero Kanban",
@@ -110,24 +116,7 @@ const navSections: NavSection[] = [
         roles: ["admin"],
       },
       {
-        title: "Dashboard",
-        to: "/dashboard",
-        icon: LayoutDashboardIcon,
-        roles: ["admin", "agent", "user"],
-      },
-    ],
-  },
-  {
-    label: "Administracion",
-    items: [
-      {
-        title: "Gestion de tickets",
-        to: "/tickets",
-        icon: TicketIcon,
-        roles: ["admin", "agent"],
-      },
-      {
-        title: "Administracion",
+        title: "Administración",
         icon: UsersIcon,
         roles: ["admin"],
         children: [
@@ -137,64 +126,21 @@ const navSections: NavSection[] = [
             roles: ["admin"],
           },
           {
-            title: "Registrar usuarios",
-            disabled: true,
+            title: "Gestionar unidades",
+            to: "/admin/units",
             roles: ["admin"],
           },
           {
-            title: "Modificar unidades",
-            disabled: true,
+            title: "Gestionar servicios",
+            to: "/admin/services",
             roles: ["admin"],
           },
           {
-            title: "Agregar servicios",
-            disabled: true,
-            roles: ["admin"],
-          },
-          {
-            title: "Agregar roles o cargos",
-            disabled: true,
+            title: "Gestionar roles",
+            to: "/admin/roles",
             roles: ["admin"],
           },
         ],
-      },
-      {
-        title: "Registrar usuarios",
-        icon: UserPlusIcon,
-        roles: ["admin"],
-        children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
-        ],
-      },
-      {
-        title: "Modificar unidades",
-        icon: Building2Icon,
-        roles: ["admin"],
-        children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
-        ],
-      },
-      {
-        title: "Agregar servicios",
-        icon: WrenchIcon,
-        roles: ["admin"],
-        children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
-        ],
-      },
-      {
-        title: "Agregar roles o cargos",
-        icon: BriefcaseBusinessIcon,
-        roles: ["admin"],
-        children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
-        ],
-      },
-      {
-        title: "Administrar usuarios",
-        to: "/admin/users",
-        icon: UserCogIcon,
-        roles: ["admin"],
       },
     ],
   },
@@ -205,11 +151,15 @@ function isPathActive(pathname: string, target: string) {
 }
 
 function getPageLabel(pathname: string) {
-  if (isPathActive(pathname, "/")) return "Inicio"
   if (isPathActive(pathname, "/dashboard")) return "Dashboard"
   if (isPathActive(pathname, "/kanban")) return "Tablero Kanban"
+  if (isPathActive(pathname, "/tickets/admin")) return "Gestión de tickets"
+  if (isPathActive(pathname, "/tickets/request")) return "Nueva solicitud"
   if (isPathActive(pathname, "/tickets")) return "Tickets"
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
+  if (isPathActive(pathname, "/admin/units")) return "Unidades"
+  if (isPathActive(pathname, "/admin/services")) return "Servicios"
+  if (isPathActive(pathname, "/admin/roles")) return "Roles"
   return "Panel"
 }
 
@@ -255,13 +205,13 @@ function AppShell({ children }: { children?: React.ReactNode }) {
   const activeParents = React.useMemo(() => {
     const next = new Set<string>()
 
-	    visibleSections.forEach((section) => {
-	      section.items.forEach((item) => {
-	        if (item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))) {
-	          next.add(item.title)
-	        }
-	      })
-	    })
+    visibleSections.forEach((section) => {
+      section.items.forEach((item) => {
+        if (item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))) {
+          next.add(item.title)
+        }
+      })
+    })
 
     return next
   }, [pathname, visibleSections])
@@ -291,7 +241,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
 
       <Sidebar
         role="navigation"
-        aria-label="Navegacion principal"
+        aria-label="Navegación principal"
         collapsible="icon"
       >
         <SidebarHeader className="border-b border-sidebar-border/60 px-3 py-3">
@@ -302,7 +252,13 @@ function AppShell({ children }: { children?: React.ReactNode }) {
               className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-accent text-sidebar-accent-foreground ring-sidebar-ring transition-colors hover:bg-sidebar-accent/90 focus-visible:outline-none focus-visible:ring-2"
               aria-label="Ir al dashboard"
             >
-              <img src="/LogoFCE.webp" alt="" className="h-6 w-auto" />
+              <img
+                src="/LogoFCE.webp"
+                alt=""
+                className="h-6 w-auto dark:brightness-0 dark:invert"
+                width="24"
+                height="24"
+              />
             </button>
             <div className={cn("min-w-0", collapsed && "hidden")}>
               <p className="truncate text-sm font-semibold text-sidebar-foreground">Soporte UTI</p>
@@ -325,10 +281,10 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                     const hasChildren = Boolean(item.children?.length)
                     const sectionOpen =
                       activeParents.has(item.title) || Boolean(expandedSections[item.title])
-	                    const directActive = item.to ? isPathActive(pathname, item.to) : false
-	                    const childActive = Boolean(
-	                      item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))
-	                    )
+                    const directActive = item.to ? isPathActive(pathname, item.to) : false
+                    const childActive = Boolean(
+                      item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))
+                    )
                     const active = directActive || childActive
 
                     return (
@@ -434,19 +390,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                               <Icon />
                               <span>{item.title}</span>
                             </SidebarMenuButton>
-                          ) : (
-                            <SidebarMenuButton
-                              type="button"
-                              isActive={false}
-                              tooltip={item.title}
-                              aria-disabled="true"
-                              title={collapsed ? `${item.title} (no disponible)` : undefined}
-                              className="h-10 cursor-not-allowed rounded-lg px-2.5 opacity-50"
-                            >
-                              <Icon />
-                              <span>{item.title}</span>
-                            </SidebarMenuButton>
-                          )
+                          ) : null
                         )}
                       </SidebarMenuItem>
                     )
@@ -484,6 +428,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
             </div>
 
             <div className="flex items-center gap-2">
+              <NotificationCenter />
               <ModeToggle />
               <UserNav />
             </div>

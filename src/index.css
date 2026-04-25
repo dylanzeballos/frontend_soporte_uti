@@ -135,7 +135,6 @@
   --text-secondary: hsl(214 20% 83.9%);
   --text-muted: hsl(214 17% 65.3%);
 
-  --primary: var(--primary);
   --primary-foreground: var(--on-primary);
   --focus-ring: hsl(350 68% 51%);
 
@@ -152,15 +151,16 @@
   --card-foreground: var(--text-primary);
   --popover: var(--surface-lowest);
   --popover-foreground: var(--text-primary);
-  --primary-foreground: var(--on-primary);
   --secondary: var(--surface-low);
   --secondary-foreground: var(--text-primary);
   --muted: var(--surface-low);
   --muted-foreground: var(--text-muted);
   --accent: var(--secondary-container);
   --accent-foreground: var(--on-secondary-fixed);
-  --border: transparent;
-  --input: var(--surface-lowest);
+  /* Visible border in dark mode for separators and element definition */
+  --border: hsl(214 19% 22%);
+  /* Input background slightly lighter than surface for contrast */
+  --input: hsl(214 20% 20%);
   --ring: var(--focus-ring);
   --destructive: var(--danger);
 
@@ -171,7 +171,7 @@
   --sidebar-primary-foreground: var(--on-primary);
   --sidebar-accent: var(--secondary-container);
   --sidebar-accent-foreground: var(--on-secondary-fixed);
-  --sidebar-border: transparent;
+  --sidebar-border: hsl(214 19% 22%);
   --sidebar-ring: var(--focus-ring);
 }
 

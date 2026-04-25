@@ -174,3 +174,121 @@ export function useAuthApi() {
 
   return { login, isLoading };
 }
+
+export interface UnitItem {
+  id: number;
+  name: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface RoleItem {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export function useUnits() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const list = useCallback(async (): Promise<UnitItem[]> => {
+    setIsLoading(true);
+    const result = await fetchApi<UnitItem[] | { data: UnitItem[] } | null>('/units');
+    setIsLoading(false);
+    if (!result) return [];
+    if (Array.isArray(result)) return result;
+    if (result && typeof result === 'object' && 'data' in result) return result.data ?? [];
+    return [];
+  }, []);
+
+  const create = useCallback(async (data: { name: string; description?: string }) => {
+    setIsLoading(true);
+    try {
+      const result = await fetchApi<UnitItem>('/units', 'POST', data);
+      return ensureData(result, 'No se pudo crear la unidad');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const remove = useCallback(async (id: number) => {
+    setIsLoading(true);
+    try {
+      await fetchApi<null>(`/units/${id}`, 'DELETE');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { list, create, remove, isLoading };
+}
+
+export function useAdminServices() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const list = useCallback(async (): Promise<ServiceItem[]> => {
+    setIsLoading(true);
+    const result = await fetchApi<ServiceItem[] | { data: ServiceItem[] } | null>('/services');
+    setIsLoading(false);
+    if (!result) return [];
+    if (Array.isArray(result)) return result;
+    if (result && typeof result === 'object' && 'data' in result) return result.data ?? [];
+    return [];
+  }, []);
+
+  const create = useCallback(async (data: { name: string }) => {
+    setIsLoading(true);
+    try {
+      const result = await fetchApi<ServiceItem>('/services', 'POST', data);
+      return ensureData(result, 'No se pudo crear el servicio');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const remove = useCallback(async (id: number) => {
+    setIsLoading(true);
+    try {
+      await fetchApi<null>(`/services/${id}`, 'DELETE');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { list, create, remove, isLoading };
+}
+
+export function useRoles() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const list = useCallback(async (): Promise<RoleItem[]> => {
+    setIsLoading(true);
+    const result = await fetchApi<RoleItem[] | { data: RoleItem[] } | null>('/roles');
+    setIsLoading(false);
+    if (!result) return [];
+    if (Array.isArray(result)) return result;
+    if (result && typeof result === 'object' && 'data' in result) return result.data ?? [];
+    return [];
+  }, []);
+
+  const create = useCallback(async (data: { name: string; description?: string }) => {
+    setIsLoading(true);
+    try {
+      const result = await fetchApi<RoleItem>('/roles', 'POST', data);
+      return ensureData(result, 'No se pudo crear el rol');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const remove = useCallback(async (id: number) => {
+    setIsLoading(true);
+    try {
+      await fetchApi<null>(`/roles/${id}`, 'DELETE');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { list, create, remove, isLoading };
+}

@@ -3,6 +3,7 @@ import { DashboardPage } from '@/features/dashboard/pages';
 import { TicketRequestPage, TicketsAdminPage, TicketsPage } from '@/features/tickets/pages';
 import { KanbanPage } from '@/features/kanban/pages';
 import { UsersAdminPage } from '@/features/users/pages';
+import { UnitsAdminPage, ServicesAdminPage, RolesAdminPage } from '@/features/admin/pages';
 import type { ReactNode } from 'react';
 
 export interface AppRoute {
@@ -35,6 +36,9 @@ export const routes: AppRoute[] = [
   {
     path: '/tickets/admin',
     element: <TicketsAdminPage />,
+    protected: true,
+  },
+  {
     path: '/kanban',
     element: <KanbanPage />,
     protected: true,
@@ -42,6 +46,21 @@ export const routes: AppRoute[] = [
   {
     path: '/admin/users',
     element: <UsersAdminPage />,
+    protected: true,
+  },
+  {
+    path: '/admin/units',
+    element: <UnitsAdminPage />,
+    protected: true,
+  },
+  {
+    path: '/admin/services',
+    element: <ServicesAdminPage />,
+    protected: true,
+  },
+  {
+    path: '/admin/roles',
+    element: <RolesAdminPage />,
     protected: true,
   },
 ];
