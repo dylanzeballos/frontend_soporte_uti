@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
@@ -148,7 +149,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    refreshProfile();
+    // refreshProfile calls setState inside async fetch callbacks, not synchronously
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refreshProfile();
   }, [refreshProfile]);
 
   return (

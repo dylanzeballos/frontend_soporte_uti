@@ -1,19 +1,18 @@
 import * as React from "react"
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
 import {
-  BriefcaseBusinessIcon,
-  Building2Icon,
   ChevronDownIcon,
   FileTextIcon,
-  HouseIcon,
   LayoutDashboardIcon,
   SendIcon,
   SquareKanbanIcon,
   TicketIcon,
   UserCogIcon,
   UserPlusIcon,
-  UsersIcon,
+  Building2Icon,
   WrenchIcon,
+  BriefcaseBusinessIcon,
+  UsersIcon,
 } from "lucide-react"
 
 import { useAuth } from "@/components/auth-context"
@@ -46,7 +45,6 @@ type NavLeaf = {
   title: string
   to?: string
   disabled?: boolean
-  statusAware?: boolean
   roles: UserRole[]
 }
 
@@ -68,66 +66,42 @@ const navSections: NavSection[] = [
     label: "General",
     items: [
       {
-        title: "Inicio",
-        to: "/dashboard",
-        icon: HouseIcon,
-        roles: ["user"],
-      },
-      {
-        title: "Enviar solicitud",
-        to: "/tickets",
-        icon: SendIcon,
-        roles: ["user"],
-      },
-      {
-        title: "Mis solicitudes",
-        icon: FileTextIcon,
-        roles: ["user"],
-        children: [
-          {
-            title: "Ver solicitudes",
-            to: "/tickets",
-            roles: ["user"],
-          },
-          {
-            title: "Editar",
-            to: "/tickets",
-            statusAware: true,
-            roles: ["user"],
-          },
-          {
-            title: "Cancelar",
-            to: "/tickets",
-            statusAware: true,
-            roles: ["user"],
-          },
-        ],
-      },
-      {
-        title: "Tablero Kanban",
-        to: "/kanban",
-        icon: SquareKanbanIcon,
-        roles: ["admin"],
-      },
-      {
         title: "Dashboard",
         to: "/dashboard",
         icon: LayoutDashboardIcon,
         roles: ["admin", "agent", "user"],
       },
+      {
+        title: "Enviar solicitud",
+        to: "/tickets/request",
+        icon: SendIcon,
+        roles: ["user"],
+      },
+      {
+        title: "Mis solicitudes",
+        to: "/tickets",
+        icon: FileTextIcon,
+        roles: ["user"],
+      },
+      {
+        title: "Tablero Kanban",
+        to: "/kanban",
+        icon: SquareKanbanIcon,
+        roles: ["admin", "agent"],
+      },
     ],
   },
   {
-    label: "Administracion",
+    label: "Administración",
     items: [
       {
-        title: "Gestion de tickets",
-        to: "/tickets",
+        title: "Gestión de tickets",
+        to: "/tickets/admin",
         icon: TicketIcon,
         roles: ["admin", "agent"],
       },
       {
-        title: "Administracion",
+        title: "Administración",
         icon: UsersIcon,
         roles: ["admin"],
         children: [
@@ -159,11 +133,17 @@ const navSections: NavSection[] = [
         ],
       },
       {
+        title: "Administrar usuarios",
+        to: "/admin/users",
+        icon: UserCogIcon,
+        roles: ["admin"],
+      },
+      {
         title: "Registrar usuarios",
         icon: UserPlusIcon,
         roles: ["admin"],
         children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
+          { title: "Próximamente", disabled: true, roles: ["admin"] },
         ],
       },
       {
@@ -171,7 +151,7 @@ const navSections: NavSection[] = [
         icon: Building2Icon,
         roles: ["admin"],
         children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
+          { title: "Próximamente", disabled: true, roles: ["admin"] },
         ],
       },
       {
@@ -179,7 +159,7 @@ const navSections: NavSection[] = [
         icon: WrenchIcon,
         roles: ["admin"],
         children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
+          { title: "Próximamente", disabled: true, roles: ["admin"] },
         ],
       },
       {
@@ -187,14 +167,8 @@ const navSections: NavSection[] = [
         icon: BriefcaseBusinessIcon,
         roles: ["admin"],
         children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
+          { title: "Próximamente", disabled: true, roles: ["admin"] },
         ],
-      },
-      {
-        title: "Administrar usuarios",
-        to: "/admin/users",
-        icon: UserCogIcon,
-        roles: ["admin"],
       },
     ],
   },
@@ -205,18 +179,13 @@ function isPathActive(pathname: string, target: string) {
 }
 
 function getPageLabel(pathname: string) {
-  if (isPathActive(pathname, "/")) return "Inicio"
   if (isPathActive(pathname, "/dashboard")) return "Dashboard"
   if (isPathActive(pathname, "/kanban")) return "Tablero Kanban"
-  if (isPathActive(pathname, "/tickets")) return "Tickets"
+  if (pathname === "/tickets/request") return "Enviar solicitud"
+  if (pathname === "/tickets/admin") return "Gestión de tickets"
+  if (isPathActive(pathname, "/tickets")) return "Mis solicitudes"
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
   return "Panel"
-}
-
-function isPendingStatus(rawStatus: string | null | undefined) {
-  if (!rawStatus) return false
-  const value = rawStatus.toLowerCase()
-  return value === "pendiente" || value === "pending"
 }
 
 function AppShell({ children }: { children?: React.ReactNode }) {
@@ -227,13 +196,6 @@ function AppShell({ children }: { children?: React.ReactNode }) {
 
   const collapsed = state === "collapsed"
   const pathname = location.pathname
-  const search = new URLSearchParams(location.search)
-  const ticketStatusFromQuery = search.get("status")
-  const ticketStatusFromState =
-    typeof (location.state as { ticketStatus?: string } | null)?.ticketStatus === "string"
-      ? (location.state as { ticketStatus?: string }).ticketStatus
-      : null
-  const canMutateRequest = isPendingStatus(ticketStatusFromQuery ?? ticketStatusFromState)
 
   const visibleSections = React.useMemo(() => {
     if (!user) return []
@@ -255,13 +217,13 @@ function AppShell({ children }: { children?: React.ReactNode }) {
   const activeParents = React.useMemo(() => {
     const next = new Set<string>()
 
-	    visibleSections.forEach((section) => {
-	      section.items.forEach((item) => {
-	        if (item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))) {
-	          next.add(item.title)
-	        }
-	      })
-	    })
+    visibleSections.forEach((section) => {
+      section.items.forEach((item) => {
+        if (item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))) {
+          next.add(item.title)
+        }
+      })
+    })
 
     return next
   }, [pathname, visibleSections])
@@ -291,15 +253,15 @@ function AppShell({ children }: { children?: React.ReactNode }) {
 
       <Sidebar
         role="navigation"
-        aria-label="Navegacion principal"
+        aria-label="Navegación principal"
         collapsible="icon"
       >
-        <SidebarHeader className="border-b border-sidebar-border/60 px-3 py-3">
+        <SidebarHeader className="px-3 py-3">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => navigate("/dashboard")}
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-accent text-sidebar-accent-foreground ring-sidebar-ring transition-colors hover:bg-sidebar-accent/90 focus-visible:outline-none focus-visible:ring-2"
+              className="flex h-10 w-10 items-center justify-center rounded-md bg-sidebar-accent text-sidebar-accent-foreground ring-sidebar-ring transition-colors hover:bg-sidebar-accent/90 focus-visible:outline-none focus-visible:ring-2"
               aria-label="Ir al dashboard"
             >
               <img src="/LogoFCE.webp" alt="" className="h-6 w-auto" />
@@ -325,10 +287,10 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                     const hasChildren = Boolean(item.children?.length)
                     const sectionOpen =
                       activeParents.has(item.title) || Boolean(expandedSections[item.title])
-	                    const directActive = item.to ? isPathActive(pathname, item.to) : false
-	                    const childActive = Boolean(
-	                      item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))
-	                    )
+                    const directActive = item.to ? isPathActive(pathname, item.to) : false
+                    const childActive = Boolean(
+                      item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))
+                    )
                     const active = directActive || childActive
 
                     return (
@@ -342,7 +304,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                               title={collapsed ? item.title : undefined}
                               aria-expanded={sectionOpen}
                               className={cn(
-                                "relative h-10 rounded-lg px-2.5 hover:bg-sidebar-accent/90 focus-visible:ring-2",
+                                "relative h-10 rounded-md px-2.5 hover:bg-sidebar-accent/90 focus-visible:ring-2",
                                 active && "bg-sidebar-accent text-sidebar-accent-foreground",
                                 active &&
                                   "after:absolute after:top-1.5 after:left-0 after:h-7 after:w-1 after:rounded-r-full after:bg-sidebar-primary"
@@ -375,9 +337,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                                 <SidebarMenuSub>
                                   {item.children?.map((child, index) => {
                                     const isActive = child.to ? isPathActive(pathname, child.to) : false
-                                    const childDisabled =
-                                      Boolean(child.disabled) ||
-                                      (Boolean(child.statusAware) && !canMutateRequest)
+                                    const childDisabled = Boolean(child.disabled)
 
                                     return (
                                       <SidebarMenuSubItem key={`${item.title}-${child.title}-${index}`}>
@@ -386,11 +346,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                                             isActive={false}
                                             aria-disabled="true"
                                             className="cursor-not-allowed rounded-md opacity-50"
-                                            title={
-                                              child.statusAware
-                                                ? "Disponible solo para solicitudes pendientes"
-                                                : "No disponible"
-                                            }
+                                            title="No disponible"
                                           >
                                             <span>{child.title}</span>
                                           </SidebarMenuSubButton>
@@ -425,7 +381,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                               aria-current={active ? "page" : undefined}
                               onClick={onNavigate}
                               className={cn(
-                                "relative h-10 rounded-lg px-2.5 hover:bg-sidebar-accent/90 focus-visible:ring-2",
+                                "relative h-10 rounded-md px-2.5 hover:bg-sidebar-accent/90 focus-visible:ring-2",
                                 active && "bg-sidebar-accent text-sidebar-accent-foreground",
                                 active &&
                                   "after:absolute after:top-1.5 after:left-0 after:h-7 after:w-1 after:rounded-r-full after:bg-sidebar-primary"
@@ -441,7 +397,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                               tooltip={item.title}
                               aria-disabled="true"
                               title={collapsed ? `${item.title} (no disponible)` : undefined}
-                              className="h-10 cursor-not-allowed rounded-lg px-2.5 opacity-50"
+                              className="h-10 cursor-not-allowed rounded-md px-2.5 opacity-50"
                             >
                               <Icon />
                               <span>{item.title}</span>
@@ -457,10 +413,11 @@ function AppShell({ children }: { children?: React.ReactNode }) {
           ))}
         </SidebarContent>
 
-        <SidebarFooter className="mt-auto border-t border-sidebar-border/60 px-3 py-3">
+        <SidebarFooter className="mt-auto px-3 py-3">
           <div className="flex items-center gap-2">
-            <ModeToggle />
-            {!collapsed && <span className="text-xs text-sidebar-foreground/70">Tema</span>}
+            {!collapsed && (
+              <p className="text-xs text-sidebar-foreground/70">v1.0</p>
+            )}
           </div>
         </SidebarFooter>
 
@@ -468,7 +425,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
       </Sidebar>
 
       <SidebarInset className="min-h-svh max-h-svh overflow-hidden">
-        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
           <div className="shell-header flex items-center justify-between gap-3 px-4 md:px-6">
             <div className="flex min-w-0 items-center gap-2">
               <SidebarTrigger

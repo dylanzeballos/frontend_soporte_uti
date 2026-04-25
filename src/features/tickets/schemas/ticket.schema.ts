@@ -149,11 +149,11 @@ export function getPriorityLabel(priority: TicketPriority): string {
 
 export function getStatusColor(status: TicketStatus): string {
   const colors: Record<TicketStatus, string> = {
-    open: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
-    in_progress: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-    resolved: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-    closed: 'bg-slate-500/15 text-slate-700 dark:text-slate-300',
-    cancelled: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
+    open: 'bg-primary/10 text-primary',
+    in_progress: 'bg-warning/15 text-warning',
+    resolved: 'bg-success/15 text-success',
+    closed: 'bg-muted text-muted-foreground',
+    cancelled: 'bg-danger/15 text-danger',
   };
 
   return colors[status];
@@ -161,10 +161,10 @@ export function getStatusColor(status: TicketStatus): string {
 
 export function getPriorityColor(priority: TicketPriority): string {
   const colors: Record<TicketPriority, string> = {
-    low: 'bg-slate-500/15 text-slate-700 dark:text-slate-300',
-    medium: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
-    high: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-    urgent: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
+    low: 'bg-muted text-muted-foreground',
+    medium: 'bg-accent text-accent-foreground',
+    high: 'bg-warning/15 text-warning',
+    urgent: 'bg-danger/15 text-danger',
   };
 
   return colors[priority];

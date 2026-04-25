@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/components/auth-context';
 import { useTickets } from '@/hooks/useApi';
-import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, LayoutDashboard } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Ticket as TicketType } from '@/features/tickets/schemas/ticket.schema';
 import type { User } from '@/features/users/schemas';
@@ -21,7 +21,14 @@ function getDashboardUserName(user: DashboardUser | null) {
 function getDashboardUserRole(user: DashboardUser | null) {
   if (!user) return 'Sin rol';
   const roleValue = user.role as string | { name?: string } | undefined;
-  if (typeof roleValue === 'string') return roleValue;
+  if (typeof roleValue === 'string') {
+    const roleLabels: Record<string, string> = {
+      admin: 'Administrador',
+      agent: 'Agente',
+      user: 'Usuario',
+    };
+    return roleLabels[roleValue] ?? roleValue;
+  }
   if (roleValue && typeof roleValue === 'object') {
     const roleName = roleValue.name;
     return typeof roleName === 'string' ? roleName : 'Sin rol';
@@ -47,69 +54,107 @@ export function DashboardPage() {
   };
 
   const statCards = [
-    { title: 'Total', value: stats.total, icon: Clock, color: 'text-blue-500' },
-    { title: 'Abiertos', value: stats.open, icon: AlertCircle, color: 'text-red-500' },
-    { title: 'En Progreso', value: stats.inProgress, icon: CheckCircle, color: 'text-yellow-500' },
-    { title: 'Resueltos', value: stats.resolved, icon: CheckCircle, color: 'text-green-500' },
+    {
+      title: 'Total',
+      value: stats.total,
+      icon: Clock,
+      iconClass: 'text-accent-foreground',
+      bgClass: 'bg-accent/70',
+    },
+    {
+      title: 'Abiertos',
+      value: stats.open,
+      icon: AlertCircle,
+      iconClass: 'text-danger',
+      bgClass: 'bg-danger/10',
+    },
+    {
+      title: 'En Progreso',
+      value: stats.inProgress,
+      icon: Clock,
+      iconClass: 'text-warning',
+      bgClass: 'bg-warning/10',
+    },
+    {
+      title: 'Resueltos',
+      value: stats.resolved,
+      icon: CheckCircle,
+      iconClass: 'text-success',
+      bgClass: 'bg-success/10',
+    },
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">
+    <div className="space-y-6">
+      <section className="editorial-surface rounded-md px-6 py-6 sm:px-8 sm:py-8">
+        <div className="editorial-kicker">
+          <LayoutDashboard className="h-3.5 w-3.5" />
+          Dashboard
+        </div>
+        <h1 className="mt-5 text-[clamp(1.8rem,2.9vw,2.8rem)] font-bold tracking-[-0.02em] text-foreground">
           Bienvenido, {getDashboardUserName(dashboardUser)}
         </h1>
-      </div>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {getDashboardUserRole(dashboardUser)} · {String(dashboardUser?.email ?? '')}
+        </p>
+      </section>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
-          <Card key={stat.title}>
+          <Card key={stat.title} className="rounded-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+              <div className={`rounded-md p-1.5 ${stat.bgClass}`}>
+                <stat.icon className={`h-4 w-4 ${stat.iconClass}`} />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Tickets Recientes</CardTitle>
+        <Card className="rounded-md">
+          <CardHeader className="px-6 pt-6">
+            <CardTitle className="text-base">Tickets Recientes</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-6 pb-6">
             {tickets.length > 0 ? (
               <div className="space-y-2">
                 {tickets.slice(0, 5).map((ticket: TicketType) => (
-                  <div key={ticket.id} className="flex items-center justify-between border-b pb-2 last:border-0">
-                    <span className="text-sm truncate">{ticket.title}</span>
-                    <span className="text-xs text-muted-foreground">
+                  <div
+                    key={ticket.id}
+                    className="editorial-inset flex items-center justify-between rounded-md px-3 py-2.5"
+                  >
+                    <span className="truncate text-sm font-medium text-foreground">{ticket.title}</span>
+                    <span className="ml-4 shrink-0 text-xs text-muted-foreground">
                       {new Date(ticket.createdAt).toLocaleDateString()}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground">No hay tickets recientes</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">No hay tickets recientes</p>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Información</CardTitle>
+        <Card className="rounded-md">
+          <CardHeader className="px-6 pt-6">
+            <CardTitle className="text-base">Información de cuenta</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Tu rol</span>
-              <span className="font-medium capitalize">{getDashboardUserRole(dashboardUser)}</span>
+          <CardContent className="space-y-2 px-6 pb-6">
+            <div className="editorial-inset flex justify-between rounded-md px-3 py-2.5 text-sm">
+              <span className="text-muted-foreground">Rol</span>
+              <span className="font-medium text-foreground capitalize">
+                {getDashboardUserRole(dashboardUser)}
+              </span>
             </div>
-            <div className="flex justify-between">
+            <div className="editorial-inset flex justify-between rounded-md px-3 py-2.5 text-sm">
               <span className="text-muted-foreground">Email</span>
-              <span className="font-medium">{String(dashboardUser?.email)}</span>
+              <span className="font-medium text-foreground">{String(dashboardUser?.email ?? '')}</span>
             </div>
           </CardContent>
         </Card>

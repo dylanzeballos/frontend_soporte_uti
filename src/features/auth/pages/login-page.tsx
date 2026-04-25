@@ -54,7 +54,7 @@ export function LoginPage() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             {error && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              <div role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -88,7 +88,8 @@ export function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>

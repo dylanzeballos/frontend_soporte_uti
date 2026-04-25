@@ -33,7 +33,7 @@ const initialColumns: KanbanColumn[] = [
       {
         id: "UTI-201",
         title: "Falla de encendido en laboratorio 3",
-        description: "Tres equipos no inician despues de corte electrico.",
+        description: "Tres equipos no inician después de corte eléctrico.",
         area: "Laboratorios FCE",
         assignedTo: "Equipo Hardware",
         priority: "alta",
@@ -43,8 +43,8 @@ const initialColumns: KanbanColumn[] = [
       },
       {
         id: "UTI-202",
-        title: "Reinstalacion de Office en Decanato",
-        description: "Solicitan instalacion limpia por errores de licencia.",
+        title: "Reinstalación de Office en Decanato",
+        description: "Solicitan instalación limpia por errores de licencia.",
         area: "Decanato",
         assignedTo: "Mesa de Ayuda",
         priority: "media",
@@ -61,8 +61,8 @@ const initialColumns: KanbanColumn[] = [
       {
         id: "UTI-180",
         title: "Cableado de red inestable en piso 2",
-        description: "Intermitencia en puertos de secretaria administrativa.",
-        area: "Administracion FCE",
+        description: "Intermitencia en puertos de secretaría administrativa.",
+        area: "Administración FCE",
         assignedTo: "Infraestructura",
         priority: "alta",
         progress: 55,
@@ -71,8 +71,8 @@ const initialColumns: KanbanColumn[] = [
       },
       {
         id: "UTI-183",
-        title: "Migracion de impresora a servidor nuevo",
-        description: "Cola de impresion se detiene en horas pico.",
+        title: "Migración de impresora a servidor nuevo",
+        description: "Cola de impresión se detiene en horas pico.",
         area: "Contabilidad",
         assignedTo: "Soporte Sistemas",
         priority: "media",
@@ -84,13 +84,13 @@ const initialColumns: KanbanColumn[] = [
   },
   {
     key: "qa",
-    title: "Validacion",
+    title: "Validación",
     tickets: [
       {
         id: "UTI-171",
-        title: "Recuperacion de cuentas institucionales",
+        title: "Recuperación de cuentas institucionales",
         description: "Validar acceso de 12 docentes en dominio interno.",
-        area: "Direccion Academica",
+        area: "Dirección Académica",
         assignedTo: "Seguridad TI",
         priority: "baja",
         progress: 85,
@@ -105,7 +105,7 @@ const initialColumns: KanbanColumn[] = [
     tickets: [
       {
         id: "UTI-160",
-        title: "Actualizacion antivirus centralizado",
+        title: "Actualización antivirus centralizado",
         description: "Endpoints de biblioteca sincronizados correctamente.",
         area: "Biblioteca",
         assignedTo: "Soporte Sistemas",
@@ -120,12 +120,12 @@ const initialColumns: KanbanColumn[] = [
 
 function priorityClass(priority: Priority) {
   if (priority === "alta") {
-    return "bg-destructive/15 text-destructive border-destructive/20";
+    return "bg-danger/15 text-danger";
   }
   if (priority === "media") {
-    return "bg-amber-500/15 text-amber-700 border-amber-500/20 dark:text-amber-400";
+    return "bg-warning/15 text-warning";
   }
-  return "bg-emerald-500/15 text-emerald-700 border-emerald-500/20 dark:text-emerald-400";
+  return "bg-success/15 text-success";
 }
 
 export function KanbanPage() {
@@ -202,18 +202,21 @@ export function KanbanPage() {
   }
 
   return (
-    <section className="space-y-4">
-      <header className="rounded-xl border bg-card p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="space-y-6">
+      <div className="editorial-surface rounded-md px-6 py-6 sm:px-8 sm:py-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-base font-semibold sm:text-lg">Tablero Kanban UTI</h1>
-            <p className="text-xs text-muted-foreground sm:text-sm">
-              Seguimiento de solicitudes de soporte tecnico para equipos FCE-UMSS.
+            <div className="editorial-kicker">Kanban</div>
+            <h1 className="mt-5 text-[clamp(1.8rem,2.9vw,2.8rem)] font-bold tracking-[-0.02em] text-foreground">
+              Tablero Kanban UTI
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Seguimiento de solicitudes de soporte técnico para equipos FCE-UMSS.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Badge variant="secondary">{totalTickets} tickets</Badge>
-            <div className="flex rounded-md border bg-muted/40 p-1">
+            <div className="flex rounded-md bg-muted/40 p-1">
               <Button
                 type="button"
                 size="sm"
@@ -228,7 +231,7 @@ export function KanbanPage() {
                 variant={view === "list" ? "default" : "ghost"}
                 onClick={() => setView("list")}
               >
-                List
+                Lista
               </Button>
               <Button
                 type="button"
@@ -236,12 +239,12 @@ export function KanbanPage() {
                 variant={view === "table" ? "default" : "ghost"}
                 onClick={() => setView("table")}
               >
-                Table
+                Tabla
               </Button>
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {view === "board" && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
@@ -249,35 +252,35 @@ export function KanbanPage() {
             <article
               key={column.key}
               className={cn(
-                "flex min-h-[420px] flex-col rounded-xl border bg-muted/20 transition-colors",
-                dragOverColumnKey === column.key && "border-primary/60 bg-primary/5"
+                "editorial-surface flex min-h-[420px] flex-col rounded-md transition-colors",
+                dragOverColumnKey === column.key && "ring-2 ring-primary/40"
               )}
               onDragOver={(event) => onColumnDragOver(event, column.key)}
               onDrop={(event) => onColumnDrop(event, column.key)}
               onDragLeave={() => setDragOverColumnKey(null)}
             >
-              <div className="border-b p-3">
+              <div className="px-4 pt-4 pb-3">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">{column.title}</h2>
+                  <h2 className="text-sm font-semibold text-foreground">{column.title}</h2>
                   <Badge variant="outline">{column.tickets.length}</Badge>
                 </div>
               </div>
-              <div className="flex-1 space-y-3 overflow-y-auto p-3">
+              <div className="flex-1 space-y-3 overflow-y-auto px-3 pb-3">
                 {column.tickets.map((ticket) => (
                   <Card
                     key={ticket.id}
                     className={cn(
-                      "cursor-grab shadow-sm active:cursor-grabbing",
+                      "cursor-grab rounded-md shadow-sm active:cursor-grabbing",
                       draggedTicketId === ticket.id && "opacity-60"
                     )}
                     draggable
-                    onDragStart={(event) => onCardDragStart(event, column.key, ticket.id)}
+                    onDragStart={(event) => onCardDragStart(event as DragEvent<HTMLDivElement>, column.key, ticket.id)}
                     onDragEnd={resetDragState}
                   >
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-sm leading-5">{ticket.title}</CardTitle>
-                        <Badge className={cn("border", priorityClass(ticket.priority))}>
+                        <Badge className={priorityClass(ticket.priority)}>
                           {ticket.priority}
                         </Badge>
                       </div>
@@ -288,7 +291,7 @@ export function KanbanPage() {
                         <span className="font-medium">ID:</span> {ticket.id}
                       </p>
                       <p>
-                        <span className="font-medium">Area:</span> {ticket.area}
+                        <span className="font-medium">Área:</span> {ticket.area}
                       </p>
                       <p>
                         <span className="font-medium">Asignado:</span> {ticket.assignedTo}
@@ -319,9 +322,9 @@ export function KanbanPage() {
       )}
 
       {view === "list" && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {boardColumns.map((column) => (
-            <Card key={column.key}>
+            <Card key={column.key} className="rounded-md">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm">
                   {column.title} ({column.tickets.length})
@@ -331,7 +334,7 @@ export function KanbanPage() {
                 {column.tickets.map((ticket) => (
                   <div
                     key={ticket.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"
+                    className="editorial-inset flex flex-wrap items-center justify-between gap-2 rounded-md p-3 text-sm"
                   >
                     <div>
                       <p className="font-medium">{ticket.title}</p>
@@ -339,7 +342,7 @@ export function KanbanPage() {
                         {ticket.id} · {ticket.area} · {ticket.assignedTo}
                       </p>
                     </div>
-                    <Badge className={cn("border", priorityClass(ticket.priority))}>
+                    <Badge className={priorityClass(ticket.priority)}>
                       {ticket.priority}
                     </Badge>
                   </div>
@@ -351,7 +354,7 @@ export function KanbanPage() {
       )}
 
       {view === "table" && (
-        <Card>
+        <Card className="rounded-md">
           <CardHeader>
             <CardTitle className="text-sm">Tabla de tickets</CardTitle>
           </CardHeader>
@@ -359,31 +362,31 @@ export function KanbanPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-sm">
                 <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="p-2">ID</th>
-                    <th className="p-2">Titulo</th>
-                    <th className="p-2">Estado</th>
-                    <th className="p-2">Area</th>
-                    <th className="p-2">Asignado</th>
-                    <th className="p-2">Prioridad</th>
-                    <th className="p-2">Progreso</th>
+                  <tr className="text-left text-muted-foreground">
+                    <th className="pb-3 pl-2 pr-4 pt-0 font-medium">ID</th>
+                    <th className="pb-3 pr-4 font-medium">Título</th>
+                    <th className="pb-3 pr-4 font-medium">Estado</th>
+                    <th className="pb-3 pr-4 font-medium">Área</th>
+                    <th className="pb-3 pr-4 font-medium">Asignado</th>
+                    <th className="pb-3 pr-4 font-medium">Prioridad</th>
+                    <th className="pb-3 font-medium">Progreso</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="space-y-2">
                   {boardColumns.flatMap((column) =>
                     column.tickets.map((ticket) => (
-                      <tr key={ticket.id} className="border-b last:border-0">
-                        <td className="p-2 font-medium">{ticket.id}</td>
-                        <td className="p-2">{ticket.title}</td>
-                        <td className="p-2">{column.title}</td>
-                        <td className="p-2">{ticket.area}</td>
-                        <td className="p-2">{ticket.assignedTo}</td>
-                        <td className="p-2">
-                          <Badge className={cn("border", priorityClass(ticket.priority))}>
+                      <tr key={ticket.id} className="editorial-inset rounded-md">
+                        <td className="py-2 pl-2 pr-4 font-medium">{ticket.id}</td>
+                        <td className="py-2 pr-4">{ticket.title}</td>
+                        <td className="py-2 pr-4">{column.title}</td>
+                        <td className="py-2 pr-4">{ticket.area}</td>
+                        <td className="py-2 pr-4">{ticket.assignedTo}</td>
+                        <td className="py-2 pr-4">
+                          <Badge className={priorityClass(ticket.priority)}>
                             {ticket.priority}
                           </Badge>
                         </td>
-                        <td className="p-2">{ticket.progress}%</td>
+                        <td className="py-2">{ticket.progress}%</td>
                       </tr>
                     ))
                   )}

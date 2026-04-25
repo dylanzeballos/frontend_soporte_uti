@@ -129,7 +129,6 @@ function SelectField({
 
 export function TicketForm({
   variant = 'admin',
-  mode: _mode = 'create',
   initialValues,
   assigneeOptions = [],
   emitterOptions = [],
