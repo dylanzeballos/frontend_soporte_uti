@@ -48,14 +48,16 @@ export function TicketRequestPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <section className="editorial-surface rounded-md px-6 py-6 sm:px-8 sm:py-8">
-        <div className="editorial-kicker">
-          <ClipboardPenLine className="h-3.5 w-3.5" />
-          Solicitud
+      <section className="lively-hero rounded-[var(--radius-panel)] px-6 py-7 sm:px-8 sm:py-9">
+        <div className="relative z-10">
+          <div className="editorial-kicker">
+            <ClipboardPenLine className="h-3.5 w-3.5" />
+            Solicitud
+          </div>
+          <h1 className="mt-5 text-[clamp(1.9rem,2.9vw,2.9rem)] font-bold tracking-[-0.02em] text-foreground">
+            Solicitar ticket
+          </h1>
         </div>
-        <h1 className="mt-5 text-[clamp(1.8rem,2.9vw,2.8rem)] font-bold tracking-[-0.02em] text-foreground">
-          Solicitar ticket
-        </h1>
       </section>
 
       <TicketForm
@@ -64,7 +66,7 @@ export function TicketRequestPage() {
         isSubmitting={createMutation.isPending}
         serviceOptions={serviceOptions}
         submitLabel="Enviar solicitud"
-        className="rounded-md"
+        className="rounded-[var(--radius-panel)]"
         onSubmit={handleSubmit}
       />
     </div>
