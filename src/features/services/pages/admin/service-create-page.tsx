@@ -1,30 +1,58 @@
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { staticServices } from '@/features/services/data/static-services';
 import { createServiceSchema, type CreateServiceInput } from '@/features/services/schemas';
+import { useServices } from '@/hooks/useApi';
 
 export function ServiceCreatePage() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const serviceId = Number(id);
   const isEditMode = Number.isInteger(serviceId) && serviceId > 0;
-  const selectedService = isEditMode
-    ? staticServices.find((service) => service.id === serviceId) ?? null
-    : null;
+  const { create, update, findOne } = useServices();
+
+  const { data: selectedService, isLoading: isLoadingService } = useQuery({
+    queryKey: ['service', serviceId],
+    queryFn: () => findOne(serviceId),
+    enabled: isEditMode,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: create,
+    onSuccess: (result) => {
+      if (!result) return;
+      toast.success(`Servicio "${result.name}" registrado correctamente`);
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      reset({ name: '' });
+      setFocus('name');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: CreateServiceInput) => update(serviceId, data),
+    onSuccess: (result) => {
+      if (!result) return;
+      toast.success(`Servicio "${result.name}" actualizado correctamente`);
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      queryClient.invalidateQueries({ queryKey: ['service', serviceId] });
+      navigate('/admin/services');
+    },
+  });
 
   const {
     control,
     handleSubmit,
     setFocus,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<CreateServiceInput>({
     resolver: zodResolver(createServiceSchema),
     defaultValues: {
@@ -43,14 +71,11 @@ export function ServiceCreatePage() {
 
   const onSubmit = async (data: CreateServiceInput) => {
     if (isEditMode) {
-      toast.success(`Servicio "${data.name}" actualizado correctamente`);
-      navigate('/admin/services');
+      await updateMutation.mutateAsync(data);
       return;
     }
 
-    toast.success(`Servicio "${data.name}" registrado correctamente`);
-    reset({ name: '' });
-    setFocus('name');
+    await createMutation.mutateAsync(data);
   };
 
   const handleClear = () => {
@@ -58,6 +83,8 @@ export function ServiceCreatePage() {
     setFocus('name');
     toast.message('Formulario limpiado');
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-4">
@@ -82,7 +109,9 @@ export function ServiceCreatePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isEditMode && !selectedService ? (
+          {isEditMode && isLoadingService ? (
+            <p className="text-sm text-muted-foreground">Cargando datos del servicio...</p>
+          ) : isEditMode && !selectedService ? (
             <p className="text-sm text-destructive">No se encontró el servicio solicitado.</p>
           ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -106,15 +135,15 @@ export function ServiceCreatePage() {
             </div>
 
             <div className="flex gap-2">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Registrar servicio'}
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Registrar servicio'}
               </Button>
               {isEditMode ? (
-                <Button type="button" variant="outline" onClick={() => navigate('/admin/services')} disabled={isSubmitting}>
+                <Button type="button" variant="outline" onClick={() => navigate('/admin/services')} disabled={isSaving}>
                   Volver a la lista
                 </Button>
               ) : (
-                <Button type="button" variant="outline" onClick={handleClear} disabled={isSubmitting}>
+                <Button type="button" variant="outline" onClick={handleClear} disabled={isSaving}>
                   Limpiar
                 </Button>
               )}
