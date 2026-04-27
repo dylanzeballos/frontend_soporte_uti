@@ -326,16 +326,12 @@
   }
 
   .editorial-inset {
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-lowest) 95%, var(--accent) 5%) 0%,
-      color-mix(in srgb, var(--surface-lowest) 87%, var(--primary) 13%) 100%
-    );
+    background-color: color-mix(in srgb, var(--surface-lowest) 95%, var(--secondary-container) 5%);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, var(--surface-lowest) 75%, transparent),
       0 0 0 1px color-mix(in srgb, var(--foreground) 4%, transparent),
       var(--shadow-1);
-    backdrop-filter: blur(10px);
+    backdrop-filter: none;
   }
 
   .editorial-label {
@@ -362,42 +358,24 @@
   }
 
   .lively-hero {
-    background-image: var(--hero-gradient);
+    background-color: color-mix(in srgb, var(--surface-lowest) 84%, var(--secondary-container) 16%);
     box-shadow: var(--shadow-2);
   }
 
   .lively-hero::after,
   .form-shell::after {
-    content: "";
-    position: absolute;
-    right: -4rem;
-    bottom: -4rem;
-    width: 14rem;
-    height: 14rem;
-    border-radius: 999px;
-    background: radial-gradient(
-      circle,
-      color-mix(in srgb, var(--primary) 24%, transparent) 0%,
-      transparent 68%
-    );
-    filter: blur(8px);
-    animation: ambient-float 12s ease-in-out infinite;
-    pointer-events: none;
+    content: none;
   }
 
   .form-shell {
-    background-image: var(--panel-gradient);
+    background-color: color-mix(in srgb, var(--surface-lowest) 91%, var(--secondary-container) 9%);
     box-shadow: var(--shadow-2);
   }
 
   .form-panel {
     position: relative;
     border-radius: calc(var(--radius-panel) - 0.25rem);
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-lowest) 96%, var(--accent) 4%) 0%,
-      color-mix(in srgb, var(--surface-lowest) 88%, var(--primary) 12%) 100%
-    );
+    background-color: color-mix(in srgb, var(--surface-lowest) 97%, var(--secondary-container) 3%);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, var(--surface-lowest) 82%, transparent),
       0 0 0 1px color-mix(in srgb, var(--foreground) 4%, transparent),
@@ -406,7 +384,7 @@
   }
 
   .ticket-entry-card {
-    background-image: var(--panel-gradient-soft);
+    background-color: color-mix(in srgb, var(--surface-lowest) 97%, var(--secondary-container) 3%);
     box-shadow: var(--shadow-2);
     transition:
       transform 200ms ease,
@@ -433,16 +411,12 @@
   }
 
   .ticket-list-shell {
-    background-image: var(--panel-gradient-soft);
+    background-color: color-mix(in srgb, var(--surface-lowest) 94%, var(--secondary-container) 6%);
     box-shadow: var(--shadow-2);
   }
 
   .ticket-record-card {
-    background-image: linear-gradient(
-      160deg,
-      color-mix(in srgb, var(--surface-lowest) 96%, var(--accent) 4%) 0%,
-      color-mix(in srgb, var(--surface-lowest) 86%, var(--primary) 14%) 100%
-    );
+    background-color: color-mix(in srgb, var(--surface-lowest) 96%, var(--secondary-container) 4%);
     box-shadow: var(--shadow-1);
     transition:
       transform 200ms ease,
@@ -471,16 +445,12 @@
 
   .control-shell {
     border-radius: var(--radius-control);
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--input) 96%, var(--accent) 4%) 0%,
-      color-mix(in srgb, var(--input) 90%, var(--primary) 10%) 100%
-    );
+    background-color: color-mix(in srgb, var(--surface-lowest) 96%, var(--secondary-container) 4%);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, var(--surface-lowest) 72%, transparent),
       0 0 0 1px color-mix(in srgb, var(--foreground) 4%, transparent),
       var(--shadow-1);
-    backdrop-filter: blur(8px);
+    backdrop-filter: none;
   }
 
   .topbar-icon-button {
