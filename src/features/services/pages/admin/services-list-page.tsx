@@ -1,30 +1,43 @@
-import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { staticServices, type ServiceItem } from '@/features/services/data/static-services';
+import type { ServiceItem } from '@/hooks/useApi';
+import { useServices } from '@/hooks/useApi';
 
 export function ServicesListPage() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [services, setServices] = useState<ServiceItem[]>(staticServices);
+  const { list, remove } = useServices();
+
+  const { data: services = [], isLoading } = useQuery<ServiceItem[]>({
+    queryKey: ['services'],
+    queryFn: list,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => remove(id),
+    onSuccess: (result) => {
+      if (!result) return;
+      toast.success('Servicio eliminado correctamente');
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+    },
+  });
 
   const handleDelete = (service: ServiceItem) => {
     const confirmed = confirm(`¿Seguro que deseas eliminar el servicio "${service.name}"?`);
     if (!confirmed) return;
 
-    setServices((prev) => prev.filter((item) => item.id !== service.id));
-    toast.success('Servicio eliminado correctamente');
+    deleteMutation.mutate(service.id);
   };
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Lista de servicios</h1>
-        <p className="text-sm text-muted-foreground">
-          Vista temporal con datos estáticos mientras se integra el backend.
-        </p>
+        <p className="text-sm text-muted-foreground">Servicios registrados en el sistema.</p>
       </div>
 
       <Card>
@@ -33,7 +46,9 @@ export function ServicesListPage() {
           <CardDescription>{services.length} servicios encontrados</CardDescription>
         </CardHeader>
         <CardContent>
-          {services.length > 0 ? (
+          {isLoading ? (
+            <div className="py-8 text-center text-muted-foreground">Cargando servicios...</div>
+          ) : services.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full min-w-160 border-collapse text-sm">
                 <thead>
@@ -66,6 +81,7 @@ export function ServicesListPage() {
                             variant="destructive"
                             onClick={() => handleDelete(service)}
                             aria-label={`Eliminar servicio ${service.id}`}
+                            disabled={deleteMutation.isPending}
                           >
                             <Trash2 data-icon="inline-start" />
                             Eliminar
