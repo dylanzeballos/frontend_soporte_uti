@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { PencilLine, ShieldCheck, Ticket as TicketIcon } from 'lucide-react';
+import { PencilLine, RadioIcon, ShieldCheck, Ticket as TicketIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { useRealtime } from '@/lib/realtime/context';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -69,6 +70,10 @@ function toFormValues(ticket: Ticket): TicketFormValues {
 export function TicketsAdminPage() {
   const queryClient = useQueryClient();
   const { list, update } = useTickets();
+  const { status: wsStatus, notifications } = useRealtime();
+  const lastUpdateCount = notifications.filter(
+    (n) => n.type === 'ticket.created' || n.type === 'ticket.status_changed' || n.type === 'ticket.assigned'
+  ).length;
   const { list: listUsers } = useUsers();
   const { list: listServices } = useServices();
 
@@ -142,15 +147,26 @@ export function TicketsAdminPage() {
 
   return (
     <div className="space-y-6">
-      <section className="lively-hero rounded-[var(--radius-panel)] px-6 py-7 sm:px-8 sm:py-9">
-        <div className="relative z-10">
-          <div className="editorial-kicker">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            Gestion administrativa
+      <section className="lively-hero rounded-(--radius-panel) px-6 py-7 sm:px-8 sm:py-9">
+        <div className="relative z-10 flex items-start justify-between gap-4">
+          <div>
+            <div className="editorial-kicker">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Gestion administrativa
+            </div>
+            <h1 className="mt-5 text-[clamp(1.9rem,2.9vw,2.9rem)] font-bold tracking-[-0.02em] text-foreground">
+              Gestionar tickets
+            </h1>
           </div>
-          <h1 className="mt-5 text-[clamp(1.9rem,2.9vw,2.9rem)] font-bold tracking-[-0.02em] text-foreground">
-            Gestionar tickets
-          </h1>
+          {wsStatus === 'connected' && (
+            <div
+              className="mt-1 flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1.5 text-xs font-medium text-success"
+              title={`Tiempo real activo · ${lastUpdateCount} evento${lastUpdateCount !== 1 ? 's' : ''} recibido${lastUpdateCount !== 1 ? 's' : ''}`}
+            >
+              <RadioIcon className="h-3 w-3 animate-pulse" aria-hidden="true" />
+              En vivo
+            </div>
+          )}
         </div>
       </section>
 
@@ -164,13 +180,13 @@ export function TicketsAdminPage() {
           serviceOptions={serviceOptions}
           isSubmitting={updateMutation.isPending}
           submitLabel="Guardar ticket"
-          className="rounded-[var(--radius-panel)]"
+          className="rounded-(--radius-panel)"
           onSubmit={handleSubmit}
           onCancel={handleCloseForm}
         />
       ) : null}
 
-      <Card className="ticket-list-shell rounded-[var(--radius-panel)]">
+      <Card className="ticket-list-shell rounded-(--radius-panel)">
         <CardHeader className="px-6 pb-0 pt-6 sm:px-8 sm:pt-8">
           <div className="space-y-2">
             <CardTitle>Solicitudes recibidas</CardTitle>
@@ -233,7 +249,7 @@ export function TicketsAdminPage() {
                 const emitter = ticket.emitter ? getUserDisplayName(ticket.emitter as ApiLikeUser) : 'No definido';
 
                 return (
-                  <Card key={ticket.id} className="ticket-record-card rounded-[var(--radius-panel)]">
+                  <Card key={ticket.id} className="ticket-record-card rounded-(--radius-panel)">
                     <CardHeader className="px-5 pb-0 pt-5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-2">

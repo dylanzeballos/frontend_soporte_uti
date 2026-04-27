@@ -18,6 +18,7 @@ import {
 
 import { useAuth } from "@/components/auth-context"
 import { ModeToggle } from "@/components/mode-toggle"
+import { NotificationCenter } from "@/components/notification-center"
 import { UserNav } from "@/components/user-nav"
 import type { UserRole } from "@/features/users/schemas"
 import { cn } from "@/lib/utils"
@@ -494,6 +495,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
             </div>
 
             <div className="flex items-center gap-2">
+              <NotificationCenter />
               <ModeToggle />
               <UserNav />
             </div>
