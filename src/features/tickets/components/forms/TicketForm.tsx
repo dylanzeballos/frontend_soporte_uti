@@ -67,7 +67,7 @@ const defaultValues: TicketFormValues = {
 function FormFieldError({ message }: { message?: string }) {
   if (!message) return null;
 
-  return <p className="text-sm leading-6 text-destructive">{message}</p>;
+  return <p className="animate-in fade-in-0 slide-in-from-top-1 text-sm leading-6 text-destructive">{message}</p>;
 }
 
 function SelectField({
@@ -217,10 +217,10 @@ export function TicketForm({
   );
 
   return (
-    <Card className={cn('editorial-surface-elevated overflow-hidden rounded-md bg-card', className)}>
-      <CardContent className="px-6 py-6 sm:px-8 sm:py-8">
-        <form className="space-y-6" onSubmit={submitForm} noValidate>
-          <section className="editorial-inset rounded-md p-5 sm:p-6">
+    <Card className={cn('form-shell overflow-hidden rounded-[var(--radius-panel)] border-0 bg-card/95', className)}>
+      <CardContent className="relative z-10 px-6 py-6 sm:px-8 sm:py-8">
+        <form className="space-y-6 sm:space-y-7" onSubmit={submitForm} noValidate>
+          <section className="form-panel p-5 sm:p-6">
             <div className={cn('grid gap-5', isRequestVariant ? 'lg:grid-cols-1' : 'lg:grid-cols-[1.35fr_0.65fr]')}>
               <div className="space-y-2">
                 <Label htmlFor="ticket-title" className="editorial-label text-muted-foreground">
@@ -246,7 +246,7 @@ export function TicketForm({
                         Estado
                       </Label>
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger id="ticket-status" ref={registerFieldRef('status')} aria-invalid={Boolean(fieldState.error)} className="w-full">
+                    <SelectTrigger id="ticket-status" ref={registerFieldRef('status')} aria-invalid={Boolean(fieldState.error)} className="w-full">
                           <SelectValue placeholder="Selecciona un estado">
                             {ticketStatusOptions.find((option) => option.value === field.value)?.label}
                           </SelectValue>
@@ -287,7 +287,7 @@ export function TicketForm({
           </section>
 
           {!isRequestVariant ? (
-            <section className="editorial-inset rounded-md p-5 sm:p-6">
+            <section className="form-panel p-5 sm:p-6">
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(14rem,0.9fr)]">
               <Controller
                 control={control}
@@ -341,7 +341,7 @@ export function TicketForm({
             </section>
           ) : null}
 
-          <section className="editorial-inset rounded-md p-5 sm:p-6">
+          <section className="form-panel p-5 sm:p-6">
             <div className={cn('grid gap-5', isRequestVariant ? 'lg:grid-cols-1' : 'lg:grid-cols-3')}>
               <Controller
                 control={control}
@@ -404,13 +404,17 @@ export function TicketForm({
             </div>
           </section>
 
-          <div className="flex flex-col items-center justify-center gap-3 pt-1">
+          <div className="flex flex-col items-center justify-center gap-3 pt-2">
             {onCancel ? (
-              <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+              <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting} className="min-w-44 justify-center">
                 {cancelLabel}
               </Button>
             ) : null}
-            <Button type="submit" disabled={isSubmitting} className="mx-auto min-w-60 justify-center px-6 text-sm font-semibold">
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="mx-auto min-w-56 justify-center px-6 text-sm font-semibold sm:min-w-64"
+            >
               {isSubmitting ? (
                 <>
                   <Spinner className="mr-2 h-4 w-4" />

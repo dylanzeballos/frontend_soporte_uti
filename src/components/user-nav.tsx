@@ -26,8 +26,12 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <Button
+          variant="ghost"
+          className="topbar-icon-button relative h-10 w-10 rounded-full p-0 hover:translate-y-0"
+          aria-label="Abrir menu de perfil"
+        >
+          <div className="topbar-avatar">
             {String(user.name || user.email || 'U').charAt(0).toUpperCase()}
           </div>
         </Button>

@@ -11,13 +11,12 @@ import {
   SquareKanbanIcon,
   TicketIcon,
   UserCogIcon,
-  UserPlusIcon,
-  UsersIcon,
   WrenchIcon,
 } from "lucide-react"
 
 import { useAuth } from "@/components/auth-context"
 import { ModeToggle } from "@/components/mode-toggle"
+import { NotificationCenter } from "@/components/notification-center"
 import { UserNav } from "@/components/user-nav"
 import type { UserRole } from "@/features/users/schemas"
 import { cn } from "@/lib/utils"
@@ -127,46 +126,6 @@ const navSections: NavSection[] = [
         roles: ["admin", "agent"],
       },
       {
-        title: "Administracion",
-        icon: UsersIcon,
-        roles: ["admin"],
-        children: [
-          {
-            title: "Administrar usuarios",
-            to: "/admin/users",
-            roles: ["admin"],
-          },
-          {
-            title: "Registrar usuarios",
-            disabled: true,
-            roles: ["admin"],
-          },
-          {
-            title: "Modificar unidades",
-            disabled: true,
-            roles: ["admin"],
-          },
-          {
-            title: "Agregar servicios",
-            disabled: true,
-            roles: ["admin"],
-          },
-          {
-            title: "Agregar roles o cargos",
-            disabled: true,
-            roles: ["admin"],
-          },
-        ],
-      },
-      {
-        title: "Registrar usuarios",
-        icon: UserPlusIcon,
-        roles: ["admin"],
-        children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
-        ],
-      },
-      {
         title: "Modificar unidades",
         icon: Building2Icon,
         roles: ["admin"],
@@ -180,7 +139,8 @@ const navSections: NavSection[] = [
         icon: WrenchIcon,
         roles: ["admin"],
         children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
+          { title: "Lista de servicios", to: "/admin/services", roles: ["admin"] },
+          { title: "Registrar servicio", to: "/admin/services/create", roles: ["admin"] },
         ],
       },
       {
@@ -188,7 +148,8 @@ const navSections: NavSection[] = [
         icon: BriefcaseBusinessIcon,
         roles: ["admin"],
         children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
+          { title: "Lista de roles o cargos", to: "/admin/roles", roles: ["admin"] },
+          { title: "Registrar rol o cargo", to: "/admin/roles/create", roles: ["admin"] },
         ],
       },
       {
@@ -212,6 +173,8 @@ function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/tickets")) return "Tickets"
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
   if (isPathActive(pathname, "/admin/units")) return "Unidades"
+  if (isPathActive(pathname, "/admin/services")) return "Servicios"
+  if (isPathActive(pathname, "/admin/roles")) return "Roles o cargos"
   return "Panel"
 }
 
@@ -490,6 +453,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
             </div>
 
             <div className="flex items-center gap-2">
+              <NotificationCenter />
               <ModeToggle />
               <UserNav />
             </div>
