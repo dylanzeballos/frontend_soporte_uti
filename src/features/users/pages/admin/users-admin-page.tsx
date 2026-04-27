@@ -1,351 +1,293 @@
-import { useState } from "react";
-import { MessageCircle, Pencil, Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { getUserRoleName, type CreateUserInput, type UpdateUserInput, type User } from '@/features/users/schemas';
+import { useUsers } from '@/hooks/useApi';
 
-type UserRole = "admin" | "cliente" | "tecnico";
+const DEFAULT_LIMIT = 20;
 
-type UserRow = {
-  id: number;
+type ActiveFilter = 'all' | 'true' | 'false';
+
+type UserFormState = {
   ci: string;
-  phone?: string;
-  cell?: string;
   firstName: string;
   lastName: string;
   email: string;
   password: string;
+  roleId: string;
+  corporationId: string;
+  phone: string;
+  cell: string;
   isActive: boolean;
-  corporation: string;
-  role: UserRole;
-  createdAt: string;
-  updatedAt: string;
 };
 
-const UNIT_OPTIONS = [
-  "Ing. Financiera",
-  "Ing. Sistemas",
-  "Ing. Comercial",
-  "Ing. Industrial",
-  "Contaduría Pública",
-  "Administración de Empresas",
-];
-
-const ROLE_OPTIONS: UserRole[] = ["admin", "cliente", "tecnico"];
-
-const roleBadgeClass: Record<UserRole, string> = {
-  admin: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300",
-  cliente: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300",
-  tecnico: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300",
+const INITIAL_FORM: UserFormState = {
+  ci: '',
+  firstName: '',
+  lastName: '',
+  email: '',
+  password: '',
+  roleId: '',
+  corporationId: '',
+  phone: '',
+  cell: '',
+  isActive: true,
 };
 
-const initialUsers: UserRow[] = [
-  {
-    id: 1,
-    ci: "12345678",
-    phone: "22445566",
-    cell: "70000001",
-    firstName: "Carlos",
-    lastName: "Mamani",
-    email: "carlos@umss.edu.bo",
-    password: "secret123",
-    isActive: true,
-    corporation: "Ing. Sistemas",
-    role: "admin",
-    createdAt: "2026-01-03T09:15:00.000Z",
-    updatedAt: "2026-01-03T09:15:00.000Z",
-  },
-  {
-    id: 2,
-    ci: "87654321",
-    phone: "22334455",
-    cell: "70000002",
-    firstName: "Lucia",
-    lastName: "Quispe",
-    email: "lucia@umss.edu.bo",
-    password: "secret123",
-    isActive: true,
-    corporation: "Ing. Financiera",
-    role: "cliente",
-    createdAt: "2026-01-10T11:20:00.000Z",
-    updatedAt: "2026-02-01T08:00:00.000Z",
-  },
-  {
-    id: 3,
-    ci: "5512344",
-    phone: "22114455",
-    cell: "70000003",
-    firstName: "Jorge",
-    lastName: "Arias",
-    email: "jorge@umss.edu.bo",
-    password: "secret123",
-    isActive: true,
-    corporation: "Ing. Comercial",
-    role: "tecnico",
-    createdAt: "2026-01-14T14:40:00.000Z",
-    updatedAt: "2026-02-10T09:45:00.000Z",
-  },
-  {
-    id: 4,
-    ci: "9123456",
-    phone: "22667788",
-    cell: "70000004",
-    firstName: "Maria",
-    lastName: "Soria",
-    email: "maria.soria@umss.edu.bo",
-    password: "secret123",
-    isActive: false,
-    corporation: "Contaduría Pública",
-    role: "cliente",
-    createdAt: "2026-01-25T10:00:00.000Z",
-    updatedAt: "2026-03-01T10:00:00.000Z",
-  },
-  {
-    id: 5,
-    ci: "3344556",
-    phone: "22330011",
-    cell: "70000005",
-    firstName: "Diego",
-    lastName: "Vargas",
-    email: "diego@umss.edu.bo",
-    password: "secret123",
-    isActive: true,
-    corporation: "Administración de Empresas",
-    role: "tecnico",
-    createdAt: "2026-02-02T13:10:00.000Z",
-    updatedAt: "2026-02-15T13:10:00.000Z",
-  },
-  {
-    id: 6,
-    ci: "7788990",
-    phone: "22887766",
-    cell: "70000006",
-    firstName: "Paola",
-    lastName: "Luna",
-    email: "paola@umss.edu.bo",
-    password: "secret123",
-    isActive: true,
-    corporation: "Ing. Industrial",
-    role: "admin",
-    createdAt: "2026-02-08T16:30:00.000Z",
-    updatedAt: "2026-02-28T16:30:00.000Z",
-  },
-];
+function toNumberOrUndefined(value: string): number | undefined {
+  if (!value.trim()) return undefined;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return undefined;
+  return parsed;
+}
+
+function getDisplayName(user: User): string {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+  return fullName || user.name || user.email;
+}
 
 export function UsersAdminPage() {
-  const [showCreate, setShowCreate] = useState(false);
-  const [editingUserId, setEditingUserId] = useState<number | null>(null);
-  const [users, setUsers] = useState<UserRow[]>(initialUsers);
-  const [newUser, setNewUser] = useState({
-    ci: "",
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    phone: "",
-    cell: "",
-    role: "cliente" as UserRole,
-    corporation: UNIT_OPTIONS[0],
+  const queryClient = useQueryClient();
+  const { listPaginated, create, update, remove } = useUsers();
+  const [showForm, setShowForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>('true');
+  const [page, setPage] = useState(1);
+  const [form, setForm] = useState<UserFormState>(INITIAL_FORM);
+
+  const isActive = useMemo(() => {
+    if (activeFilter === 'all') return undefined;
+    return activeFilter === 'true';
+  }, [activeFilter]);
+
+  const { data: usersPage, isLoading } = useQuery({
+    queryKey: ['users', page, DEFAULT_LIMIT, activeFilter],
+    queryFn: () => listPaginated({ page, limit: DEFAULT_LIMIT, isActive }),
   });
 
-  const resetForm = () => {
-    setNewUser({
-      ci: "",
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      phone: "",
-      cell: "",
-      role: "cliente",
-      corporation: UNIT_OPTIONS[0],
-    });
-    setEditingUserId(null);
+  const createMutation = useMutation({
+    mutationFn: create,
+    onSuccess: () => {
+      toast.success('Usuario creado correctamente');
+      setShowForm(false);
+      setForm(INITIAL_FORM);
+      void queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateUserInput }) => update(id, data),
+    onSuccess: () => {
+      toast.success('Usuario actualizado correctamente');
+      setEditingUser(null);
+      setShowForm(false);
+      setForm(INITIAL_FORM);
+      void queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: remove,
+    onSuccess: () => {
+      toast.success('Usuario archivado correctamente');
+      void queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+
+  const users = usersPage?.data ?? [];
+  const total = usersPage?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / DEFAULT_LIMIT));
+
+  const startCreate = () => {
+    setEditingUser(null);
+    setForm(INITIAL_FORM);
+    setShowForm(true);
   };
 
-  const handleCreateOrUpdate = () => {
-    if (!newUser.ci || !newUser.firstName || !newUser.lastName || !newUser.email) return;
+  const startEdit = (user: User) => {
+    setEditingUser(user);
+    setForm({
+      ci: user.ci ?? '',
+      firstName: user.firstName ?? '',
+      lastName: user.lastName ?? '',
+      email: user.email,
+      password: '',
+      roleId: user.roleId ? String(user.roleId) : '',
+      corporationId: user.corporationId ? String(user.corporationId) : '',
+      phone: user.phone ?? '',
+      cell: user.cell ?? '',
+      isActive: user.isActive,
+    });
+    setShowForm(true);
+  };
 
-    if (editingUserId !== null) {
-      setUsers((prev) =>
-        prev.map((user) =>
-          user.id === editingUserId
-            ? {
-                ...user,
-                ci: newUser.ci,
-                firstName: newUser.firstName,
-                lastName: newUser.lastName,
-                email: newUser.email,
-                password: newUser.password || user.password,
-                phone: newUser.phone || undefined,
-                cell: newUser.cell || undefined,
-                role: newUser.role,
-                corporation: newUser.corporation,
-                updatedAt: new Date().toISOString(),
-              }
-            : user
-        )
-      );
-      resetForm();
-      setShowCreate(false);
+  const handleSave = async () => {
+    const basePayload = {
+      ci: form.ci.trim(),
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      email: form.email.trim(),
+      roleId: toNumberOrUndefined(form.roleId),
+      corporationId: toNumberOrUndefined(form.corporationId),
+      phone: form.phone.trim() || undefined,
+      cell: form.cell.trim() || undefined,
+      isActive: form.isActive,
+    };
+
+    if (!basePayload.ci || !basePayload.firstName || !basePayload.lastName || !basePayload.email) {
+      toast.error('Completa CI, nombre, apellido y email');
       return;
     }
 
-    const nextId = users.length ? Math.max(...users.map((user) => user.id)) + 1 : 1;
-    const now = new Date().toISOString();
-    setUsers((prev) => [
-      {
-        id: nextId,
-        ci: newUser.ci,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        email: newUser.email,
-        password: newUser.password || "secret123",
-        phone: newUser.phone || undefined,
-        cell: newUser.cell || undefined,
-        isActive: true,
-        role: newUser.role,
-        corporation: newUser.corporation,
-        createdAt: now,
-        updatedAt: now,
-      },
-      ...prev,
-    ]);
-    resetForm();
-    setShowCreate(false);
+    if (editingUser) {
+      const payload: UpdateUserInput = {
+        ...basePayload,
+        ...(form.password.trim() ? { password: form.password.trim() } : {}),
+      };
+      await updateMutation.mutateAsync({ id: editingUser.id, data: payload });
+      return;
+    }
+
+    const password = form.password.trim();
+    if (!password) {
+      toast.error('El password es requerido para crear el usuario');
+      return;
+    }
+
+    if (!basePayload.roleId) {
+      toast.error('El roleId es requerido');
+      return;
+    }
+
+    const payload: CreateUserInput = {
+      ...basePayload,
+      password,
+      roleId: basePayload.roleId,
+    };
+    await createMutation.mutateAsync(payload);
   };
 
-  const handleEdit = (user: UserRow) => {
-    setEditingUserId(user.id);
-    setNewUser({
-      ci: user.ci,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      password: "",
-      phone: user.phone || "",
-      cell: user.cell || "",
-      role: user.role,
-      corporation: user.corporation,
-    });
-    setShowCreate(true);
+  const handleDelete = async (user: User) => {
+    const confirmed = confirm(`¿Seguro que deseas archivar a "${getDisplayName(user)}"?`);
+    if (!confirmed) return;
+    await deleteMutation.mutateAsync(user.id);
   };
 
-  const handleDelete = (id: number) => {
-    setUsers((prev) => prev.filter((user) => user.id !== id));
-  };
-
-  const handleContact = (email: string) => {
-    window.location.href = `mailto:${email}`;
-  };
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Registrar usuarios</h1>
-        <Button onClick={() => {
-          if (showCreate) resetForm();
-          setShowCreate(!showCreate);
-        }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Agregar usuario
-        </Button>
+        <h1 className="text-2xl font-bold tracking-tight">Gestionar usuarios</h1>
+        <div className="flex items-center gap-2">
+          <Select
+            value={activeFilter}
+            onValueChange={(value) => {
+              setPage(1);
+              setActiveFilter(value as ActiveFilter);
+            }}
+          >
+            <SelectTrigger className="w-[190px]">
+              <SelectValue placeholder="Filtrar estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="true">Solo activos</SelectItem>
+              <SelectItem value="false">Solo inactivos</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={startCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar usuario
+          </Button>
+        </div>
       </div>
 
-      {showCreate && (
+      {showForm ? (
         <Card>
           <CardHeader>
-            <CardTitle>{editingUserId ? "Editar usuario" : "Nuevo usuario"}</CardTitle>
+            <CardTitle>{editingUser ? 'Editar usuario' : 'Nuevo usuario'}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-3">
-              <Input
-                placeholder="CI"
-                value={newUser.ci}
-                onChange={(e) => setNewUser({ ...newUser, ci: e.target.value })}
-              />
+              <Input placeholder="CI" value={form.ci} onChange={(e) => setForm((prev) => ({ ...prev, ci: e.target.value }))} />
               <Input
                 placeholder="Nombre"
-                value={newUser.firstName}
-                onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
+                value={form.firstName}
+                onChange={(e) => setForm((prev) => ({ ...prev, firstName: e.target.value }))}
               />
               <Input
                 placeholder="Apellido"
-                value={newUser.lastName}
-                onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
+                value={form.lastName}
+                onChange={(e) => setForm((prev) => ({ ...prev, lastName: e.target.value }))}
               />
               <Input
                 type="email"
                 placeholder="Email"
-                value={newUser.email}
-                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                value={form.email}
+                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
               />
               <Input
                 type="password"
-                placeholder={editingUserId ? "Password (opcional)" : "Password"}
-                value={newUser.password}
-                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                placeholder={editingUser ? 'Password (opcional)' : 'Password'}
+                value={form.password}
+                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+              />
+              <Input
+                type="number"
+                placeholder="roleId (ej: 1)"
+                value={form.roleId}
+                onChange={(e) => setForm((prev) => ({ ...prev, roleId: e.target.value }))}
+              />
+              <Input
+                type="number"
+                placeholder="corporationId (ej: 1)"
+                value={form.corporationId}
+                onChange={(e) => setForm((prev) => ({ ...prev, corporationId: e.target.value }))}
               />
               <Input
                 placeholder="Teléfono"
-                value={newUser.phone}
-                onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                value={form.phone}
+                onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
               />
               <Input
                 placeholder="Celular"
-                value={newUser.cell}
-                onChange={(e) => setNewUser({ ...newUser, cell: e.target.value })}
+                value={form.cell}
+                onChange={(e) => setForm((prev) => ({ ...prev, cell: e.target.value }))}
               />
-              <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value as UserRole })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLE_OPTIONS.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={newUser.corporation} onValueChange={(value) => setNewUser({ ...newUser, corporation: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Unidad" />
-                </SelectTrigger>
-                <SelectContent>
-                  {UNIT_OPTIONS.map((unit) => (
-                    <SelectItem key={unit} value={unit}>
-                      {unit}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleCreateOrUpdate}>{editingUserId ? "Actualizar" : "Guardar"}</Button>
+              <Button onClick={handleSave} disabled={isSaving}>
+                {editingUser ? 'Actualizar' : 'Guardar'}
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => {
-                  resetForm();
-                  setShowCreate(false);
+                  setEditingUser(null);
+                  setForm(INITIAL_FORM);
+                  setShowForm(false);
                 }}
+                disabled={isSaving}
               >
                 Cancelar
               </Button>
             </div>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
       <Card>
         <CardHeader>
-          <CardTitle>Listado de usuarios ({users.length})</CardTitle>
+          <CardTitle>Listado de usuarios ({total})</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -355,7 +297,7 @@ export function UsersAdminPage() {
                   <TableHead>Nombre</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Rol</TableHead>
-                  <TableHead>Unidad</TableHead>
+                  <TableHead>Corporación</TableHead>
                   <TableHead>Teléfono</TableHead>
                   <TableHead>Celular</TableHead>
                   <TableHead>Estado</TableHead>
@@ -364,39 +306,76 @@ export function UsersAdminPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.id}</TableCell>
-                    <TableCell>{user.ci}</TableCell>
-                    <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={cn("capitalize", roleBadgeClass[user.role])}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{user.corporation}</TableCell>
-                    <TableCell>{user.phone || "-"}</TableCell>
-                    <TableCell>{user.cell || "-"}</TableCell>
-                    <TableCell>{user.isActive ? "Activo" : "Inactivo"}</TableCell>
-                    <TableCell>{new Date(user.createdAt).toLocaleDateString("es-BO")}</TableCell>
-                    <TableCell>
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(user)} aria-label="Editar usuario">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleContact(user.email)} aria-label="Contactar usuario">
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(user.id)} aria-label="Eliminar usuario">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={11} className="py-8 text-center text-muted-foreground">
+                      Cargando usuarios...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : users.length > 0 ? (
+                  users.map((user) => {
+                    const roleName = getUserRoleName(user) ?? (user.roleId ? `Rol #${user.roleId}` : '-');
+                    const corporationName = user.corporation?.name ?? (user.corporationId ? `Corp #${user.corporationId}` : '-');
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.id}</TableCell>
+                        <TableCell>{user.ci ?? '-'}</TableCell>
+                        <TableCell>{getDisplayName(user)}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {roleName}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{corporationName}</TableCell>
+                        <TableCell>{user.phone || '-'}</TableCell>
+                        <TableCell>{user.cell || '-'}</TableCell>
+                        <TableCell>{user.isActive ? 'Activo' : 'Inactivo'}</TableCell>
+                        <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString('es-BO') : '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => startEdit(user)} aria-label="Editar usuario">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => void handleDelete(user)}
+                              aria-label="Archivar usuario"
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={11} className="py-8 text-center text-muted-foreground">
+                      No se encontraron usuarios
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="outline" disabled={page <= 1 || isLoading} onClick={() => setPage((current) => current - 1)}>
+              Anterior
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Página {page} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              disabled={page >= totalPages || isLoading}
+              onClick={() => setPage((current) => current + 1)}
+            >
+              Siguiente
+            </Button>
           </div>
         </CardContent>
       </Card>

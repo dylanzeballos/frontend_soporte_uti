@@ -4,7 +4,7 @@ import type { Ticket } from '@/features/tickets/schemas/ticket.schema';
 import type { CreateTicketInput, UpdateTicketStatusInput, AssignTicketInput } from '@/features/tickets/schemas/ticket.schema';
 import type { UpdateTicketInput } from '@/features/tickets/schemas/ticket.schema';
 import type { TicketFilter } from '@/features/tickets/schemas/ticket.schema';
-import type { User, CreateUserInput } from '@/features/users/schemas';
+import type { User, CreateUserInput, UpdateUserInput } from '@/features/users/schemas';
 import type { LoginInput } from '@/features/auth/schemas/login.schema';
 import type { CreateUnitInput, Unit, UpdateUnitInput } from '@/features/units/schemas';
 
@@ -141,16 +141,48 @@ export function useTickets() {
 export function useUsers() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const list = useCallback(async (): Promise<User[]> => {
-    setIsLoading(true);
-    const result = await fetchApi<User[] | { data: User[] } | null>('/users');
-    setIsLoading(false);
-    if (!result) return [];
-    if (Array.isArray(result)) return result;
-    if (result && typeof result === 'object' && 'data' in result) {
-      return (result.data as User[]) ?? [];
-    }
-    return [];
+  const listPaginated = useCallback(
+    async (filters?: { page?: number; limit?: number; isActive?: boolean }): Promise<PaginatedResponse<User>> => {
+      setIsLoading(true);
+      try {
+        const query = new URLSearchParams();
+        const page = filters?.page && filters.page > 0 ? filters.page : 1;
+        const limit = filters?.limit && filters.limit > 0 ? Math.min(filters.limit, 100) : 20;
+        query.set('page', String(page));
+        query.set('limit', String(limit));
+        if (typeof filters?.isActive === 'boolean') {
+          query.set('isActive', String(filters.isActive));
+        }
+
+        const result = await fetchApi<User[] | { data: User[] } | PaginatedResponse<User> | null>(`/users?${query.toString()}`);
+        if (!result) {
+          return { page, limit, total: 0, data: [] };
+        }
+        if (Array.isArray(result)) {
+          return { page, limit, total: result.length, data: result };
+        }
+
+        const payload = result.data ?? [];
+        return {
+          page: typeof result.page === 'number' ? result.page : page,
+          limit: typeof result.limit === 'number' ? result.limit : limit,
+          total: typeof result.total === 'number' ? result.total : payload.length,
+          data: payload,
+        };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const list = useCallback(async (filters?: { page?: number; limit?: number; isActive?: boolean }): Promise<User[]> => {
+    const result = await listPaginated(filters);
+    return result.data;
+  }, [listPaginated]);
+
+  const findOne = useCallback(async (id: number): Promise<User | null> => {
+    return await fetchApi<User>(`/users/${id}`);
   }, []);
 
   const create = useCallback(async (data: CreateUserInput) => {
@@ -158,6 +190,16 @@ export function useUsers() {
     try {
       const result = await fetchApi<User>('/users', 'POST', data);
       return ensureData(result, 'No se pudo crear el usuario');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: number, data: UpdateUserInput) => {
+    setIsLoading(true);
+    try {
+      const result = await fetchApi<User>(`/users/${id}`, 'PATCH', data);
+      return ensureData(result, 'No se pudo actualizar el usuario');
     } finally {
       setIsLoading(false);
     }
@@ -172,7 +214,7 @@ export function useUsers() {
     }
   }, []);
 
-  return { list, create, remove, isLoading };
+  return { list, listPaginated, findOne, create, update, remove, isLoading };
 }
 
 export function useServices() {
