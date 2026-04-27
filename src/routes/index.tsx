@@ -1,6 +1,7 @@
 import { LoginPage } from '@/features/auth/pages';
 import { DashboardPage } from '@/features/dashboard/pages';
 import { TicketRequestPage, TicketsAdminPage, TicketsPage } from '@/features/tickets/pages';
+import { ServiceCreatePage, ServicesListPage } from '@/features/services/pages';
 import { UnitCreatePage, UnitsListPage } from '@/features/units/pages';
 import { KanbanPage } from '@/features/kanban/pages';
 import { UsersAdminPage } from '@/features/users/pages';
@@ -61,6 +62,21 @@ export const routes: AppRoute[] = [
   {
     path: '/admin/units',
     element: <UnitsListPage />,
+    protected: true,
+  },
+  {
+    path: '/admin/services/create',
+    element: <ServiceCreatePage />,
+    protected: true,
+  },
+  {
+    path: '/admin/services/:id/edit',
+    element: <ServiceCreatePage />,
+    protected: true,
+  },
+  {
+    path: '/admin/services',
+    element: <ServicesListPage />,
     protected: true,
   },
 ];

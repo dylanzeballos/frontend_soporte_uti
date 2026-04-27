@@ -180,7 +180,8 @@ const navSections: NavSection[] = [
         icon: WrenchIcon,
         roles: ["admin"],
         children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
+          { title: "Lista de servicios", to: "/admin/services", roles: ["admin"] },
+          { title: "Registrar servicio", to: "/admin/services/create", roles: ["admin"] },
         ],
       },
       {
@@ -212,6 +213,7 @@ function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/tickets")) return "Tickets"
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
   if (isPathActive(pathname, "/admin/units")) return "Unidades"
+  if (isPathActive(pathname, "/admin/services")) return "Servicios"
   return "Panel"
 }
 
