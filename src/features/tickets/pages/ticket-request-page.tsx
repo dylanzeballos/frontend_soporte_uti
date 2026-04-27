@@ -32,6 +32,7 @@ export function TicketRequestPage() {
       toast.success('Solicitud enviada correctamente');
       setFormKey((current) => current + 1);
       void queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-tickets', user?.id] });
     },
   });
 

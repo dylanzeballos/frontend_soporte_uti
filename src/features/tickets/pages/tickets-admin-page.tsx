@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PencilLine, RadioIcon, ShieldCheck, Ticket as TicketIcon } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useRealtime } from '@/lib/realtime/context';
 
+import { useAuth } from '@/components/auth-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +22,7 @@ import {
   type TicketPriority,
   type TicketStatus,
 } from '@/features/tickets/schemas/ticket.schema';
-import type { User } from '@/features/users/schemas';
+import { isAgent, type User } from '@/features/users/schemas';
 import { useServices, useTickets, useUsers } from '@/hooks/useApi';
 
 type TicketFilterState = {
@@ -68,6 +70,7 @@ function toFormValues(ticket: Ticket): TicketFormValues {
 }
 
 export function TicketsAdminPage() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { list, update } = useTickets();
   const { status: wsStatus, notifications } = useRealtime();
@@ -76,6 +79,10 @@ export function TicketsAdminPage() {
   ).length;
   const { list: listUsers } = useUsers();
   const { list: listServices } = useServices();
+
+  if (!isAgent(user)) {
+    return <Navigate to="/tickets" replace />;
+  }
 
   const [showForm, setShowForm] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -87,7 +94,7 @@ export function TicketsAdminPage() {
 
   const { data: tickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
     queryKey: ['tickets'],
-    queryFn: list,
+    queryFn: async () => list(),
   });
 
   const { data: users = [] } = useQuery<User[]>({

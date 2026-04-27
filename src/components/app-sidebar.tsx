@@ -74,7 +74,7 @@ const navSections: NavSection[] = [
       },
       {
         title: "Enviar solicitud",
-        to: "/tickets",
+        to: "/tickets/request",
         icon: SendIcon,
         roles: ["user"],
       },
