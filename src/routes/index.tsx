@@ -36,6 +36,9 @@ export const routes: AppRoute[] = [
   {
     path: '/tickets/admin',
     element: <TicketsAdminPage />,
+    protected: true,
+  },
+  {
     path: '/kanban',
     element: <KanbanPage />,
     protected: true,

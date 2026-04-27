@@ -257,13 +257,14 @@ function AppShell({ children }: { children?: React.ReactNode }) {
   const activeParents = React.useMemo(() => {
     const next = new Set<string>()
 
-	    visibleSections.forEach((section) => {
-	      section.items.forEach((item) => {
-	        if (item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))) {
-	          next.add(item.title)
-	        }
-	      })
-	    })
+    visibleSections.forEach((section) => {
+      section.items.forEach((item, itemIndex) => {
+        const itemKey = `${section.label}-${itemIndex}-${item.title}`
+        if (item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))) {
+          next.add(itemKey)
+        }
+      })
+    })
 
     return next
   }, [pathname, visibleSections])
@@ -327,11 +328,11 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                     const itemKey = `${section.label}-${itemIndex}-${item.title}`
                     const hasChildren = Boolean(item.children?.length)
                     const sectionOpen =
-                      activeParents.has(item.title) || Boolean(expandedSections[item.title])
-	                    const directActive = item.to ? isPathActive(pathname, item.to) : false
-	                    const childActive = Boolean(
-	                      item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))
-	                    )
+                      activeParents.has(itemKey) || Boolean(expandedSections[itemKey])
+                    const directActive = item.to ? isPathActive(pathname, item.to) : false
+                    const childActive = Boolean(
+                      item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))
+                    )
                     const active = directActive || childActive
 
                     return (
@@ -473,7 +474,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
       </Sidebar>
 
       <SidebarInset className="min-h-svh max-h-svh overflow-hidden">
-        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/70">
           <div className="shell-header flex items-center justify-between gap-3 px-4 md:px-6">
             <div className="flex min-w-0 items-center gap-2">
               <SidebarTrigger
