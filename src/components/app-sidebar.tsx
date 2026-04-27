@@ -11,8 +11,6 @@ import {
   SquareKanbanIcon,
   TicketIcon,
   UserCogIcon,
-  UserPlusIcon,
-  UsersIcon,
   WrenchIcon,
 } from "lucide-react"
 
@@ -125,46 +123,6 @@ const navSections: NavSection[] = [
         to: "/tickets",
         icon: TicketIcon,
         roles: ["admin", "agent"],
-      },
-      {
-        title: "Administracion",
-        icon: UsersIcon,
-        roles: ["admin"],
-        children: [
-          {
-            title: "Administrar usuarios",
-            to: "/admin/users",
-            roles: ["admin"],
-          },
-          {
-            title: "Registrar usuarios",
-            disabled: true,
-            roles: ["admin"],
-          },
-          {
-            title: "Modificar unidades",
-            disabled: true,
-            roles: ["admin"],
-          },
-          {
-            title: "Agregar servicios",
-            disabled: true,
-            roles: ["admin"],
-          },
-          {
-            title: "Agregar roles o cargos",
-            disabled: true,
-            roles: ["admin"],
-          },
-        ],
-      },
-      {
-        title: "Registrar usuarios",
-        icon: UserPlusIcon,
-        roles: ["admin"],
-        children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
-        ],
       },
       {
         title: "Modificar unidades",
