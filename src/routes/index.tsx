@@ -2,6 +2,7 @@ import { LoginPage } from '@/features/auth/pages';
 import { DashboardPage } from '@/features/dashboard/pages';
 import { TicketRequestPage, TicketsAdminPage, TicketsPage } from '@/features/tickets/pages';
 import { ServiceCreatePage, ServicesListPage } from '@/features/services/pages';
+import { RoleCreatePage, RolesListPage } from '@/features/roles/pages';
 import { UnitCreatePage, UnitsListPage } from '@/features/units/pages';
 import { KanbanPage } from '@/features/kanban/pages';
 import { UsersAdminPage } from '@/features/users/pages';
@@ -77,6 +78,21 @@ export const routes: AppRoute[] = [
   {
     path: '/admin/services',
     element: <ServicesListPage />,
+    protected: true,
+  },
+  {
+    path: '/admin/roles/create',
+    element: <RoleCreatePage />,
+    protected: true,
+  },
+  {
+    path: '/admin/roles/:id/edit',
+    element: <RoleCreatePage />,
+    protected: true,
+  },
+  {
+    path: '/admin/roles',
+    element: <RolesListPage />,
     protected: true,
   },
 ];

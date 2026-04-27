@@ -189,7 +189,8 @@ const navSections: NavSection[] = [
         icon: BriefcaseBusinessIcon,
         roles: ["admin"],
         children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
+          { title: "Lista de roles o cargos", to: "/admin/roles", roles: ["admin"] },
+          { title: "Registrar rol o cargo", to: "/admin/roles/create", roles: ["admin"] },
         ],
       },
       {
@@ -214,6 +215,7 @@ function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
   if (isPathActive(pathname, "/admin/units")) return "Unidades"
   if (isPathActive(pathname, "/admin/services")) return "Servicios"
+  if (isPathActive(pathname, "/admin/roles")) return "Roles o cargos"
   return "Panel"
 }
 
