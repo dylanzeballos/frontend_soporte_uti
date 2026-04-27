@@ -138,7 +138,7 @@ const navSections: NavSection[] = [
           },
           {
             title: "Registrar usuarios",
-            disabled: true,
+            to: "/admin/users",
             roles: ["admin"],
           },
           {
@@ -162,9 +162,7 @@ const navSections: NavSection[] = [
         title: "Registrar usuarios",
         icon: UserPlusIcon,
         roles: ["admin"],
-        children: [
-          { title: "Proximamente", disabled: true, roles: ["admin"] },
-        ],
+        to: "/admin/users",
       },
       {
         title: "Modificar unidades",
