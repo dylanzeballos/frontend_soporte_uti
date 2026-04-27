@@ -4,6 +4,7 @@ import type { Ticket } from '@/features/tickets/schemas/ticket.schema';
 import type { CreateTicketInput, UpdateTicketStatusInput, AssignTicketInput } from '@/features/tickets/schemas/ticket.schema';
 import type { User, CreateUserInput } from '@/features/users/schemas';
 import type { LoginInput } from '@/features/auth/schemas/login.schema';
+import type { CreateUnitInput, Unit, UpdateUnitInput } from '@/features/units/schemas';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -125,4 +126,47 @@ export function useAuthApi() {
   }, []);
 
   return { login, isLoading };
+}
+
+export function useUnits() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const list = useCallback(async (): Promise<Unit[]> => {
+    setIsLoading(true);
+    const result = await fetchApi<Unit[] | { data: Unit[] } | null>('/units');
+    setIsLoading(false);
+    if (!result) return [];
+    if (Array.isArray(result)) return result;
+    if (result && typeof result === 'object' && 'data' in result) {
+      return (result.data as Unit[]) ?? [];
+    }
+    return [];
+  }, []);
+
+  const findOne = useCallback(async (id: number): Promise<Unit | null> => {
+    return await fetchApi<Unit>(`/units/${id}`);
+  }, []);
+
+  const create = useCallback(async (data: CreateUnitInput) => {
+    setIsLoading(true);
+    const result = await fetchApi<Unit>('/units', 'POST', data);
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  const update = useCallback(async (id: number, data: UpdateUnitInput) => {
+    setIsLoading(true);
+    const result = await fetchApi<Unit>(`/units/${id}`, 'PATCH', data);
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  const remove = useCallback(async (id: number) => {
+    setIsLoading(true);
+    const result = await fetchApi<{ message: string }>(`/units/${id}`, 'DELETE');
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  return { list, findOne, create, update, remove, isLoading };
 }
