@@ -83,6 +83,7 @@ export function useTickets() {
     if (filters?.priority) query.set('priority', filters.priority);
     if (filters?.assignedToId) query.set('assignedToId', String(filters.assignedToId));
     if (filters?.createdById) query.set('createdById', String(filters.createdById));
+    if (filters?.excludeCreatedById) query.set('excludeCreatedById', String(filters.excludeCreatedById));
     if (filters?.search) query.set('search', filters.search);
     const suffix = query.toString() ? `?${query.toString()}` : '';
     const result = await fetchApi<Ticket[] | { data: Ticket[] } | PaginatedResponse<Ticket> | null>(`/tickets${suffix}`);

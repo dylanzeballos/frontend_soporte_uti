@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PencilLine, RadioIcon, ShieldCheck, Ticket as TicketIcon } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useRealtime } from '@/lib/realtime/context';
 
@@ -79,10 +79,14 @@ export function TicketsAdminPage() {
   ).length;
   const { list: listUsers } = useUsers();
   const { list: listServices } = useServices();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   if (!isAgent(user)) {
     return <Navigate to="/tickets" replace />;
   }
+
+  const scope = searchParams.get('scope') === 'mine' ? 'mine' : 'all';
+  const isMyRequestsView = scope === 'mine';
 
   const [showForm, setShowForm] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -93,8 +97,13 @@ export function TicketsAdminPage() {
   });
 
   const { data: tickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
-    queryKey: ['tickets'],
-    queryFn: async () => list(),
+    queryKey: ['tickets', user?.id, scope],
+    queryFn: async () =>
+      list({
+        createdById: isMyRequestsView ? user?.id : undefined,
+        excludeCreatedById: isMyRequestsView ? undefined : user?.id,
+        limit: 100,
+      }),
   });
 
   const { data: users = [] } = useQuery<User[]>({
@@ -159,11 +168,25 @@ export function TicketsAdminPage() {
           <div>
             <div className="editorial-kicker">
               <ShieldCheck className="h-3.5 w-3.5" />
-              Gestion administrativa
+              {isMyRequestsView ? 'Solicitudes propias' : 'Gestion administrativa'}
             </div>
             <h1 className="mt-5 text-[clamp(1.9rem,2.9vw,2.9rem)] font-bold tracking-[-0.02em] text-foreground">
-              Gestionar tickets
+              {isMyRequestsView ? 'Mis solicitudes' : 'Gestionar tickets'}
             </h1>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button
+                variant={isMyRequestsView ? 'outline' : 'default'}
+                onClick={() => setSearchParams({})}
+              >
+                Todas las solicitudes
+              </Button>
+              <Button
+                variant={isMyRequestsView ? 'default' : 'outline'}
+                onClick={() => setSearchParams({ scope: 'mine' })}
+              >
+                Mis solicitudes
+              </Button>
+            </div>
           </div>
           {wsStatus === 'connected' && (
             <div
@@ -196,8 +219,12 @@ export function TicketsAdminPage() {
       <Card className="ticket-list-shell rounded-(--radius-panel)">
         <CardHeader className="px-6 pb-0 pt-6 sm:px-8 sm:pt-8">
           <div className="space-y-2">
-            <CardTitle>Solicitudes recibidas</CardTitle>
-            <CardDescription>Edita cualquier ticket desde aqui.</CardDescription>
+            <CardTitle>{isMyRequestsView ? 'Solicitudes creadas por ti' : 'Solicitudes recibidas'}</CardTitle>
+            <CardDescription>
+              {isMyRequestsView
+                ? 'Aqui ves solo los tickets registrados desde tu cuenta.'
+                : 'Edita cualquier ticket desde aqui.'}
+            </CardDescription>
           </div>
         </CardHeader>
 

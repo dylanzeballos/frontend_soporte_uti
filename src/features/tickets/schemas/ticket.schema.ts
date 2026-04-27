@@ -109,6 +109,7 @@ export const ticketFilterSchema = z.object({
   priority: ticketPriorityEnum.optional(),
   assignedToId: z.number().int().positive().optional(),
   createdById: z.number().int().positive().optional(),
+  excludeCreatedById: z.number().int().positive().optional(),
   search: z.string().trim().optional(),
 });
 

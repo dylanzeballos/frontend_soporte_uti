@@ -1,5 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, ClipboardPenLine, FileClock, FolderKanban, Ticket as TicketIcon } from 'lucide-react';
+import {
+  ArrowRight,
+  ClipboardPenLine,
+  FileClock,
+  FolderKanban,
+  Ticket as TicketIcon,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/components/auth-context';
