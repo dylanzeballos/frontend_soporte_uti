@@ -312,7 +312,10 @@ export function UsersAdminPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={newUser.corporation} onValueChange={(value) => setNewUser({ ...newUser, corporation: value })}>
+              <Select
+                value={newUser.corporation ?? ""}
+                onValueChange={(value) => setNewUser({ ...newUser, corporation: value ?? UNIT_OPTIONS[0] })}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Unidad" />
                 </SelectTrigger>
