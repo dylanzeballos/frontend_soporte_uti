@@ -3,6 +3,11 @@ import type { ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-context';
+import {
+  invalidateTicketCaches,
+  syncTicketStatusCaches,
+} from '@/features/tickets/lib/ticket-cache';
+import type { TicketStatus } from '@/features/tickets/schemas/ticket.schema';
 import { RealtimeClient } from './client';
 import type { AppNotification, ConnectionStatus, RealtimeEvent } from './types';
 
@@ -143,13 +148,18 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
           });
           break;
         case 'ticket.status_changed':
+          syncTicketStatusCaches(queryClient, {
+            ticketId: event.payload.ticket.id,
+            title: event.payload.ticket.title,
+            status: event.payload.newStatus as TicketStatus,
+          });
           toast.info(`Estado: ${statusLabel(event.payload.newStatus)}`, {
             description: event.payload.ticket.title,
           });
           break;
       }
 
-      void queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      invalidateTicketCaches(queryClient);
     },
     [queryClient],
   );

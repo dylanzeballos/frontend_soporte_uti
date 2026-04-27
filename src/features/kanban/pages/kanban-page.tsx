@@ -7,6 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  invalidateTicketCaches,
+  syncUpdatedTicketCaches,
+} from "@/features/tickets/lib/ticket-cache";
 import { useTickets } from "@/hooks/useApi";
 import { cn } from "@/lib/utils";
 import {
@@ -106,8 +110,12 @@ export function KanbanPage() {
       }
       toast.error("No se pudo mover el ticket. Se revirtió el cambio.");
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["kanban-tickets"] });
+    onSuccess: (updatedTicket) => {
+      setBoardTickets((current) =>
+        current.map((ticket) => (ticket.id === updatedTicket.id ? updatedTicket : ticket))
+      );
+      syncUpdatedTicketCaches(queryClient, updatedTicket);
+      invalidateTicketCaches(queryClient);
     },
   });
 

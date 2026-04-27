@@ -79,7 +79,12 @@ export class RealtimeClient {
 
     socket.on(
       'ticket:assigned',
-      (payload: { ticketId: number; title: string; assignedBy: number }) => {
+      (payload: {
+        ticketId: number;
+        title: string;
+        assignedBy: number;
+        assignedToName?: string;
+      }) => {
         const event: RealtimeEvent = {
           type: 'ticket.assigned',
           payload: {
@@ -89,8 +94,32 @@ export class RealtimeClient {
             },
             assignedTo: {
               id: payload.assignedBy,
-              name: 'Asignado',
+              name: payload.assignedToName ?? 'Asignado',
             },
+          },
+        };
+        this.eventHandlers.forEach((h) => h(event));
+      },
+    );
+
+    socket.on(
+      'ticket:status_changed',
+      (payload: {
+        ticketId: number;
+        title: string;
+        oldStatus: string;
+        newStatus: string;
+      }) => {
+        const event: RealtimeEvent = {
+          type: 'ticket.status_changed',
+          payload: {
+            ticket: {
+              id: payload.ticketId,
+              title: payload.title,
+              status: payload.newStatus,
+            },
+            oldStatus: payload.oldStatus,
+            newStatus: payload.newStatus,
           },
         };
         this.eventHandlers.forEach((h) => h(event));
