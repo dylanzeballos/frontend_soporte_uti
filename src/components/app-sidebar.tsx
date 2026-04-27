@@ -105,7 +105,7 @@ const navSections: NavSection[] = [
       },
       {
         title: "Tablero Kanban",
-        to: "/tickets",
+        to: "/kanban",
         icon: SquareKanbanIcon,
         roles: ["admin"],
       },
@@ -208,6 +208,7 @@ function isPathActive(pathname: string, target: string) {
 function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/")) return "Inicio"
   if (isPathActive(pathname, "/dashboard")) return "Dashboard"
+  if (isPathActive(pathname, "/kanban")) return "Tablero Kanban"
   if (isPathActive(pathname, "/tickets")) return "Tickets"
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
   if (isPathActive(pathname, "/admin/units")) return "Unidades"
@@ -256,14 +257,13 @@ function AppShell({ children }: { children?: React.ReactNode }) {
   const activeParents = React.useMemo(() => {
     const next = new Set<string>()
 
-    visibleSections.forEach((section) => {
-      section.items.forEach((item, itemIndex) => {
-        const itemKey = `${section.label}-${itemIndex}-${item.title}`
-        if (item.children?.some((child) => isPathActive(pathname, child.to))) {
-          next.add(itemKey)
-        }
-      })
-    })
+	    visibleSections.forEach((section) => {
+	      section.items.forEach((item) => {
+	        if (item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))) {
+	          next.add(item.title)
+	        }
+	      })
+	    })
 
     return next
   }, [pathname, visibleSections])
@@ -326,14 +326,12 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                     const Icon = item.icon
                     const itemKey = `${section.label}-${itemIndex}-${item.title}`
                     const hasChildren = Boolean(item.children?.length)
-                    const hasManualState = Object.hasOwn(expandedSections, itemKey)
-                    const sectionOpen = hasManualState
-                      ? Boolean(expandedSections[itemKey])
-                      : activeParents.has(itemKey)
-                    const directActive = item.to ? isPathActive(pathname, item.to) : false
-                    const childActive = Boolean(
-                      item.children?.some((child) => isPathActive(pathname, child.to))
-                    )
+                    const sectionOpen =
+                      activeParents.has(item.title) || Boolean(expandedSections[item.title])
+	                    const directActive = item.to ? isPathActive(pathname, item.to) : false
+	                    const childActive = Boolean(
+	                      item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))
+	                    )
                     const active = directActive || childActive
 
                     return (
