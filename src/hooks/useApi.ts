@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import type { Ticket } from '@/features/tickets/schemas/ticket.schema';
 import type { CreateTicketInput, UpdateTicketStatusInput, AssignTicketInput } from '@/features/tickets/schemas/ticket.schema';
 import type { UpdateTicketInput } from '@/features/tickets/schemas/ticket.schema';
+import type { TicketFilter } from '@/features/tickets/schemas/ticket.schema';
 import type { User, CreateUserInput } from '@/features/users/schemas';
 import type { LoginInput } from '@/features/auth/schemas/login.schema';
 import type { CreateUnitInput, Unit, UpdateUnitInput } from '@/features/units/schemas';
@@ -11,6 +12,13 @@ export interface ServiceItem {
   id: number;
   name: string;
   isActive?: boolean;
+}
+
+interface PaginatedResponse<T> {
+  page: number;
+  limit: number;
+  total: number;
+  data: T[];
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -65,9 +73,19 @@ function ensureData<T>(response: T | null, fallbackMessage: string): T {
 export function useTickets() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const list = useCallback(async (): Promise<Ticket[]> => {
+  const list = useCallback(async (filters?: Partial<TicketFilter>): Promise<Ticket[]> => {
     setIsLoading(true);
-    const result = await fetchApi<Ticket[] | { data: Ticket[] } | null>('/tickets');
+    const query = new URLSearchParams();
+    const safeLimit = filters?.limit ? Math.min(filters.limit, 100) : undefined;
+    if (filters?.page) query.set('page', String(filters.page));
+    if (safeLimit) query.set('limit', String(safeLimit));
+    if (filters?.status) query.set('status', filters.status);
+    if (filters?.priority) query.set('priority', filters.priority);
+    if (filters?.assignedToId) query.set('assignedToId', String(filters.assignedToId));
+    if (filters?.createdById) query.set('createdById', String(filters.createdById));
+    if (filters?.search) query.set('search', filters.search);
+    const suffix = query.toString() ? `?${query.toString()}` : '';
+    const result = await fetchApi<Ticket[] | { data: Ticket[] } | PaginatedResponse<Ticket> | null>(`/tickets${suffix}`);
     setIsLoading(false);
     if (!result) return [];
     if (Array.isArray(result)) return result;
@@ -98,11 +116,23 @@ export function useTickets() {
   }, []);
 
   const updateStatus = useCallback(async (id: number, data: UpdateTicketStatusInput) => {
-    return await fetchApi<Ticket>(`/tickets/${id}/status`, 'PATCH', data);
+    setIsLoading(true);
+    try {
+      const result = await fetchApi<Ticket>(`/tickets/${id}/status`, 'PATCH', data);
+      return ensureData(result, 'No se pudo cambiar el estado del ticket');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const assign = useCallback(async (id: number, data: AssignTicketInput) => {
-    return await fetchApi<Ticket>(`/tickets/${id}/assign`, 'PATCH', data);
+    setIsLoading(true);
+    try {
+      const result = await fetchApi<Ticket>(`/tickets/${id}/assign`, 'PATCH', data);
+      return ensureData(result, 'No se pudo asignar el ticket');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   return { list, create, update, updateStatus, assign, isLoading };
