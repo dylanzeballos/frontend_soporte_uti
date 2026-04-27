@@ -133,7 +133,7 @@ export function useUnits() {
 
   const list = useCallback(async (): Promise<Unit[]> => {
     setIsLoading(true);
-    const result = await fetchApi<Unit[] | { data: Unit[] } | null>('/units');
+    const result = await fetchApi<Unit[] | { data: Unit[] } | null>('/units?isActive=true');
     setIsLoading(false);
     if (!result) return [];
     if (Array.isArray(result)) return result;
