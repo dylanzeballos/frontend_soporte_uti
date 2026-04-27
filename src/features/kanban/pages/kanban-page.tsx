@@ -1,201 +1,163 @@
-import { useMemo, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useTickets } from "@/hooks/useApi";
 import { cn } from "@/lib/utils";
+import {
+  getPriorityColor,
+  getPriorityLabel,
+  getStatusColor,
+  getStatusLabel,
+  type Ticket,
+  type TicketPriority,
+  type TicketStatus,
+} from "@/features/tickets/schemas/ticket.schema";
 
-type Priority = "alta" | "media" | "baja";
 type BoardView = "board" | "list" | "table";
+type PriorityFilter = "all" | TicketPriority;
 
-type KanbanTicket = {
-  id: string;
-  title: string;
-  description: string;
-  area: string;
-  assignedTo: string;
-  priority: Priority;
-  progress: number;
-  comments: number;
-  attachments: number;
-};
+const STATUS_COLUMNS: TicketStatus[] = ["open", "in_progress", "resolved", "closed", "cancelled"];
 
-type KanbanColumn = {
-  key: string;
-  title: string;
-  tickets: KanbanTicket[];
-};
+function getAssigneeName(ticket: Ticket): string {
+  if (!ticket.assignedTo) return "Sin asignar";
+  const first = ticket.assignedTo.firstName ?? "";
+  const last = ticket.assignedTo.lastName ?? "";
+  const fullName = `${first} ${last}`.trim();
+  return fullName || ticket.assignedTo.name || ticket.assignedTo.email;
+}
 
-const initialColumns: KanbanColumn[] = [
-  {
-    key: "backlog",
-    title: "Pendiente",
-    tickets: [
-      {
-        id: "UTI-201",
-        title: "Falla de encendido en laboratorio 3",
-        description: "Tres equipos no inician despues de corte electrico.",
-        area: "Laboratorios FCE",
-        assignedTo: "Equipo Hardware",
-        priority: "alta",
-        progress: 10,
-        comments: 2,
-        attachments: 1,
-      },
-      {
-        id: "UTI-202",
-        title: "Reinstalacion de Office en Decanato",
-        description: "Solicitan instalacion limpia por errores de licencia.",
-        area: "Decanato",
-        assignedTo: "Mesa de Ayuda",
-        priority: "media",
-        progress: 0,
-        comments: 1,
-        attachments: 0,
-      },
-    ],
-  },
-  {
-    key: "in_progress",
-    title: "En Proceso",
-    tickets: [
-      {
-        id: "UTI-180",
-        title: "Cableado de red inestable en piso 2",
-        description: "Intermitencia en puertos de secretaria administrativa.",
-        area: "Administracion FCE",
-        assignedTo: "Infraestructura",
-        priority: "alta",
-        progress: 55,
-        comments: 4,
-        attachments: 2,
-      },
-      {
-        id: "UTI-183",
-        title: "Migracion de impresora a servidor nuevo",
-        description: "Cola de impresion se detiene en horas pico.",
-        area: "Contabilidad",
-        assignedTo: "Soporte Sistemas",
-        priority: "media",
-        progress: 40,
-        comments: 3,
-        attachments: 1,
-      },
-    ],
-  },
-  {
-    key: "qa",
-    title: "Validacion",
-    tickets: [
-      {
-        id: "UTI-171",
-        title: "Recuperacion de cuentas institucionales",
-        description: "Validar acceso de 12 docentes en dominio interno.",
-        area: "Direccion Academica",
-        assignedTo: "Seguridad TI",
-        priority: "baja",
-        progress: 85,
-        comments: 1,
-        attachments: 0,
-      },
-    ],
-  },
-  {
-    key: "done",
-    title: "Resuelto",
-    tickets: [
-      {
-        id: "UTI-160",
-        title: "Actualizacion antivirus centralizado",
-        description: "Endpoints de biblioteca sincronizados correctamente.",
-        area: "Biblioteca",
-        assignedTo: "Soporte Sistemas",
-        priority: "media",
-        progress: 100,
-        comments: 2,
-        attachments: 3,
-      },
-    ],
-  },
-];
-
-function priorityClass(priority: Priority) {
-  if (priority === "alta") {
-    return "bg-destructive/15 text-destructive border-destructive/20";
+function normalizeStatus(value: string | undefined): TicketStatus {
+  const normalized = (value ?? "").toLowerCase().trim();
+  if (normalized === "open" || normalized === "in_progress" || normalized === "resolved" || normalized === "closed" || normalized === "cancelled") {
+    return normalized;
   }
-  if (priority === "media") {
-    return "bg-amber-500/15 text-amber-700 border-amber-500/20 dark:text-amber-400";
+  return "open";
+}
+
+function normalizePriority(value: string | undefined): TicketPriority {
+  const normalized = (value ?? "").toLowerCase().trim();
+  if (normalized === "low" || normalized === "medium" || normalized === "high" || normalized === "urgent") {
+    return normalized;
   }
-  return "bg-emerald-500/15 text-emerald-700 border-emerald-500/20 dark:text-emerald-400";
+  return "medium";
 }
 
 export function KanbanPage() {
-  const [view, setView] = useState<BoardView>("board");
-  const [boardColumns, setBoardColumns] = useState<KanbanColumn[]>(initialColumns);
-  const [draggedTicketId, setDraggedTicketId] = useState<string | null>(null);
-  const [dragFromColumnKey, setDragFromColumnKey] = useState<string | null>(null);
-  const [dragOverColumnKey, setDragOverColumnKey] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { list, updateStatus } = useTickets();
 
-  const totalTickets = useMemo(
-    () => boardColumns.reduce((sum, col) => sum + col.tickets.length, 0),
-    [boardColumns]
+  const [view, setView] = useState<BoardView>("board");
+  const [search, setSearch] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
+  const [boardTickets, setBoardTickets] = useState<Ticket[]>([]);
+  const [draggedTicketId, setDraggedTicketId] = useState<number | null>(null);
+  const [dragFromStatus, setDragFromStatus] = useState<TicketStatus | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<TicketStatus | null>(null);
+
+  const { data: tickets = [], isLoading, isFetching } = useQuery<Ticket[]>({
+    queryKey: ["kanban-tickets", search, priorityFilter],
+    queryFn: () =>
+      list({
+        page: 1,
+        limit: 20,
+        search: search || undefined,
+        priority: priorityFilter === "all" ? undefined : priorityFilter,
+      }),
+  });
+
+  useEffect(() => {
+    setBoardTickets(
+      tickets.map((ticket) => ({
+        ...ticket,
+        status: normalizeStatus(ticket.status),
+        priority: normalizePriority(ticket.priority),
+      }))
+    );
+  }, [tickets]);
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status, comment }: { id: number; status: TicketStatus; comment?: string }) =>
+      updateStatus(id, { status, comment }),
+    onMutate: async ({ id, status }) => {
+      let previous: Ticket[] = [];
+      setBoardTickets((current) => {
+        previous = current;
+        return current.map((ticket) =>
+          ticket.id === id
+            ? {
+                ...ticket,
+                status,
+                updatedAt: new Date().toISOString(),
+              }
+            : ticket
+        );
+      });
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        setBoardTickets(context.previous);
+      }
+      toast.error("No se pudo mover el ticket. Se revirtió el cambio.");
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["kanban-tickets"] });
+    },
+  });
+
+  const columns = useMemo(
+    () =>
+      STATUS_COLUMNS.map((status) => ({
+        key: status,
+        title: getStatusLabel(status),
+        tickets: boardTickets.filter((ticket) => ticket.status === status),
+      })),
+    [boardTickets]
   );
 
-  function onCardDragStart(event: DragEvent<HTMLDivElement>, columnKey: string, ticketId: string) {
+  const totalTickets = boardTickets.length;
+
+  function onCardDragStart(event: DragEvent<HTMLDivElement>, ticketId: number, sourceStatus: TicketStatus) {
     setDraggedTicketId(ticketId);
-    setDragFromColumnKey(columnKey);
+    setDragFromStatus(sourceStatus);
     event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", ticketId);
+    event.dataTransfer.setData("text/plain", String(ticketId));
   }
 
-  function onColumnDragOver(event: DragEvent<HTMLElement>, columnKey: string) {
+  function onColumnDragOver(event: DragEvent<HTMLElement>, status: TicketStatus) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
-    if (dragOverColumnKey !== columnKey) {
-      setDragOverColumnKey(columnKey);
+    if (dragOverStatus !== status) {
+      setDragOverStatus(status);
     }
   }
 
   function resetDragState() {
     setDraggedTicketId(null);
-    setDragFromColumnKey(null);
-    setDragOverColumnKey(null);
+    setDragFromStatus(null);
+    setDragOverStatus(null);
   }
 
-  function onColumnDrop(event: DragEvent<HTMLElement>, targetColumnKey: string) {
+  function onColumnDrop(event: DragEvent<HTMLElement>, targetStatus: TicketStatus) {
     event.preventDefault();
+    const ticketId = draggedTicketId ?? Number(event.dataTransfer.getData("text/plain"));
+    const sourceStatus = dragFromStatus;
 
-    const ticketId = draggedTicketId ?? event.dataTransfer.getData("text/plain");
-    const sourceColumnKey = dragFromColumnKey;
-
-    if (!ticketId || !sourceColumnKey || sourceColumnKey === targetColumnKey) {
+    if (!ticketId || !sourceStatus || sourceStatus === targetStatus) {
       resetDragState();
       return;
     }
 
-    setBoardColumns((prev) => {
-      const sourceColumn = prev.find((column) => column.key === sourceColumnKey);
-      const targetColumn = prev.find((column) => column.key === targetColumnKey);
-
-      if (!sourceColumn || !targetColumn) return prev;
-
-      const movedTicket = sourceColumn.tickets.find((ticket) => ticket.id === ticketId);
-      if (!movedTicket) return prev;
-
-      return prev.map((column) => {
-        if (column.key === sourceColumnKey) {
-          return {
-            ...column,
-            tickets: column.tickets.filter((ticket) => ticket.id !== ticketId),
-          };
-        }
-        if (column.key === targetColumnKey) {
-          return {
-            ...column,
-            tickets: [...column.tickets, movedTicket],
-          };
-        }
-        return column;
-      });
+    statusMutation.mutate({
+      id: ticketId,
+      status: targetStatus,
+      comment: `Movimiento desde ${getStatusLabel(sourceStatus)} a ${getStatusLabel(targetStatus)} desde Kanban`,
     });
 
     resetDragState();
@@ -208,53 +170,64 @@ export function KanbanPage() {
           <div>
             <h1 className="text-base font-semibold sm:text-lg">Tablero Kanban UTI</h1>
             <p className="text-xs text-muted-foreground sm:text-sm">
-              Seguimiento de solicitudes de soporte tecnico para equipos FCE-UMSS.
+              Tickets reales desde API. Arrastra tarjetas entre columnas para cambiar estado.
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary">{totalTickets} tickets</Badge>
             <div className="flex rounded-md border bg-muted/40 p-1">
-              <Button
-                type="button"
-                size="sm"
-                variant={view === "board" ? "default" : "ghost"}
-                onClick={() => setView("board")}
-              >
+              <Button type="button" size="sm" variant={view === "board" ? "default" : "ghost"} onClick={() => setView("board")}>
                 Board
               </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={view === "list" ? "default" : "ghost"}
-                onClick={() => setView("list")}
-              >
+              <Button type="button" size="sm" variant={view === "list" ? "default" : "ghost"} onClick={() => setView("list")}>
                 List
               </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={view === "table" ? "default" : "ghost"}
-                onClick={() => setView("table")}
-              >
+              <Button type="button" size="sm" variant={view === "table" ? "default" : "ghost"} onClick={() => setView("table")}>
                 Table
               </Button>
             </div>
           </div>
         </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <Input
+            placeholder="Buscar por titulo..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <Select value={priorityFilter} onValueChange={(value) => setPriorityFilter(value as PriorityFilter)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filtrar por prioridad" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las prioridades</SelectItem>
+              <SelectItem value="low">Baja</SelectItem>
+              <SelectItem value="medium">Media</SelectItem>
+              <SelectItem value="high">Alta</SelectItem>
+              <SelectItem value="urgent">Urgente</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </header>
 
-      {view === "board" && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
-          {boardColumns.map((column) => (
+      {isLoading ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">Cargando tickets...</CardContent>
+        </Card>
+      ) : null}
+
+      {view === "board" && !isLoading && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {columns.map((column) => (
             <article
               key={column.key}
               className={cn(
                 "flex min-h-[420px] flex-col rounded-xl border bg-muted/20 transition-colors",
-                dragOverColumnKey === column.key && "border-primary/60 bg-primary/5"
+                dragOverStatus === column.key && "border-primary/60 bg-primary/5"
               )}
               onDragOver={(event) => onColumnDragOver(event, column.key)}
               onDrop={(event) => onColumnDrop(event, column.key)}
-              onDragLeave={() => setDragOverColumnKey(null)}
+              onDragLeave={() => setDragOverStatus(null)}
             >
               <div className="border-b p-3">
                 <div className="flex items-center justify-between">
@@ -262,65 +235,53 @@ export function KanbanPage() {
                   <Badge variant="outline">{column.tickets.length}</Badge>
                 </div>
               </div>
+
               <div className="flex-1 space-y-3 overflow-y-auto p-3">
                 {column.tickets.map((ticket) => (
                   <Card
                     key={ticket.id}
-                    className={cn(
-                      "cursor-grab shadow-sm active:cursor-grabbing",
-                      draggedTicketId === ticket.id && "opacity-60"
-                    )}
+                    className={cn("cursor-grab shadow-sm active:cursor-grabbing", draggedTicketId === ticket.id && "opacity-60")}
                     draggable
-                    onDragStart={(event) => onCardDragStart(event, column.key, ticket.id)}
+                    onDragStart={(event) => onCardDragStart(event, ticket.id, column.key)}
                     onDragEnd={resetDragState}
                   >
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-sm leading-5">{ticket.title}</CardTitle>
-                        <Badge className={cn("border", priorityClass(ticket.priority))}>
-                          {ticket.priority}
+                        <Badge className={cn("border", getPriorityColor(ticket.priority))}>
+                          {getPriorityLabel(ticket.priority)}
                         </Badge>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-2 pt-0 text-xs">
-                      <p className="text-muted-foreground">{ticket.description}</p>
+                      <p className="line-clamp-3 text-muted-foreground">{ticket.description}</p>
                       <p>
-                        <span className="font-medium">ID:</span> {ticket.id}
+                        <span className="font-medium">ID:</span> #{ticket.id}
                       </p>
                       <p>
-                        <span className="font-medium">Area:</span> {ticket.area}
+                        <span className="font-medium">Asignado:</span> {getAssigneeName(ticket)}
                       </p>
                       <p>
-                        <span className="font-medium">Asignado:</span> {ticket.assignedTo}
+                        <span className="font-medium">Actualizado:</span>{" "}
+                        {new Date(ticket.updatedAt).toLocaleString("es-BO")}
                       </p>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-muted-foreground">
-                          <span>Progreso</span>
-                          <span>{ticket.progress}%</span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-muted">
-                          <div
-                            className="h-1.5 rounded-full bg-primary"
-                            style={{ width: `${ticket.progress}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-muted-foreground">
-                        <span>Comentarios: {ticket.comments}</span>
-                        <span>Adjuntos: {ticket.attachments}</span>
-                      </div>
                     </CardContent>
                   </Card>
                 ))}
+                {column.tickets.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+                    Sin tickets
+                  </div>
+                ) : null}
               </div>
             </article>
           ))}
         </div>
       )}
 
-      {view === "list" && (
+      {view === "list" && !isLoading && (
         <div className="space-y-3">
-          {boardColumns.map((column) => (
+          {columns.map((column) => (
             <Card key={column.key}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm">
@@ -329,70 +290,64 @@ export function KanbanPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {column.tickets.map((ticket) => (
-                  <div
-                    key={ticket.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"
-                  >
+                  <div key={ticket.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
                     <div>
                       <p className="font-medium">{ticket.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {ticket.id} · {ticket.area} · {ticket.assignedTo}
+                        #{ticket.id} · {getAssigneeName(ticket)}
                       </p>
                     </div>
-                    <Badge className={cn("border", priorityClass(ticket.priority))}>
-                      {ticket.priority}
-                    </Badge>
+                    <Badge className={cn("border", getPriorityColor(ticket.priority))}>{getPriorityLabel(ticket.priority)}</Badge>
                   </div>
                 ))}
+                {column.tickets.length === 0 ? <p className="text-sm text-muted-foreground">Sin tickets</p> : null}
               </CardContent>
             </Card>
           ))}
         </div>
       )}
 
-      {view === "table" && (
+      {view === "table" && !isLoading && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Tabla de tickets</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-sm">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="p-2">ID</th>
-                    <th className="p-2">Titulo</th>
-                    <th className="p-2">Estado</th>
-                    <th className="p-2">Area</th>
-                    <th className="p-2">Asignado</th>
-                    <th className="p-2">Prioridad</th>
-                    <th className="p-2">Progreso</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {boardColumns.flatMap((column) =>
-                    column.tickets.map((ticket) => (
-                      <tr key={ticket.id} className="border-b last:border-0">
-                        <td className="p-2 font-medium">{ticket.id}</td>
-                        <td className="p-2">{ticket.title}</td>
-                        <td className="p-2">{column.title}</td>
-                        <td className="p-2">{ticket.area}</td>
-                        <td className="p-2">{ticket.assignedTo}</td>
-                        <td className="p-2">
-                          <Badge className={cn("border", priorityClass(ticket.priority))}>
-                            {ticket.priority}
-                          </Badge>
-                        </td>
-                        <td className="p-2">{ticket.progress}%</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Titulo</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Prioridad</TableHead>
+                  <TableHead>Asignado</TableHead>
+                  <TableHead>Creado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {boardTickets.map((ticket) => (
+                  <TableRow key={ticket.id}>
+                    <TableCell className="font-medium">#{ticket.id}</TableCell>
+                    <TableCell>{ticket.title}</TableCell>
+                    <TableCell>
+                      <Badge className={cn("border", getStatusColor(ticket.status))}>{getStatusLabel(ticket.status)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={cn("border", getPriorityColor(ticket.priority))}>{getPriorityLabel(ticket.priority)}</Badge>
+                    </TableCell>
+                    <TableCell>{getAssigneeName(ticket)}</TableCell>
+                    <TableCell>{new Date(ticket.createdAt).toLocaleDateString("es-BO")}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       )}
+
+      {isFetching && !isLoading ? (
+        <p className="text-xs text-muted-foreground">Actualizando tablero...</p>
+      ) : null}
     </section>
   );
 }
