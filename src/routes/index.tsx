@@ -1,6 +1,7 @@
 import { LoginPage } from '@/features/auth/pages';
 import { DashboardPage } from '@/features/dashboard/pages';
 import { TicketRequestPage, TicketsAdminPage, TicketsPage } from '@/features/tickets/pages';
+import { UnitCreatePage, UnitsListPage } from '@/features/units/pages';
 import { KanbanPage } from '@/features/kanban/pages';
 import { UsersAdminPage } from '@/features/users/pages';
 import type { ReactNode } from 'react';
@@ -35,6 +36,9 @@ export const routes: AppRoute[] = [
   {
     path: '/tickets/admin',
     element: <TicketsAdminPage />,
+    protected: true,
+  },
+  {
     path: '/kanban',
     element: <KanbanPage />,
     protected: true,
@@ -42,6 +46,21 @@ export const routes: AppRoute[] = [
   {
     path: '/admin/users',
     element: <UsersAdminPage />,
+    protected: true,
+  },
+  {
+    path: '/admin/units/create',
+    element: <UnitCreatePage />,
+    protected: true,
+  },
+  {
+    path: '/admin/units/:id/edit',
+    element: <UnitCreatePage />,
+    protected: true,
+  },
+  {
+    path: '/admin/units',
+    element: <UnitsListPage />,
     protected: true,
   },
 ];
