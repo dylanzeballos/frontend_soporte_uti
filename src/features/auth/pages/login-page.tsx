@@ -41,7 +41,7 @@ export function LoginPage() {
   return (
     <div className="login-scene relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 py-8 sm:px-6 lg:px-8">
       <video
-        className="pointer-events-none absolute inset-0 h-full w-full object-fill"
+        className="login-video pointer-events-none absolute inset-0 h-full w-full object-fill"
         autoPlay
         loop
         muted
@@ -54,8 +54,8 @@ export function LoginPage() {
         <source src="/FondoLogin.mp4" type="video/mp4" />
       </video>
 
-      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(4,10,20,0.34)_0%,rgba(4,10,20,0.2)_45%,rgba(4,10,20,0.42)_100%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.1),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(8,24,48,0.22),transparent_34%)]" />
+      <div className="login-video-tint absolute inset-0" />
+      <div className="login-video-glow absolute inset-0" />
 
       <Card className="login-shell relative z-10 w-full max-w-md border-white/20 bg-white/12 py-0 text-white backdrop-blur-lg">
         <div className="login-form-panel rounded-[2rem] border border-white/18 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(246,248,252,0.92)_100%)] text-slate-900">
