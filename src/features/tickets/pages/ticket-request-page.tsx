@@ -49,13 +49,13 @@ export function TicketRequestPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <section className="lively-hero rounded-[var(--radius-panel)] px-6 py-7 sm:px-8 sm:py-9">
+      <section className="lively-hero rounded-[var(--radius-panel)] px-6 py-5 sm:px-8 sm:py-5">
         <div className="relative z-10">
           <div className="editorial-kicker">
             <ClipboardPenLine className="h-3.5 w-3.5" />
             Solicitud
           </div>
-          <h1 className="mt-5 text-[clamp(1.9rem,2.9vw,2.9rem)] font-bold tracking-[-0.02em] text-foreground">
+          <h1 className="mt-2 text-[clamp(1.9rem,2.9vw,2.9rem)] font-bold tracking-[-0.02em] text-foreground">
             Solicitar ticket
           </h1>
         </div>
