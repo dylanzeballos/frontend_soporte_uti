@@ -43,7 +43,7 @@ export function ServiceCreatePage() {
       toast.success(`Servicio "${result.name}" actualizado correctamente`);
       queryClient.invalidateQueries({ queryKey: ['services'] });
       queryClient.invalidateQueries({ queryKey: ['service', serviceId] });
-      navigate('/admin/services/list');
+      navigate('/admin/services');
     },
   });
 
@@ -139,7 +139,7 @@ export function ServiceCreatePage() {
                 {isSaving ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Registrar servicio'}
               </Button>
               {isEditMode ? (
-                <Button type="button" variant="outline" onClick={() => navigate('/admin/services/list')} disabled={isSaving}>
+                <Button type="button" variant="outline" onClick={() => navigate('/admin/services')} disabled={isSaving}>
                   Volver a la lista
                 </Button>
               ) : (

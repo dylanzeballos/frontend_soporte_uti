@@ -43,7 +43,7 @@ export function RoleCreatePage() {
       toast.success(`Rol o cargo "${result.name}" actualizado correctamente`);
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       queryClient.invalidateQueries({ queryKey: ['role', roleId] });
-      navigate('/admin/roles/list');
+      navigate('/admin/roles');
     },
   });
 
@@ -139,7 +139,7 @@ export function RoleCreatePage() {
                   {isSaving ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Registrar rol o cargo'}
                 </Button>
                 {isEditMode ? (
-                  <Button type="button" variant="outline" onClick={() => navigate('/admin/roles/list')} disabled={isSaving}>
+                  <Button type="button" variant="outline" onClick={() => navigate('/admin/roles')} disabled={isSaving}>
                     Volver a la lista
                   </Button>
                 ) : (

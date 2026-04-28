@@ -1,9 +1,9 @@
 import { LoginPage } from '@/features/auth/pages';
 import { DashboardPage } from '@/features/dashboard/pages';
 import { TicketRequestPage, TicketsAdminPage, TicketsPage } from '@/features/tickets/pages';
-import { ServiceCreatePage, ServicesEntryPage, ServicesListPage } from '@/features/services/pages';
-import { RoleCreatePage, RolesEntryPage, RolesListPage } from '@/features/roles/pages';
-import { UnitCreatePage, UnitsEntryPage, UnitsListPage } from '@/features/units/pages';
+import { ServiceCreatePage, ServicesListPage } from '@/features/services/pages';
+import { RoleCreatePage, RolesListPage } from '@/features/roles/pages';
+import { UnitCreatePage, UnitsListPage } from '@/features/units/pages';
 import { KanbanPage } from '@/features/kanban/pages';
 import { UsersAdminPage } from '@/features/users/pages';
 import type { ReactNode } from 'react';
@@ -61,13 +61,8 @@ export const routes: AppRoute[] = [
     protected: true,
   },
   {
-    path: '/admin/units/list',
-    element: <UnitsListPage />,
-    protected: true,
-  },
-  {
     path: '/admin/units',
-    element: <UnitsEntryPage />,
+    element: <UnitsListPage />,
     protected: true,
   },
   {
@@ -81,13 +76,8 @@ export const routes: AppRoute[] = [
     protected: true,
   },
   {
-    path: '/admin/services/list',
-    element: <ServicesListPage />,
-    protected: true,
-  },
-  {
     path: '/admin/services',
-    element: <ServicesEntryPage />,
+    element: <ServicesListPage />,
     protected: true,
   },
   {
@@ -101,13 +91,8 @@ export const routes: AppRoute[] = [
     protected: true,
   },
   {
-    path: '/admin/roles/list',
-    element: <RolesListPage />,
-    protected: true,
-  },
-  {
     path: '/admin/roles',
-    element: <RolesEntryPage />,
+    element: <RolesListPage />,
     protected: true,
   },
 ];

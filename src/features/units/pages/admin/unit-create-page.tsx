@@ -43,7 +43,7 @@ export function UnitCreatePage() {
       toast.success(`Unidad "${result.name}" actualizada correctamente`);
       queryClient.invalidateQueries({ queryKey: ['units'] });
       queryClient.invalidateQueries({ queryKey: ['unit', unitId] });
-      navigate('/admin/units/list');
+      navigate('/admin/units');
     },
   });
 
@@ -139,7 +139,7 @@ export function UnitCreatePage() {
                   {isSaving ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Registrar unidad'}
                 </Button>
                 {isEditMode ? (
-                  <Button type="button" variant="outline" onClick={() => navigate('/admin/units/list')} disabled={isSaving}>
+                  <Button type="button" variant="outline" onClick={() => navigate('/admin/units')} disabled={isSaving}>
                     Volver a la lista
                   </Button>
                 ) : (

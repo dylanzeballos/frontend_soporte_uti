@@ -127,21 +127,30 @@ const navSections: NavSection[] = [
       },
       {
         title: "Modificar unidades",
-        to: "/admin/units",
         icon: Building2Icon,
         roles: ["admin"],
+        children: [
+          { title: "Lista de unidades", to: "/admin/units", roles: ["admin"] },
+          { title: "Registrar unidad", to: "/admin/units/create", roles: ["admin"] },
+        ],
       },
       {
         title: "Agregar servicios",
-        to: "/admin/services",
         icon: WrenchIcon,
         roles: ["admin"],
+        children: [
+          { title: "Lista de servicios", to: "/admin/services", roles: ["admin"] },
+          { title: "Registrar servicio", to: "/admin/services/create", roles: ["admin"] },
+        ],
       },
       {
         title: "Agregar roles o cargos",
-        to: "/admin/roles",
         icon: BriefcaseBusinessIcon,
         roles: ["admin"],
+        children: [
+          { title: "Lista de roles o cargos", to: "/admin/roles", roles: ["admin"] },
+          { title: "Registrar rol o cargo", to: "/admin/roles/create", roles: ["admin"] },
+        ],
       },
       {
         title: "Administrar usuarios",
@@ -251,19 +260,15 @@ function AppShell({ children }: { children?: React.ReactNode }) {
         aria-label="Navegacion principal"
         collapsible="icon"
       >
-        <SidebarHeader className="border-b border-sidebar-border/60 px-3 py-4 group-data-[collapsible=icon]:px-1.5">
-          <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
+        <SidebarHeader className="border-b border-sidebar-border/60 px-3 py-3">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => navigate("/dashboard")}
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-accent text-sidebar-accent-foreground ring-sidebar-ring transition-colors hover:bg-sidebar-accent/90 focus-visible:outline-none focus-visible:ring-2 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-accent text-sidebar-accent-foreground ring-sidebar-ring transition-colors hover:bg-sidebar-accent/90 focus-visible:outline-none focus-visible:ring-2"
               aria-label="Ir al dashboard"
             >
-              <img
-                src={collapsed ? "/LogoFCE_reduced.webp" : "/LogoFCE.webp"}
-                alt=""
-                className={cn("w-auto", collapsed ? "h-5" : "h-6")}
-              />
+              <img src="/LogoFCE.webp" alt="" className="h-6 w-auto" />
             </button>
             <div className={cn("min-w-0", collapsed && "hidden")}>
               <p className="truncate text-sm font-semibold text-sidebar-foreground">Soporte UTI</p>
@@ -272,9 +277,9 @@ function AppShell({ children }: { children?: React.ReactNode }) {
           </div>
         </SidebarHeader>
 
-        <SidebarContent className="px-2 py-4 group-data-[collapsible=icon]:px-1.5">
+        <SidebarContent className="px-2 py-3">
           {visibleSections.map((section) => (
-            <SidebarGroup key={section.label} className="px-1 py-2">
+            <SidebarGroup key={section.label} className="px-1 py-1.5">
               <SidebarGroupLabel className="px-2 text-[11px] uppercase tracking-wide text-sidebar-foreground/55">
                 {section.label}
               </SidebarGroupLabel>
@@ -304,7 +309,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                               title={collapsed ? item.title : undefined}
                               aria-expanded={sectionOpen}
                               className={cn(
-                                "relative h-11 rounded-lg px-2.5 hover:bg-sidebar-accent/90 focus-visible:ring-2",
+                                "relative h-10 rounded-lg px-2.5 hover:bg-sidebar-accent/90 focus-visible:ring-2",
                                 active && "bg-sidebar-accent text-sidebar-accent-foreground",
                                 active &&
                                   "after:absolute after:top-1.5 after:left-0 after:h-7 after:w-1 after:rounded-r-full after:bg-sidebar-primary"
@@ -389,7 +394,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                               aria-current={active ? "page" : undefined}
                               onClick={onNavigate}
                               className={cn(
-                                "relative h-11 rounded-lg px-2.5 hover:bg-sidebar-accent/90 focus-visible:ring-2",
+                                "relative h-10 rounded-lg px-2.5 hover:bg-sidebar-accent/90 focus-visible:ring-2",
                                 active && "bg-sidebar-accent text-sidebar-accent-foreground",
                                 active &&
                                   "after:absolute after:top-1.5 after:left-0 after:h-7 after:w-1 after:rounded-r-full after:bg-sidebar-primary"
@@ -405,7 +410,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                               tooltip={item.title}
                               aria-disabled="true"
                               title={collapsed ? `${item.title} (no disponible)` : undefined}
-                              className="h-11 cursor-not-allowed rounded-lg px-2.5 opacity-50"
+                              className="h-10 cursor-not-allowed rounded-lg px-2.5 opacity-50"
                             >
                               <Icon />
                               <span>{item.title}</span>
@@ -421,8 +426,8 @@ function AppShell({ children }: { children?: React.ReactNode }) {
           ))}
         </SidebarContent>
 
-        <SidebarFooter className="mt-auto border-t border-sidebar-border/60 px-3 py-4 group-data-[collapsible=icon]:px-1.5">
-          <div className={cn("flex items-center gap-2", collapsed && "justify-center")}>
+        <SidebarFooter className="mt-auto border-t border-sidebar-border/60 px-3 py-3">
+          <div className="flex items-center gap-2">
             <ModeToggle />
             {!collapsed && <span className="text-xs text-sidebar-foreground/70">Tema</span>}
           </div>
