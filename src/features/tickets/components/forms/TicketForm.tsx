@@ -99,7 +99,7 @@ function SelectField({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="editorial-label text-muted-foreground">
+      <Label htmlFor={id} className="text-sm font-medium text-muted-foreground">
         {label}
       </Label>
       <Select value={normalizedValue} onValueChange={(nextValue) => onChange(nextValue === '__none__' ? null : Number(nextValue))}>
@@ -217,84 +217,79 @@ export function TicketForm({
   );
 
   return (
-    <Card className={cn('form-shell overflow-hidden rounded-[var(--radius-panel)] border-0 bg-card/95', className)}>
-      <CardContent className="relative z-10 px-6 py-6 sm:px-8 sm:py-8">
-        <form className="space-y-6 sm:space-y-7" onSubmit={submitForm} noValidate>
-          <section className="form-panel p-5 sm:p-6">
-            <div className={cn('grid gap-5', isRequestVariant ? 'lg:grid-cols-1' : 'lg:grid-cols-[1.35fr_0.65fr]')}>
-              <div className="space-y-2">
-                <Label htmlFor="ticket-title" className="editorial-label text-muted-foreground">
-                  Titulo
-                </Label>
-                <Input
-                  id="ticket-title"
-                  placeholder={isRequestVariant ? 'Ej. No puedo acceder al portal institucional' : 'Ej. Incidente reportado por mesa de ayuda'}
-                  aria-invalid={Boolean(errors.title)}
-                  {...titleField}
-                  ref={registerFieldRef('title', titleField.ref)}
-                />
-                <FormFieldError message={errors.title?.message} />
-              </div>
-
-              {!isRequestVariant ? (
-                <Controller
-                  control={control}
-                  name="status"
-                  render={({ field, fieldState }) => (
-                    <div className="space-y-2">
-                      <Label htmlFor="ticket-status" className="editorial-label text-muted-foreground">
-                        Estado
-                      </Label>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="ticket-status" ref={registerFieldRef('status')} aria-invalid={Boolean(fieldState.error)} className="w-full">
-                          <SelectValue placeholder="Selecciona un estado">
-                            {ticketStatusOptions.find((option) => option.value === field.value)?.label}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ticketStatusOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormFieldError message={fieldState.error?.message} />
-                    </div>
-                  )}
-                />
-              ) : null}
-            </div>
-
-            <div className="mt-5 space-y-2">
-              <Label htmlFor="ticket-description" className="editorial-label text-muted-foreground">
-                Descripcion
-              </Label>
-              <Textarea
-                id="ticket-description"
-                placeholder={
-                  isRequestVariant
-                    ? 'Describe el problema y el impacto que te genera.'
-                    : 'Describe el problema, el contexto y cualquier detalle relevante para gestionarlo.'
-                }
-                aria-invalid={Boolean(errors.description)}
-                className="min-h-40"
-                {...descriptionField}
-                ref={registerFieldRef('description', descriptionField.ref)}
-              />
-              <FormFieldError message={errors.description?.message} />
-            </div>
-          </section>
+    <Card className={cn('form-shell overflow-hidden rounded-(--radius-panel) border-0 bg-card/95', className)}>
+      <CardContent className="relative z-10 px-5 py-0 sm:px-6 sm:py-0">
+        <form className="space-y-5" onSubmit={submitForm} noValidate>
+          <div className="space-y-2">
+            <Label htmlFor="ticket-title" className="text-sm font-medium text-muted-foreground">
+              Titulo
+            </Label>
+            <Input
+              id="ticket-title"
+              placeholder={isRequestVariant ? 'Ej. No puedo acceder al portal institucional' : 'Ej. Incidente reportado por mesa de ayuda'}
+              aria-invalid={Boolean(errors.title)}
+              {...titleField}
+              ref={registerFieldRef('title', titleField.ref)}
+            />
+            <FormFieldError message={errors.title?.message} />
+          </div>
 
           {!isRequestVariant ? (
-            <section className="form-panel p-5 sm:p-6">
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(14rem,0.9fr)]">
+            <Controller
+              control={control}
+              name="status"
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <Label htmlFor="ticket-status" className="text-sm font-medium text-muted-foreground">
+                    Estado
+                  </Label>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="ticket-status" ref={registerFieldRef('status')} aria-invalid={Boolean(fieldState.error)} className="w-full">
+                      <SelectValue placeholder="Selecciona un estado">
+                        {ticketStatusOptions.find((option) => option.value === field.value)?.label}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ticketStatusOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormFieldError message={fieldState.error?.message} />
+                </div>
+              )}
+            />
+          ) : null}
+
+          <div className="space-y-2">
+            <Label htmlFor="ticket-description" className="text-sm font-medium text-muted-foreground">
+              Descripcion
+            </Label>
+            <Textarea
+              id="ticket-description"
+              placeholder={
+                isRequestVariant
+                  ? 'Describe el problema y el impacto que te genera.'
+                  : 'Describe el problema, el contexto y cualquier detalle relevante para gestionarlo.'
+              }
+              aria-invalid={Boolean(errors.description)}
+              className="min-h-32"
+              {...descriptionField}
+              ref={registerFieldRef('description', descriptionField.ref)}
+            />
+            <FormFieldError message={errors.description?.message} />
+          </div>
+
+          {!isRequestVariant ? (
+            <div className="grid gap-5 md:grid-cols-2">
               <Controller
                 control={control}
                 name="priority"
                 render={({ field, fieldState }) => (
                   <div className="space-y-2">
-                    <Label htmlFor="ticket-priority" className="editorial-label text-muted-foreground">
+                    <Label htmlFor="ticket-priority" className="text-sm font-medium text-muted-foreground">
                       Prioridad
                     </Label>
                     <Select value={field.value} onValueChange={field.onChange}>
@@ -317,7 +312,7 @@ export function TicketForm({
               />
 
               <div className="space-y-2">
-                <Label htmlFor="ticket-sla" className="editorial-label text-muted-foreground">
+                <Label htmlFor="ticket-sla" className="text-sm font-medium text-muted-foreground">
                   SLA (minutos)
                 </Label>
                 <div className="relative">
@@ -337,74 +332,71 @@ export function TicketForm({
                 </div>
                 <FormFieldError message={errors.slaMinutes?.message} />
               </div>
-              </div>
-            </section>
+            </div>
           ) : null}
 
-          <section className="form-panel p-5 sm:p-6">
-            <div className={cn('grid gap-5', isRequestVariant ? 'lg:grid-cols-1' : 'lg:grid-cols-3')}>
+          <div className={cn('grid gap-5', isRequestVariant ? 'md:grid-cols-1' : 'md:grid-cols-3')}>
+            <Controller
+              control={control}
+              name="serviceId"
+              render={({ field, fieldState }) => (
+                <SelectField
+                  id="ticket-serviceId"
+                  label="Servicio"
+                  placeholder="Selecciona un servicio"
+                  error={fieldState.error?.message}
+                  value={field.value}
+                  options={serviceOptions}
+                  onChange={field.onChange}
+                  registerRef={registerFieldRef('serviceId')}
+                  emptyLabel="Sin servicio"
+                  allowEmptySelection={!isRequestVariant}
+                />
+              )}
+            />
+
+            {!isRequestVariant ? (
               <Controller
                 control={control}
-                name="serviceId"
+                name="assignedToId"
                 render={({ field, fieldState }) => (
                   <SelectField
-                    id="ticket-serviceId"
-                    label="Servicio"
-                    placeholder="Selecciona un servicio"
+                    id="ticket-assignedToId"
+                    label="Asignado a"
+                    placeholder="Selecciona un agente"
                     error={fieldState.error?.message}
                     value={field.value}
-                    options={serviceOptions}
+                    options={assigneeOptions}
                     onChange={field.onChange}
-                    registerRef={registerFieldRef('serviceId')}
-                    emptyLabel="Sin servicio"
-                    allowEmptySelection={!isRequestVariant}
+                    registerRef={registerFieldRef('assignedToId')}
+                    emptyLabel="Sin asignar"
                   />
                 )}
               />
+            ) : null}
 
-              {!isRequestVariant ? (
-                <>
-                <Controller
-                  control={control}
-                  name="assignedToId"
-                  render={({ field, fieldState }) => (
-                    <SelectField
-                      id="ticket-assignedToId"
-                      label="Asignado a"
-                      placeholder="Selecciona un agente"
-                      error={fieldState.error?.message}
-                      value={field.value}
-                      options={assigneeOptions}
-                      onChange={field.onChange}
-                      registerRef={registerFieldRef('assignedToId')}
-                      emptyLabel="Sin asignar"
-                    />
-                  )}
-                />
+            {!isRequestVariant ? (
+              <Controller
+                control={control}
+                name="emitterId"
+                render={({ field, fieldState }) => (
+                  <SelectField
+                    id="ticket-emitterId"
+                    label="Emisor"
+                    placeholder="Selecciona el usuario emisor"
+                    error={fieldState.error?.message}
+                    value={field.value}
+                    options={emitterOptions}
+                    onChange={field.onChange}
+                    registerRef={registerFieldRef('emitterId')}
+                    emptyLabel="Sin emisor"
+                  />
+                )}
+              />
+            ) : null}
+          </div>
 
-                <Controller
-                  control={control}
-                  name="emitterId"
-                  render={({ field, fieldState }) => (
-                    <SelectField
-                      id="ticket-emitterId"
-                      label="Emisor"
-                      placeholder="Selecciona el usuario emisor"
-                      error={fieldState.error?.message}
-                      value={field.value}
-                      options={emitterOptions}
-                      onChange={field.onChange}
-                      registerRef={registerFieldRef('emitterId')}
-                      emptyLabel="Sin emisor"
-                    />
-                  )}
-                />
-                </>
-              ) : null}
-            </div>
-          </section>
-
-          <div className="flex flex-col items-center justify-center gap-3 pt-2">
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:justify-end">
             {onCancel ? (
               <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting} className="min-w-44 justify-center">
                 {cancelLabel}
@@ -413,7 +405,7 @@ export function TicketForm({
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="mx-auto min-w-56 justify-center px-6 text-sm font-semibold sm:min-w-64"
+              className="min-w-56 justify-center px-6 text-sm font-semibold sm:min-w-64"
             >
               {isSubmitting ? (
                 <>
