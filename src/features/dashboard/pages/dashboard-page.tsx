@@ -35,8 +35,9 @@ export function DashboardPage() {
   const { list } = useTickets();
 
   const { data: tickets = [] } = useQuery<TicketType[]>({
-    queryKey: ['tickets'],
-    queryFn: list,
+    queryKey: ['tickets', 'dashboard', user?.id],
+    enabled: Boolean(user?.id),
+    queryFn: async () => list({ limit: 100 }),
   });
 
   const stats = {

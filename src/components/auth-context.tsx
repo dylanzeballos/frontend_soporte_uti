@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import type { User } from '@/features/users/schemas';
@@ -18,6 +18,8 @@ interface AuthContextValue extends AuthState {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const ACCESS_TOKEN_KEY = 'accessToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
 const AUTH_USER_KEY = 'authUser';
 
 type ApiUser = Partial<User> & {
@@ -26,17 +28,24 @@ type ApiUser = Partial<User> & {
   lastName?: string | null;
 };
 
+type AuthResponse = {
+  accessToken?: string;
+  refreshToken?: string;
+};
+
+function normalizeRoleName(role: string | null | undefined) {
+  const normalized = role?.trim().toLowerCase();
+  return normalized === 'admin' || normalized === 'agent' || normalized === 'user'
+    ? normalized
+    : 'user';
+}
+
 function normalizeUser(apiUser: ApiUser): User {
   const roleValue = apiUser.role as User['role'] | { name?: string | null } | null | undefined;
   const roleFromObject =
-    typeof roleValue === 'object' && roleValue !== null
-      ? roleValue.name
-      : roleValue;
+    typeof roleValue === 'object' && roleValue !== null ? roleValue.name : roleValue;
 
-  const normalizedRole: User['role'] =
-    roleFromObject === 'admin' || roleFromObject === 'agent' || roleFromObject === 'user'
-      ? roleFromObject
-      : 'user';
+  const normalizedRole = normalizeRoleName(roleFromObject);
 
   const fallbackName = [apiUser.firstName, apiUser.lastName].filter(Boolean).join(' ').trim();
 
@@ -51,6 +60,12 @@ function normalizeUser(apiUser: ApiUser): User {
   };
 }
 
+function clearStoredSession() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_USER_KEY);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: (() => {
@@ -62,12 +77,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null;
       }
     })(),
-    isAuthenticated: Boolean(localStorage.getItem('accessToken')),
+    isAuthenticated: Boolean(localStorage.getItem(ACCESS_TOKEN_KEY)),
     isLoading: true,
   });
 
   const refreshProfile = useCallback(async () => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
     if (!token) {
       setState({ user: null, isAuthenticated: false, isLoading: false });
       return;
@@ -84,13 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
         setState({ user, isAuthenticated: true, isLoading: false });
       } else {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem(AUTH_USER_KEY);
+        clearStoredSession();
         setState({ user: null, isAuthenticated: false, isLoading: false });
       }
     } catch {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem(AUTH_USER_KEY);
+      clearStoredSession();
       setState({ user: null, isAuthenticated: false, isLoading: false });
     }
   }, []);
@@ -104,13 +117,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: 'Credenciales inválidas' }));
-      toast.error(error.message || 'Error de autenticación');
+      const error = await res.json().catch(() => ({ message: 'Credenciales invalidas' }));
+      toast.error(error.message || 'Error de autenticacion');
       throw new Error(error.message || 'Invalid credentials');
     }
 
-    const data = await res.json();
-    localStorage.setItem('accessToken', data.accessToken);
+    const data = (await res.json()) as AuthResponse;
+    if (!data.accessToken || !data.refreshToken) {
+      clearStoredSession();
+      toast.error('Respuesta de autenticacion incompleta');
+      throw new Error('Authentication response is incomplete');
+    }
+
+    localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
 
     const profileRes = await fetch(`${API_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${data.accessToken}` },
@@ -122,29 +142,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
       setState({ user, isAuthenticated: true, isLoading: false });
       toast.success(`Bienvenido, ${user.name || user.email}`);
-    } else {
-      localStorage.removeItem(AUTH_USER_KEY);
-      setState({ user: null, isAuthenticated: false, isLoading: false });
+      return;
     }
+
+    clearStoredSession();
+    setState({ user: null, isAuthenticated: false, isLoading: false });
   }, []);
 
   const logout = useCallback(async () => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (refreshToken) {
       try {
         await fetch(`${API_URL}/auth/logout`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${refreshToken}` },
           credentials: 'include',
         });
       } catch {
-        // Ignore
+        // Ignore network errors and still clear local session.
       }
     }
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem(AUTH_USER_KEY);
+
+    clearStoredSession();
     setState({ user: null, isAuthenticated: false, isLoading: false });
-    toast.info('Sesión cerrada');
+    toast.info('Sesion cerrada');
   }, []);
 
   useEffect(() => {

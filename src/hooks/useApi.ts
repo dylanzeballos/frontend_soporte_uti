@@ -6,9 +6,23 @@ import type { UpdateTicketInput } from '@/features/tickets/schemas/ticket.schema
 import type { TicketFilter } from '@/features/tickets/schemas/ticket.schema';
 import type { User, CreateUserInput, UpdateUserInput } from '@/features/users/schemas';
 import type { LoginInput } from '@/features/auth/schemas/login.schema';
+import type { CreateRoleInput } from '@/features/roles/schemas';
+import type { CreateServiceInput } from '@/features/services/schemas';
 import type { CreateUnitInput, Unit, UpdateUnitInput } from '@/features/units/schemas';
 
 export interface ServiceItem {
+  id: number;
+  name: string;
+  isActive?: boolean;
+}
+
+export interface RoleItem {
+  id: number;
+  name: string;
+  description?: string | null;
+}
+
+export interface CorporationItem {
   id: number;
   name: string;
   isActive?: boolean;
@@ -83,6 +97,7 @@ export function useTickets() {
     if (filters?.priority) query.set('priority', filters.priority);
     if (filters?.assignedToId) query.set('assignedToId', String(filters.assignedToId));
     if (filters?.createdById) query.set('createdById', String(filters.createdById));
+    if (filters?.excludeCreatedById) query.set('excludeCreatedById', String(filters.excludeCreatedById));
     if (filters?.search) query.set('search', filters.search);
     const suffix = query.toString() ? `?${query.toString()}` : '';
     const result = await fetchApi<Ticket[] | { data: Ticket[] } | PaginatedResponse<Ticket> | null>(`/tickets${suffix}`);
@@ -162,13 +177,17 @@ export function useUsers() {
           return { page, limit, total: result.length, data: result };
         }
 
-        const payload = result.data ?? [];
-        return {
-          page: typeof result.page === 'number' ? result.page : page,
-          limit: typeof result.limit === 'number' ? result.limit : limit,
-          total: typeof result.total === 'number' ? result.total : payload.length,
-          data: payload,
-        };
+        if ('data' in result) {
+          const payload = result.data ?? [];
+          return {
+            page: typeof (result as any).page === 'number' ? (result as any).page : page,
+            limit: typeof (result as any).limit === 'number' ? (result as any).limit : limit,
+            total: typeof (result as any).total === 'number' ? (result as any).total : payload.length,
+            data: payload,
+          };
+        }
+
+        return { page, limit, total: 0, data: [] };
       } finally {
         setIsLoading(false);
       }
@@ -222,7 +241,7 @@ export function useServices() {
 
   const list = useCallback(async (): Promise<ServiceItem[]> => {
     setIsLoading(true);
-    const result = await fetchApi<ServiceItem[] | { data: ServiceItem[] } | null>('/services');
+    const result = await fetchApi<ServiceItem[] | { data: ServiceItem[] } | PaginatedResponse<ServiceItem> | null>('/services?isActive=true');
     setIsLoading(false);
     if (!result) return [];
     if (Array.isArray(result)) return result;
@@ -232,7 +251,75 @@ export function useServices() {
     return [];
   }, []);
 
-  return { list, isLoading };
+  const findOne = useCallback(async (id: number): Promise<ServiceItem | null> => {
+    return await fetchApi<ServiceItem>(`/services/${id}`);
+  }, []);
+
+  const create = useCallback(async (data: CreateServiceInput) => {
+    setIsLoading(true);
+    const result = await fetchApi<ServiceItem>('/services', 'POST', data);
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  const update = useCallback(async (id: number, data: CreateServiceInput) => {
+    setIsLoading(true);
+    const result = await fetchApi<ServiceItem>(`/services/${id}`, 'PATCH', data);
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  const remove = useCallback(async (id: number) => {
+    setIsLoading(true);
+    const result = await fetchApi<{ message: string }>(`/services/${id}`, 'DELETE');
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  return { list, findOne, create, update, remove, isLoading };
+}
+
+export function useRoles() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const list = useCallback(async (): Promise<RoleItem[]> => {
+    setIsLoading(true);
+    const result = await fetchApi<RoleItem[] | { data: RoleItem[] } | PaginatedResponse<RoleItem> | null>('/roles');
+    setIsLoading(false);
+    if (!result) return [];
+    if (Array.isArray(result)) return result;
+    if (result && typeof result === 'object' && 'data' in result) {
+      return (result.data as RoleItem[]) ?? [];
+    }
+    return [];
+  }, []);
+
+  const findOne = useCallback(async (id: number): Promise<RoleItem | null> => {
+    return await fetchApi<RoleItem>(`/roles/${id}`);
+  }, []);
+
+  const create = useCallback(async (data: CreateRoleInput) => {
+    setIsLoading(true);
+    const result = await fetchApi<RoleItem>('/roles', 'POST', data);
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  const update = useCallback(async (id: number, data: CreateRoleInput) => {
+    setIsLoading(true);
+    const result = await fetchApi<RoleItem>(`/roles/${id}`, 'PATCH', data);
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  const remove = useCallback(async (id: number) => {
+    setIsLoading(true);
+    const result = await fetchApi<{ message: string }>(`/roles/${id}`, 'DELETE');
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  return { list, findOne, create, update, remove, isLoading };
 }
 
 export function useAuthApi() {

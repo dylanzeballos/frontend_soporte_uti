@@ -1,84 +1,75 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getUserRoleName, type CreateUserInput, type UpdateUserInput, type User } from '@/features/users/schemas';
+import { Label } from '@/components/ui/label';
+import type { CreateUserInput, UpdateUserInput, User } from '@/features/users/schemas';
 import { useUsers } from '@/hooks/useApi';
+import { useRoles, useCorporations } from '@/hooks/useApi';
+import { UserFormComponent } from '@/features/users/components/forms/UserFormComponent';
+import { UsersTable } from '@/features/users/components/tables/UsersTable';
+import { useUserForm } from '@/features/users/hooks/useUserForm';
 
 const DEFAULT_LIMIT = 20;
 
 type ActiveFilter = 'all' | 'true' | 'false';
 
-type UserFormState = {
-  ci: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  roleId: string;
-  corporationId: string;
-  phone: string;
-  cell: string;
-  isActive: boolean;
-};
-
-const INITIAL_FORM: UserFormState = {
-  ci: '',
-  firstName: '',
-  lastName: '',
-  email: '',
-  password: '',
-  roleId: '',
-  corporationId: '',
-  phone: '',
-  cell: '',
-  isActive: true,
-};
-
-function toNumberOrUndefined(value: string): number | undefined {
-  if (!value.trim()) return undefined;
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed <= 0) return undefined;
-  return parsed;
-}
-
-function getDisplayName(user: User): string {
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-  return fullName || user.name || user.email;
-}
-
 export function UsersAdminPage() {
   const queryClient = useQueryClient();
   const { listPaginated, create, update, remove } = useUsers();
+  const { list: listRoles } = useRoles();
+  const { list: listCorporations } = useCorporations();
+
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>('true');
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all');
   const [page, setPage] = useState(1);
-  const [form, setForm] = useState<UserFormState>(INITIAL_FORM);
 
-  const isActive = useMemo(() => {
-    if (activeFilter === 'all') return undefined;
-    return activeFilter === 'true';
-  }, [activeFilter]);
+  // Fetch roles y corporaciones
+  const { data: roles = [] } = useQuery({
+    queryKey: ['roles'],
+    queryFn: listRoles,
+  });
 
+  const { data: corporations = [] } = useQuery({
+    queryKey: ['corporations'],
+    queryFn: listCorporations,
+  });
+
+  // Determinar si activo
+  const isActive = activeFilter === 'all' ? undefined : activeFilter === 'true';
+
+  // Fetch users
   const { data: usersPage, isLoading } = useQuery({
     queryKey: ['users', page, DEFAULT_LIMIT, activeFilter],
     queryFn: () => listPaginated({ page, limit: DEFAULT_LIMIT, isActive }),
   });
+
+  // Setup form hook
+  const userFormHook = useUserForm({
+    mode: editingUser ? 'edit' : 'create',
+    editingUser: editingUser || undefined,
+    roles,
+    corporations: corporations.map((c) => ({ id: c.id, name: c.name })),
+  });
+
+  // Reset form cuando cambia modo
+  useEffect(() => {
+    userFormHook.form.reset();
+  }, [editingUser, showForm, userFormHook.form]);
 
   const createMutation = useMutation({
     mutationFn: create,
     onSuccess: () => {
       toast.success('Usuario creado correctamente');
       setShowForm(false);
-      setForm(INITIAL_FORM);
+      setEditingUser(null);
       void queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: () => {
+      toast.error('Error al crear el usuario');
     },
   });
 
@@ -86,10 +77,12 @@ export function UsersAdminPage() {
     mutationFn: ({ id, data }: { id: number; data: UpdateUserInput }) => update(id, data),
     onSuccess: () => {
       toast.success('Usuario actualizado correctamente');
-      setEditingUser(null);
       setShowForm(false);
-      setForm(INITIAL_FORM);
+      setEditingUser(null);
       void queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: () => {
+      toast.error('Error al actualizar el usuario');
     },
   });
 
@@ -99,111 +92,91 @@ export function UsersAdminPage() {
       toast.success('Usuario archivado correctamente');
       void queryClient.invalidateQueries({ queryKey: ['users'] });
     },
+    onError: () => {
+      toast.error('Error al archivar el usuario');
+    },
   });
 
   const users = usersPage?.data ?? [];
   const total = usersPage?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / DEFAULT_LIMIT));
 
-  const startCreate = () => {
+  const startCreate = useCallback(() => {
     setEditingUser(null);
-    setForm(INITIAL_FORM);
     setShowForm(true);
-  };
+  }, []);
 
-  const startEdit = (user: User) => {
+  const startEdit = useCallback((user: User) => {
     setEditingUser(user);
-    setForm({
-      ci: user.ci ?? '',
-      firstName: user.firstName ?? '',
-      lastName: user.lastName ?? '',
-      email: user.email,
-      password: '',
-      roleId: user.roleId ? String(user.roleId) : '',
-      corporationId: user.corporationId ? String(user.corporationId) : '',
-      phone: user.phone ?? '',
-      cell: user.cell ?? '',
-      isActive: user.isActive,
-    });
     setShowForm(true);
-  };
+  }, []);
 
-  const handleSave = async () => {
-    const basePayload = {
-      ci: form.ci.trim(),
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      email: form.email.trim(),
-      roleId: toNumberOrUndefined(form.roleId),
-      corporationId: toNumberOrUndefined(form.corporationId),
-      phone: form.phone.trim() || undefined,
-      cell: form.cell.trim() || undefined,
-      isActive: form.isActive,
-    };
+  const handleSave = useCallback(
+    async (values: any) => {
+      try {
+        const payload = userFormHook.preparePayload(values);
 
-    if (!basePayload.ci || !basePayload.firstName || !basePayload.lastName || !basePayload.email) {
-      toast.error('Completa CI, nombre, apellido y email');
-      return;
-    }
+        if (!editingUser) {
+          // Crear
+          const createPayload = payload as CreateUserInput;
+          if (!createPayload.ci || !createPayload.firstName || !createPayload.lastName || !createPayload.email) {
+            toast.error('Completa CI, nombre, apellido y email');
+            return;
+          }
+          if (!createPayload.roleId) {
+            toast.error('El rol es requerido');
+            return;
+          }
+          await createMutation.mutateAsync(createPayload);
+        } else {
+          // Actualizar
+          const updatePayload = payload as UpdateUserInput;
+          await updateMutation.mutateAsync({ id: editingUser.id, data: updatePayload });
+        }
+      } catch (error) {
+        console.error('Error al guardar:', error);
+      }
+    },
+    [editingUser, userFormHook, createMutation, updateMutation]
+  );
 
-    if (editingUser) {
-      const payload: UpdateUserInput = {
-        ...basePayload,
-        ...(form.password.trim() ? { password: form.password.trim() } : {}),
-      };
-      await updateMutation.mutateAsync({ id: editingUser.id, data: payload });
-      return;
-    }
-
-    const password = form.password.trim();
-    if (!password) {
-      toast.error('El password es requerido para crear el usuario');
-      return;
-    }
-
-    if (!basePayload.roleId) {
-      toast.error('El roleId es requerido');
-      return;
-    }
-
-    const payload: CreateUserInput = {
-      ...basePayload,
-      password,
-      roleId: basePayload.roleId,
-    };
-    await createMutation.mutateAsync(payload);
-  };
-
-  const handleDelete = async (user: User) => {
-    const confirmed = confirm(`¿Seguro que deseas archivar a "${getDisplayName(user)}"?`);
+  const handleDelete = useCallback((user: User) => {
+    const confirmed = confirm(
+      `¿Seguro que deseas archivar a "${[user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email}"?`
+    );
     if (!confirmed) return;
-    await deleteMutation.mutateAsync(user.id);
-  };
+    deleteMutation.mutate(user.id);
+  }, [deleteMutation]);
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <h1 className="text-2xl font-bold tracking-tight">Gestionar usuarios</h1>
         <div className="flex items-center gap-2">
-          <Select
-            value={activeFilter}
-            onValueChange={(value) => {
-              setPage(1);
-              setActiveFilter(value as ActiveFilter);
-            }}
-          >
-            <SelectTrigger className="w-[190px]">
-              <SelectValue placeholder="Filtrar estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="true">Solo activos</SelectItem>
-              <SelectItem value="false">Solo inactivos</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={startCreate}>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="active-filter" className="text-sm font-medium">
+              Filtrar:
+            </Label>
+            <Select
+              value={activeFilter}
+              onValueChange={(value) => {
+                setPage(1);
+                setActiveFilter(value as ActiveFilter);
+              }}
+            >
+              <SelectTrigger id="active-filter" className="w-[150px]">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="true">Activos</SelectItem>
+                <SelectItem value="false">Inactivos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={startCreate} disabled={showForm}>
             <Plus className="mr-2 h-4 w-4" />
             Agregar usuario
           </Button>
@@ -211,174 +184,36 @@ export function UsersAdminPage() {
       </div>
 
       {showForm ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingUser ? 'Editar usuario' : 'Nuevo usuario'}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <Input placeholder="CI" value={form.ci} onChange={(e) => setForm((prev) => ({ ...prev, ci: e.target.value }))} />
-              <Input
-                placeholder="Nombre"
-                value={form.firstName}
-                onChange={(e) => setForm((prev) => ({ ...prev, firstName: e.target.value }))}
-              />
-              <Input
-                placeholder="Apellido"
-                value={form.lastName}
-                onChange={(e) => setForm((prev) => ({ ...prev, lastName: e.target.value }))}
-              />
-              <Input
-                type="email"
-                placeholder="Email"
-                value={form.email}
-                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-              />
-              <Input
-                type="password"
-                placeholder={editingUser ? 'Password (opcional)' : 'Password'}
-                value={form.password}
-                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-              />
-              <Input
-                type="number"
-                placeholder="roleId (ej: 1)"
-                value={form.roleId}
-                onChange={(e) => setForm((prev) => ({ ...prev, roleId: e.target.value }))}
-              />
-              <Input
-                type="number"
-                placeholder="corporationId (ej: 1)"
-                value={form.corporationId}
-                onChange={(e) => setForm((prev) => ({ ...prev, corporationId: e.target.value }))}
-              />
-              <Input
-                placeholder="Teléfono"
-                value={form.phone}
-                onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-              />
-              <Input
-                placeholder="Celular"
-                value={form.cell}
-                onChange={(e) => setForm((prev) => ({ ...prev, cell: e.target.value }))}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleSave} disabled={isSaving}>
-                {editingUser ? 'Actualizar' : 'Guardar'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEditingUser(null);
-                  setForm(INITIAL_FORM);
-                  setShowForm(false);
-                }}
-                disabled={isSaving}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <UserFormComponent
+          form={userFormHook.form}
+          mode={editingUser ? 'edit' : 'create'}
+          editingUser={editingUser}
+          roles={roles}
+          corporations={corporations.map((c) => ({ id: c.id, name: c.name }))}
+          isSubmitting={isSaving}
+          onSubmit={handleSave}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingUser(null);
+            userFormHook.form.reset();
+          }}
+        />
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Listado de usuarios ({total})</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>CI</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Corporación</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead>Celular</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Creado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={11} className="py-8 text-center text-muted-foreground">
-                      Cargando usuarios...
-                    </TableCell>
-                  </TableRow>
-                ) : users.length > 0 ? (
-                  users.map((user) => {
-                    const roleName = getUserRoleName(user) ?? (user.roleId ? `Rol #${user.roleId}` : '-');
-                    const corporationName = user.corporation?.name ?? (user.corporationId ? `Corp #${user.corporationId}` : '-');
-                    return (
-                      <TableRow key={user.id}>
-                        <TableCell>{user.id}</TableCell>
-                        <TableCell>{user.ci ?? '-'}</TableCell>
-                        <TableCell>{getDisplayName(user)}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="capitalize">
-                            {roleName}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{corporationName}</TableCell>
-                        <TableCell>{user.phone || '-'}</TableCell>
-                        <TableCell>{user.cell || '-'}</TableCell>
-                        <TableCell>{user.isActive ? 'Activo' : 'Inactivo'}</TableCell>
-                        <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString('es-BO') : '-'}</TableCell>
-                        <TableCell>
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => startEdit(user)} aria-label="Editar usuario">
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => void handleDelete(user)}
-                              aria-label="Archivar usuario"
-                              disabled={deleteMutation.isPending}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={11} className="py-8 text-center text-muted-foreground">
-                      No se encontraron usuarios
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="outline" disabled={page <= 1 || isLoading} onClick={() => setPage((current) => current - 1)}>
-              Anterior
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Página {page} de {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              disabled={page >= totalPages || isLoading}
-              onClick={() => setPage((current) => current + 1)}
-            >
-              Siguiente
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <UsersTable
+        users={users}
+        isLoading={isLoading}
+        total={total}
+        page={page}
+        totalPages={totalPages}
+        roles={roles}
+        corporations={corporations.map((c) => ({ id: c.id, name: c.name }))}
+        isDeleting={deleteMutation.isPending}
+        onEdit={startEdit}
+        onDelete={handleDelete}
+        onPreviousPage={() => setPage((current) => current - 1)}
+        onNextPage={() => setPage((current) => current + 1)}
+      />
     </div>
   );
 }

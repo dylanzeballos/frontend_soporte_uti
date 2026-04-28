@@ -12,8 +12,9 @@ const navItems = [
 export function Header() {
   const { user } = useAuth();
 
+  const userRole = user ? (typeof user.role === 'string' ? user.role : (user.role?.name ?? 'user')) : null;
   const filteredNav = navItems.filter(item =>
-    user && item.roles.includes(user.role)
+    userRole && item.roles.includes(userRole as any)
   );
 
   return (

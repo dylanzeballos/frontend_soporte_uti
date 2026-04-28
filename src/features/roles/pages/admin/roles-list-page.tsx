@@ -1,30 +1,43 @@
-import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { staticRoles, type RoleItem } from '@/features/roles/data/static-roles';
+import type { RoleItem } from '@/hooks/useApi';
+import { useRoles } from '@/hooks/useApi';
 
 export function RolesListPage() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [roles, setRoles] = useState<RoleItem[]>(staticRoles);
+  const { list, remove } = useRoles();
+
+  const { data: roles = [], isLoading } = useQuery<RoleItem[]>({
+    queryKey: ['roles'],
+    queryFn: list,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => remove(id),
+    onSuccess: (result) => {
+      if (!result) return;
+      toast.success('Rol o cargo eliminado correctamente');
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+    },
+  });
 
   const handleDelete = (role: RoleItem) => {
     const confirmed = confirm(`¿Seguro que deseas eliminar el rol o cargo "${role.name}"?`);
     if (!confirmed) return;
 
-    setRoles((prev) => prev.filter((item) => item.id !== role.id));
-    toast.success('Rol o cargo eliminado correctamente');
+    deleteMutation.mutate(role.id);
   };
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Lista de roles o cargos</h1>
-        <p className="text-sm text-muted-foreground">
-          Vista temporal con datos estáticos mientras se integra el backend.
-        </p>
+        <p className="text-sm text-muted-foreground">Roles y cargos registrados en el sistema.</p>
       </div>
 
       <Card>
@@ -33,7 +46,9 @@ export function RolesListPage() {
           <CardDescription>{roles.length} registros encontrados</CardDescription>
         </CardHeader>
         <CardContent>
-          {roles.length > 0 ? (
+          {isLoading ? (
+            <div className="py-8 text-center text-muted-foreground">Cargando roles...</div>
+          ) : roles.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full min-w-160 border-collapse text-sm">
                 <thead>
@@ -66,6 +81,7 @@ export function RolesListPage() {
                             variant="destructive"
                             onClick={() => handleDelete(role)}
                             aria-label={`Eliminar rol o cargo ${role.id}`}
+                            disabled={deleteMutation.isPending}
                           >
                             <Trash2 data-icon="inline-start" />
                             Eliminar

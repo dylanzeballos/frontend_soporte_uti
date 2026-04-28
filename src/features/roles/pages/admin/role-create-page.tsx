@@ -1,30 +1,58 @@
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { staticRoles } from '@/features/roles/data/static-roles';
 import { createRoleSchema, type CreateRoleInput } from '@/features/roles/schemas';
+import { useRoles } from '@/hooks/useApi';
 
 export function RoleCreatePage() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const roleId = Number(id);
   const isEditMode = Number.isInteger(roleId) && roleId > 0;
-  const selectedRole = isEditMode
-    ? staticRoles.find((role) => role.id === roleId) ?? null
-    : null;
+  const { create, update, findOne } = useRoles();
+
+  const { data: selectedRole, isLoading: isLoadingRole } = useQuery({
+    queryKey: ['role', roleId],
+    queryFn: () => findOne(roleId),
+    enabled: isEditMode,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: create,
+    onSuccess: (result) => {
+      if (!result) return;
+      toast.success(`Rol o cargo "${result.name}" registrado correctamente`);
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      reset({ name: '' });
+      setFocus('name');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: CreateRoleInput) => update(roleId, data),
+    onSuccess: (result) => {
+      if (!result) return;
+      toast.success(`Rol o cargo "${result.name}" actualizado correctamente`);
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: ['role', roleId] });
+      navigate('/admin/roles/list');
+    },
+  });
 
   const {
     control,
     handleSubmit,
     setFocus,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<CreateRoleInput>({
     resolver: zodResolver(createRoleSchema),
     defaultValues: {
@@ -43,14 +71,11 @@ export function RoleCreatePage() {
 
   const onSubmit = async (data: CreateRoleInput) => {
     if (isEditMode) {
-      toast.success(`Rol o cargo "${data.name}" actualizado correctamente`);
-      navigate('/admin/roles');
+      await updateMutation.mutateAsync(data);
       return;
     }
 
-    toast.success(`Rol o cargo "${data.name}" registrado correctamente`);
-    reset({ name: '' });
-    setFocus('name');
+    await createMutation.mutateAsync(data);
   };
 
   const handleClear = () => {
@@ -58,6 +83,8 @@ export function RoleCreatePage() {
     setFocus('name');
     toast.message('Formulario limpiado');
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-4">
@@ -82,7 +109,9 @@ export function RoleCreatePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isEditMode && !selectedRole ? (
+          {isEditMode && isLoadingRole ? (
+            <p className="text-sm text-muted-foreground">Cargando datos del rol o cargo...</p>
+          ) : isEditMode && !selectedRole ? (
             <p className="text-sm text-destructive">No se encontró el rol o cargo solicitado.</p>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -106,15 +135,15 @@ export function RoleCreatePage() {
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Registrar rol o cargo'}
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Registrar rol o cargo'}
                 </Button>
                 {isEditMode ? (
-                  <Button type="button" variant="outline" onClick={() => navigate('/admin/roles')} disabled={isSubmitting}>
+                  <Button type="button" variant="outline" onClick={() => navigate('/admin/roles/list')} disabled={isSaving}>
                     Volver a la lista
                   </Button>
                 ) : (
-                  <Button type="button" variant="outline" onClick={handleClear} disabled={isSubmitting}>
+                  <Button type="button" variant="outline" onClick={handleClear} disabled={isSaving}>
                     Limpiar
                   </Button>
                 )}
