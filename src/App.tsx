@@ -4,9 +4,10 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider, useAuth } from '@/components/auth-context';
 import { RealtimeProvider } from '@/lib/realtime/context';
 import { AppSidebar } from '@/components/app-sidebar';
-import { routes, defaultRoute } from '@/routes';
+import { routes } from '@/routes';
 import type { AppRoute } from '@/routes';
 import { Spinner } from '@/components/ui/spinner';
+import { getDefaultRouteForUser } from '@/features/users/schemas';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,7 +37,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function PublicRoute({ element }: { element: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -47,10 +48,28 @@ function PublicRoute({ element }: { element: React.ReactNode }) {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={defaultRoute} replace />;
+    return <Navigate to={getDefaultRouteForUser(user)} replace />;
   }
 
   return <>{element}</>;
+}
+
+function RoleHomeRedirect() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-pulse text-muted-foreground"><Spinner/>Cargando...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Navigate to={getDefaultRouteForUser(user)} replace />;
 }
 
 function App() {
@@ -86,7 +105,7 @@ function App() {
                     );
                   }
                 })}
-                <Route path="*" element={<Navigate to={defaultRoute} replace />} />
+                <Route path="*" element={<RoleHomeRedirect />} />
               </Routes>
             </BrowserRouter>
           </RealtimeProvider>

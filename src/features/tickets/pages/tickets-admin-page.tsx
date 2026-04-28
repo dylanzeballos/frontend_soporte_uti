@@ -123,7 +123,7 @@ export function TicketsAdminPage() {
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['ticket-form-users'],
-    queryFn: listUsers,
+    queryFn: async () => listUsers(),
   });
 
   const { data: serviceOptions = [] } = useQuery<TicketSelectOption[]>({

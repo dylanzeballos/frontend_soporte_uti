@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/components/auth-context';
 import { loginSchema, type LoginForm } from '@/features/auth/schemas/login.schema';
+import { getDefaultRouteForUser } from '@/features/users/schemas';
 
 export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -29,8 +30,8 @@ export function LoginPage() {
     setError(null);
     setIsLoading(true);
     try {
-      await login(data.email, data.password);
-      navigate('/dashboard');
+      const user = await login(data.email, data.password);
+      navigate(getDefaultRouteForUser(user), { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error de autenticacion');
     } finally {

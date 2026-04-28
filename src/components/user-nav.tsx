@@ -1,5 +1,5 @@
 import { useAuth } from '@/components/auth-context';
-import { isAdmin } from '@/features/users/schemas';
+import { getDefaultRouteForUser, isAdmin } from '@/features/users/schemas';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -46,7 +46,7 @@ export function UserNav() {
           </div>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+        <DropdownMenuItem onClick={() => navigate(getDefaultRouteForUser(user))}>
           <User className="mr-2 h-4 w-4" />
           Dashboard
         </DropdownMenuItem>

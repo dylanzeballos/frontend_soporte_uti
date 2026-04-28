@@ -64,11 +64,28 @@ export type User = z.infer<typeof userSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type UserRole = z.infer<typeof roleNameSchema>;
+export type AppUserRole = 'admin' | 'agent' | 'user';
 
 export function getUserRoleName(user: Pick<User, 'role'> | null | undefined): string | null {
   if (!user?.role) return null;
   if (typeof user.role === 'string') return user.role;
   return user.role.name ?? null;
+}
+
+export function normalizeAppRoleName(role: string | null | undefined): AppUserRole {
+  const normalized = role?.trim().toLowerCase();
+
+  if (normalized === 'admin') return 'admin';
+  if (normalized === 'agent' || normalized === 'tecnico') return 'agent';
+  return 'user';
+}
+
+export function getAppUserRole(user: Pick<User, 'role'> | null | undefined): AppUserRole {
+  return normalizeAppRoleName(getUserRoleName(user));
+}
+
+export function getDefaultRouteForUser(user: Pick<User, 'role'> | null | undefined): string {
+  return getAppUserRole(user) === 'agent' ? '/technician/dashboard' : '/dashboard';
 }
 
 export function hasRole(user: User | null, requiredRole: UserRole | UserRole[]): boolean {
@@ -82,10 +99,10 @@ export function hasRole(user: User | null, requiredRole: UserRole | UserRole[]):
 }
 
 export function isAdmin(user: User | null): boolean {
-  return getUserRoleName(user) === 'admin';
+  return getAppUserRole(user) === 'admin';
 }
 
 export function isAgent(user: User | null): boolean {
-  const roleName = getUserRoleName(user);
-  return roleName === 'admin' || roleName === 'agent' || roleName === 'tecnico';
+  const appRole = getAppUserRole(user);
+  return appRole === 'admin' || appRole === 'agent';
 }

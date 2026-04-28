@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useAuth } from "@/components/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +24,15 @@ import {
   type TicketPriority,
   type TicketStatus,
 } from "@/features/tickets/schemas/ticket.schema";
+import { getAppUserRole } from "@/features/users/schemas";
+
+type KanbanPageProps = {
+  assignedToId?: number;
+  title?: string;
+  description?: string;
+  emptyMessage?: string;
+  badgeLabel?: string;
+};
 
 type BoardView = "board" | "list" | "table";
 type PriorityFilter = "all" | TicketPriority;
@@ -52,7 +63,14 @@ function normalizePriority(value: string | undefined): TicketPriority {
   return "medium";
 }
 
-export function KanbanPage() {
+export function KanbanPage({
+  assignedToId,
+  title = "Tablero Kanban UTI",
+  description = "Tickets reales desde API. Arrastra tarjetas entre columnas para cambiar estado.",
+  emptyMessage = "Sin tickets",
+  badgeLabel = "tickets",
+}: KanbanPageProps) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { list, updateStatus } = useTickets();
 
@@ -64,12 +82,17 @@ export function KanbanPage() {
   const [dragFromStatus, setDragFromStatus] = useState<TicketStatus | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<TicketStatus | null>(null);
 
+  if (!assignedToId && getAppUserRole(user) === "agent") {
+    return <Navigate to="/technician/kanban" replace />;
+  }
+
   const { data: tickets = [], isLoading, isFetching } = useQuery<Ticket[]>({
-    queryKey: ["kanban-tickets", search, priorityFilter],
+    queryKey: ["kanban-tickets", assignedToId ?? "all", search, priorityFilter],
     queryFn: () =>
       list({
         page: 1,
         limit: 20,
+        assignedToId,
         search: search || undefined,
         priority: priorityFilter === "all" ? undefined : priorityFilter,
       }),
@@ -176,13 +199,13 @@ export function KanbanPage() {
       <header className="rounded-xl border bg-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-base font-semibold sm:text-lg">Tablero Kanban UTI</h1>
+            <h1 className="text-base font-semibold sm:text-lg">{title}</h1>
             <p className="text-xs text-muted-foreground sm:text-sm">
-              Tickets reales desde API. Arrastra tarjetas entre columnas para cambiar estado.
+              {description}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary">{totalTickets} tickets</Badge>
+            <Badge variant="secondary">{totalTickets} {badgeLabel}</Badge>
             <div className="flex rounded-md border bg-muted/40 p-1">
               <Button type="button" size="sm" variant={view === "board" ? "default" : "ghost"} onClick={() => setView("board")}>
                 Board
@@ -278,7 +301,7 @@ export function KanbanPage() {
                 ))}
                 {column.tickets.length === 0 ? (
                   <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
-                    Sin tickets
+                    {emptyMessage}
                   </div>
                 ) : null}
               </div>
@@ -308,7 +331,7 @@ export function KanbanPage() {
                     <Badge className={cn("border", getPriorityColor(ticket.priority))}>{getPriorityLabel(ticket.priority)}</Badge>
                   </div>
                 ))}
-                {column.tickets.length === 0 ? <p className="text-sm text-muted-foreground">Sin tickets</p> : null}
+                {column.tickets.length === 0 ? <p className="text-sm text-muted-foreground">{emptyMessage}</p> : null}
               </CardContent>
             </Card>
           ))}

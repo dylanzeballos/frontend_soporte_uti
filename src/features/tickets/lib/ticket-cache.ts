@@ -2,7 +2,15 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import type { Ticket, TicketStatus } from '@/features/tickets/schemas/ticket.schema';
 
-const ticketQueryKeys = [['tickets'], ['my-tickets'], ['kanban-tickets']] as const;
+const ticketQueryKeys = [
+  ['tickets'],
+  ['my-tickets'],
+  ['kanban-tickets'],
+  ['technician-dashboard'],
+  ['technician-assignments'],
+  ['technician-reports'],
+  ['technician-pending'],
+] as const;
 
 function updateTicketInList(
   tickets: Ticket[] | undefined,

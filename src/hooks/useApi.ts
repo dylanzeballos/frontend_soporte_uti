@@ -152,6 +152,7 @@ export function useTickets() {
     if (filters?.status) query.set('status', filters.status);
     if (filters?.priority) query.set('priority', filters.priority);
     if (filters?.assignedToId) query.set('assignedToId', String(filters.assignedToId));
+    if (typeof filters?.unassigned === 'boolean') query.set('unassigned', String(filters.unassigned));
     if (filters?.createdById) query.set('createdById', String(filters.createdById));
     if (filters?.excludeCreatedById) query.set('excludeCreatedById', String(filters.excludeCreatedById));
     if (filters?.search) query.set('search', filters.search);

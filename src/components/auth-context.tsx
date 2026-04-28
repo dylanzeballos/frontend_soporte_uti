@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
-import type { User } from '@/features/users/schemas';
+import { normalizeAppRoleName, type User } from '@/features/users/schemas';
 
 interface AuthState {
   user: User | null;
@@ -10,7 +10,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -34,10 +34,7 @@ type AuthResponse = {
 };
 
 function normalizeRoleName(role: string | null | undefined) {
-  const normalized = role?.trim().toLowerCase();
-  return normalized === 'admin' || normalized === 'agent' || normalized === 'user'
-    ? normalized
-    : 'user';
+  return normalizeAppRoleName(role);
 }
 
 function normalizeUser(apiUser: ApiUser): User {
@@ -142,11 +139,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
       setState({ user, isAuthenticated: true, isLoading: false });
       toast.success(`Bienvenido, ${user.name || user.email}`);
-      return;
+      return user;
     }
 
     clearStoredSession();
     setState({ user: null, isAuthenticated: false, isLoading: false });
+    throw new Error('No se pudo cargar el perfil del usuario');
   }, []);
 
   const logout = useCallback(async () => {
