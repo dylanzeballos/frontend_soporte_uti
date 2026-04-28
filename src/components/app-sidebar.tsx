@@ -80,27 +80,9 @@ const navSections: NavSection[] = [
       },
       {
         title: "Mis solicitudes",
+        to: "/tickets",
         icon: FileTextIcon,
         roles: ["user"],
-        children: [
-          {
-            title: "Ver solicitudes",
-            to: "/tickets",
-            roles: ["user"],
-          },
-          {
-            title: "Editar",
-            to: "/tickets",
-            statusAware: true,
-            roles: ["user"],
-          },
-          {
-            title: "Cancelar",
-            to: "/tickets",
-            statusAware: true,
-            roles: ["user"],
-          },
-        ],
       },
       {
         title: "Tablero Kanban",
@@ -112,7 +94,7 @@ const navSections: NavSection[] = [
         title: "Dashboard",
         to: "/dashboard",
         icon: LayoutDashboardIcon,
-        roles: ["admin", "agent", "user"],
+        roles: ["admin", "agent"],
       },
     ],
   },
