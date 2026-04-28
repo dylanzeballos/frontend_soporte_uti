@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/components/auth-context';
 import { loginSchema, type LoginForm } from '@/features/auth/schemas/login.schema';
+
 
 export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export function LoginPage() {
       await login(data.email, data.password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de autenticacion');
+      setError(err instanceof Error ? err.message : 'Error de autenticación');
     } finally {
       setIsLoading(false);
     }
@@ -69,15 +70,32 @@ export function LoginPage() {
                   {...register('email')}
                 />
               </div>
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
             </div>
-
             <div className="space-y-2">
-              <CardTitle className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">
-                Gestor Soporte UTI
-              </CardTitle>
-              <CardDescription className="mx-auto max-w-sm text-sm leading-6 text-slate-600 sm:text-base">
-                Ingresa tus credenciales.
-              </CardDescription>
+              <Label htmlFor="password">Contraseña</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  className="pl-9 pr-10"
+                  {...register('password')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
             </div>
           </CardContent>
           <CardFooter className="mt-2 flex flex-col gap-4 pt-2">
