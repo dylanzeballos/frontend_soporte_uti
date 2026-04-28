@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth-context';
 import { useTickets } from '@/hooks/useApi';
 import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Ticket as TicketType } from '@/features/tickets/schemas/ticket.schema';
-import type { User } from '@/features/users/schemas';
+import { getAppUserRole, type User } from '@/features/users/schemas';
 
 type DashboardUser = User & {
   firstName?: string;
@@ -33,6 +34,10 @@ export function DashboardPage() {
   const { user } = useAuth();
   const dashboardUser = user as DashboardUser | null;
   const { list } = useTickets();
+
+  if (getAppUserRole(user) === 'agent') {
+    return <Navigate to="/technician/dashboard" replace />;
+  }
 
   const { data: tickets = [] } = useQuery<TicketType[]>({
     queryKey: ['tickets', 'dashboard', user?.id],

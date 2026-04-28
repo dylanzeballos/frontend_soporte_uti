@@ -76,7 +76,10 @@ export function UsersAdminPage() {
 
             <div className="space-y-2">
               <Label htmlFor="user-role-filter">Rol</Label>
-              <Select value={usersAdmin.filters.roleId} onValueChange={usersAdmin.setRoleId}>
+              <Select
+                value={usersAdmin.filters.roleId}
+                onValueChange={(value) => usersAdmin.setRoleId(value ?? 'all')}
+              >
                 <SelectTrigger id="user-role-filter">
                   <SelectValue placeholder="Rol">
                     {usersAdmin.filters.roleId === 'all'
@@ -97,7 +100,10 @@ export function UsersAdminPage() {
 
             <div className="space-y-2">
               <Label htmlFor="user-corporation-filter">Corporación</Label>
-              <Select value={usersAdmin.filters.corporationId} onValueChange={usersAdmin.setCorporationId}>
+              <Select
+                value={usersAdmin.filters.corporationId}
+                onValueChange={(value) => usersAdmin.setCorporationId(value ?? 'all')}
+              >
                 <SelectTrigger id="user-corporation-filter">
                   <SelectValue placeholder="Corporación">
                     {usersAdmin.filters.corporationId === 'all'

@@ -62,11 +62,9 @@ export function ConfirmDialog({
 
             {/* Acciones */}
             <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-              <DialogPrimitive.Close asChild>
-                <Button type="button" variant="outline" disabled={isLoading}>
-                  {cancelLabel}
-                </Button>
-              </DialogPrimitive.Close>
+              <Button type="button" variant="outline" disabled={isLoading} onClick={() => onOpenChange(false)}>
+                {cancelLabel}
+              </Button>
               <Button
                 type="button"
                 variant={variant}

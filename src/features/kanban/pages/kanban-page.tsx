@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -15,6 +16,8 @@ import {
   UserRound,
   XCircle,
 } from "lucide-react";
+
+import { useAuth } from "@/components/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,16 +39,20 @@ import {
   type TicketPriority,
   type TicketStatus,
 } from "@/features/tickets/schemas/ticket.schema";
+import { getAppUserRole } from "@/features/users/schemas";
+
+type KanbanPageProps = {
+  assignedToId?: number;
+  title?: string;
+  description?: string;
+  emptyMessage?: string;
+  badgeLabel?: string;
+};
 
 type BoardView = "board" | "list" | "table";
 type PriorityFilter = "all" | TicketPriority;
 
 const STATUS_COLUMNS: TicketStatus[] = ["open", "in_progress", "resolved", "closed", "cancelled"];
-const VIEW_LABELS: Record<BoardView, string> = {
-  board: "Board",
-  list: "Lista",
-  table: "Tabla",
-};
 
 const STATUS_META: Record<
   TicketStatus,
@@ -95,7 +102,13 @@ function getAssigneeName(ticket: Ticket): string {
 
 function normalizeStatus(value: string | undefined): TicketStatus {
   const normalized = (value ?? "").toLowerCase().trim();
-  if (normalized === "open" || normalized === "in_progress" || normalized === "resolved" || normalized === "closed" || normalized === "cancelled") {
+  if (
+    normalized === "open" ||
+    normalized === "in_progress" ||
+    normalized === "resolved" ||
+    normalized === "closed" ||
+    normalized === "cancelled"
+  ) {
     return normalized;
   }
   return "open";
@@ -109,7 +122,22 @@ function normalizePriority(value: string | undefined): TicketPriority {
   return "medium";
 }
 
-export function KanbanPage() {
+function EmptyState({ message }: { message: string }) {
+  return (
+    <Card>
+      <CardContent className="py-12 text-center text-muted-foreground">{message}</CardContent>
+    </Card>
+  );
+}
+
+export function KanbanPage({
+  assignedToId,
+  title = "Tablero Kanban UTI",
+  description = "Tickets reales desde API. Arrastra tarjetas entre columnas para cambiar estado.",
+  emptyMessage = "Sin tickets",
+  badgeLabel = "tickets",
+}: KanbanPageProps) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { list, updateStatus } = useTickets();
 
@@ -121,12 +149,17 @@ export function KanbanPage() {
   const [dragFromStatus, setDragFromStatus] = useState<TicketStatus | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<TicketStatus | null>(null);
 
+  if (!assignedToId && getAppUserRole(user) === "agent") {
+    return <Navigate to="/technician/kanban" replace />;
+  }
+
   const { data: tickets = [], isLoading, isFetching } = useQuery<Ticket[]>({
-    queryKey: ["kanban-tickets", search, priorityFilter],
+    queryKey: ["kanban-tickets", assignedToId ?? "all", search, priorityFilter],
     queryFn: () =>
       list({
         page: 1,
         limit: 20,
+        assignedToId,
         search: search || undefined,
         priority: priorityFilter === "all" ? undefined : priorityFilter,
       }),
@@ -165,7 +198,7 @@ export function KanbanPage() {
       if (context?.previous) {
         setBoardTickets(context.previous);
       }
-      toast.error("No se pudo mover el ticket. Se revirtió el cambio.");
+      toast.error("No se pudo mover el ticket. Se revirtio el cambio.");
     },
     onSuccess: (updatedTicket) => {
       setBoardTickets((current) =>
@@ -188,6 +221,7 @@ export function KanbanPage() {
 
   const totalTickets = boardTickets.length;
   const activeColumns = columns.filter((column) => column.tickets.length > 0).length;
+  const isEmpty = totalTickets === 0;
 
   function onCardDragStart(event: DragEvent<HTMLDivElement>, ticketId: number, sourceStatus: TicketStatus) {
     setDraggedTicketId(ticketId);
@@ -236,15 +270,15 @@ export function KanbanPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-md border bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground">
               <KanbanSquare className="h-3.5 w-3.5 text-primary" />
-              Operación de tickets
+              Operacion de tickets
             </div>
-            <h1 className="mt-3 text-base font-semibold sm:text-lg">Tablero Kanban UTI</h1>
-            <p className="text-xs text-muted-foreground sm:text-sm">
-              Tickets reales desde API. Arrastra tarjetas entre columnas para cambiar estado.
-            </p>
+            <h1 className="mt-3 text-base font-semibold sm:text-lg">{title}</h1>
+            <p className="text-xs text-muted-foreground sm:text-sm">{description}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{totalTickets} tickets</Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">
+              {totalTickets} {badgeLabel}
+            </Badge>
             <Badge variant="outline">{activeColumns} columnas activas</Badge>
             <div className="flex rounded-md border bg-muted/40 p-1">
               <Button type="button" size="sm" variant={view === "board" ? "default" : "ghost"} onClick={() => setView("board")}>
@@ -296,182 +330,196 @@ export function KanbanPage() {
         </Card>
       ) : null}
 
-      {view === "board" && !isLoading && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {columns.map((column) => {
-            const meta = STATUS_META[column.key];
-            const StatusIcon = meta.icon;
+      {view === "board" && !isLoading ? (
+        isEmpty ? (
+          <EmptyState message={emptyMessage} />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            {columns.map((column) => {
+              const meta = STATUS_META[column.key];
+              const StatusIcon = meta.icon;
 
-            return (
-              <article
-                key={column.key}
-                className={cn(
-                  "flex min-h-[520px] flex-col rounded-[var(--radius-panel)] border shadow-[var(--shadow-1)] transition-all",
-                  meta.shell,
-                  dragOverStatus === column.key && "border-primary/60 ring-2 ring-primary/15"
-                )}
-                onDragOver={(event) => onColumnDragOver(event, column.key)}
-                onDrop={(event) => onColumnDrop(event, column.key)}
-                onDragLeave={() => setDragOverStatus(null)}
-              >
-                <div className="border-b border-border/60 px-4 py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <div className={cn("rounded-md border bg-background/80 p-1.5", meta.accent)}>
-                        <StatusIcon className="h-4 w-4" />
+              return (
+                <article
+                  key={column.key}
+                  className={cn(
+                    "flex min-h-[520px] flex-col rounded-[var(--radius-panel)] border shadow-[var(--shadow-1)] transition-all",
+                    meta.shell,
+                    dragOverStatus === column.key && "border-primary/60 ring-2 ring-primary/15"
+                  )}
+                  onDragOver={(event) => onColumnDragOver(event, column.key)}
+                  onDrop={(event) => onColumnDrop(event, column.key)}
+                  onDragLeave={() => setDragOverStatus(null)}
+                >
+                  <div className="border-b border-border/60 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div className={cn("rounded-md border bg-background/80 p-1.5", meta.accent)}>
+                          <StatusIcon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <h2 className="truncate text-sm font-semibold">{column.title}</h2>
+                          <p className="text-xs text-muted-foreground">{column.tickets.length} ticket(s)</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <h2 className="truncate text-sm font-semibold">{column.title}</h2>
-                        <p className="text-xs text-muted-foreground">{column.tickets.length} ticket(s)</p>
+                      <Badge variant="outline" className="shrink-0">
+                        {column.tickets.length}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 space-y-3 overflow-y-auto p-3">
+                    {column.tickets.map((ticket) => {
+                      const PriorityIcon = PRIORITY_ICON[ticket.priority];
+
+                      return (
+                        <Card
+                          key={ticket.id}
+                          className={cn(
+                            "cursor-grab border-border/70 bg-card/95 shadow-[var(--shadow-1)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-2)] active:cursor-grabbing",
+                            draggedTicketId === ticket.id && "opacity-60"
+                          )}
+                          draggable
+                          onDragStart={(event) => onCardDragStart(event, ticket.id, column.key)}
+                          onDragEnd={resetDragState}
+                        >
+                          <CardHeader className="gap-3 pb-2">
+                            <div className="flex items-start gap-2">
+                              <div className="rounded-md border bg-muted/60 p-1 text-muted-foreground">
+                                <GripVertical className="h-3.5 w-3.5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-start gap-2">
+                                  <CardTitle className="min-w-0 flex-1 break-all pr-1 text-sm leading-5 text-foreground">
+                                    {ticket.title}
+                                  </CardTitle>
+                                  <Badge className={cn("shrink-0 border", getPriorityColor(ticket.priority))}>
+                                    <PriorityIcon className="mr-1 h-3 w-3" />
+                                    {getPriorityLabel(ticket.priority)}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                              <Badge variant="outline" className="shrink-0">
+                                <TicketIcon className="mr-1 h-3 w-3" />
+                                #{ticket.id}
+                              </Badge>
+                              <Badge className={cn("border", getStatusColor(ticket.status))}>
+                                {getStatusLabel(ticket.status)}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3 pt-0 text-xs">
+                            <p className="line-clamp-3 leading-5 text-muted-foreground">{ticket.description}</p>
+
+                            <div className="grid gap-2">
+                              <div className="rounded-md border border-border/60 bg-muted/35 px-3 py-2">
+                                <div className="mb-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                  <UserRound className="h-3 w-3" />
+                                  Asignado
+                                </div>
+                                <p className="break-words font-medium text-foreground">{getAssigneeName(ticket)}</p>
+                              </div>
+                              <div className="rounded-md border border-border/60 bg-muted/35 px-3 py-2">
+                                <div className="mb-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                  <Clock3 className="h-3 w-3" />
+                                  Actualizado
+                                </div>
+                                <p className="text-foreground">{new Date(ticket.updatedAt).toLocaleString("es-BO")}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                    {column.tickets.length === 0 ? (
+                      <div className="rounded-lg border border-dashed border-border/70 bg-background/40 p-4 text-xs text-muted-foreground">
+                        Sin tickets
                       </div>
-                    </div>
-                    <Badge variant="outline" className="shrink-0">
-                      {column.tickets.length}
-                    </Badge>
+                    ) : null}
                   </div>
-                </div>
+                </article>
+              );
+            })}
+          </div>
+        )
+      ) : null}
 
-                <div className="flex-1 space-y-3 overflow-y-auto p-3">
-                  {column.tickets.map((ticket) => {
-                    const PriorityIcon = PRIORITY_ICON[ticket.priority];
-
-                    return (
-                      <Card
-                        key={ticket.id}
-                        className={cn(
-                          "cursor-grab border-border/70 bg-card/95 shadow-[var(--shadow-1)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-2)] active:cursor-grabbing",
-                          draggedTicketId === ticket.id && "opacity-60"
-                        )}
-                        draggable
-                        onDragStart={(event) => onCardDragStart(event, ticket.id, column.key)}
-                        onDragEnd={resetDragState}
-                      >
-                        <CardHeader className="gap-3 pb-2">
-                          <div className="flex items-start gap-2">
-                            <div className="rounded-md border bg-muted/60 p-1 text-muted-foreground">
-                              <GripVertical className="h-3.5 w-3.5" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start gap-2">
-                                <CardTitle className="min-w-0 flex-1 break-all pr-1 text-sm leading-5 text-foreground">
-                                  {ticket.title}
-                                </CardTitle>
-                                <Badge className={cn("shrink-0 border", getPriorityColor(ticket.priority))}>
-                                  <PriorityIcon className="mr-1 h-3 w-3" />
-                                  {getPriorityLabel(ticket.priority)}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                            <Badge variant="outline" className="shrink-0">
-                              <TicketIcon className="mr-1 h-3 w-3" />
-                              #{ticket.id}
-                            </Badge>
-                            <span className="truncate">{VIEW_LABELS[view]}</span>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3 pt-0 text-xs">
-                          <p className="line-clamp-3 leading-5 text-muted-foreground">{ticket.description}</p>
-
-                          <div className="grid gap-2">
-                            <div className="rounded-md border border-border/60 bg-muted/35 px-3 py-2">
-                              <div className="mb-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                                <UserRound className="h-3 w-3" />
-                                Asignado
-                              </div>
-                              <p className="break-words font-medium text-foreground">{getAssigneeName(ticket)}</p>
-                            </div>
-                            <div className="rounded-md border border-border/60 bg-muted/35 px-3 py-2">
-                              <div className="mb-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                                <Clock3 className="h-3 w-3" />
-                                Actualizado
-                              </div>
-                              <p className="text-foreground">{new Date(ticket.updatedAt).toLocaleString("es-BO")}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                  {column.tickets.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-border/70 bg-background/40 p-4 text-xs text-muted-foreground">
-                      Sin tickets
-                    </div>
-                  ) : null}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
-
-      {view === "list" && !isLoading && (
-        <div className="space-y-3">
-          {columns.map((column) => (
-            <Card key={column.key}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">
-                  {column.title} ({column.tickets.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {column.tickets.map((ticket) => (
-                  <div key={ticket.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
-                    <div>
-                      <p className="font-medium">{ticket.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        #{ticket.id} · {getAssigneeName(ticket)}
-                      </p>
-                    </div>
-                    <Badge className={cn("border", getPriorityColor(ticket.priority))}>{getPriorityLabel(ticket.priority)}</Badge>
-                  </div>
-                ))}
-                {column.tickets.length === 0 ? <p className="text-sm text-muted-foreground">Sin tickets</p> : null}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {view === "table" && !isLoading && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Tabla de tickets</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Titulo</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Prioridad</TableHead>
-                  <TableHead>Asignado</TableHead>
-                  <TableHead>Creado</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {boardTickets.map((ticket) => (
-                  <TableRow key={ticket.id}>
-                    <TableCell className="font-medium">#{ticket.id}</TableCell>
-                    <TableCell>{ticket.title}</TableCell>
-                    <TableCell>
-                      <Badge className={cn("border", getStatusColor(ticket.status))}>{getStatusLabel(ticket.status)}</Badge>
-                    </TableCell>
-                    <TableCell>
+      {view === "list" && !isLoading ? (
+        isEmpty ? (
+          <EmptyState message={emptyMessage} />
+        ) : (
+          <div className="space-y-3">
+            {columns.map((column) => (
+              <Card key={column.key}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">
+                    {column.title} ({column.tickets.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {column.tickets.map((ticket) => (
+                    <div key={ticket.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
+                      <div>
+                        <p className="font-medium">{ticket.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          #{ticket.id} · {getAssigneeName(ticket)}
+                        </p>
+                      </div>
                       <Badge className={cn("border", getPriorityColor(ticket.priority))}>{getPriorityLabel(ticket.priority)}</Badge>
-                    </TableCell>
-                    <TableCell>{getAssigneeName(ticket)}</TableCell>
-                    <TableCell>{new Date(ticket.createdAt).toLocaleDateString("es-BO")}</TableCell>
+                    </div>
+                  ))}
+                  {column.tickets.length === 0 ? <p className="text-sm text-muted-foreground">Sin tickets</p> : null}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )
+      ) : null}
+
+      {view === "table" && !isLoading ? (
+        isEmpty ? (
+          <EmptyState message={emptyMessage} />
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Tabla de tickets</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Titulo</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Prioridad</TableHead>
+                    <TableHead>Asignado</TableHead>
+                    <TableHead>Creado</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                </TableHeader>
+                <TableBody>
+                  {boardTickets.map((ticket) => (
+                    <TableRow key={ticket.id}>
+                      <TableCell className="font-medium">#{ticket.id}</TableCell>
+                      <TableCell>{ticket.title}</TableCell>
+                      <TableCell>
+                        <Badge className={cn("border", getStatusColor(ticket.status))}>{getStatusLabel(ticket.status)}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={cn("border", getPriorityColor(ticket.priority))}>{getPriorityLabel(ticket.priority)}</Badge>
+                      </TableCell>
+                      <TableCell>{getAssigneeName(ticket)}</TableCell>
+                      <TableCell>{new Date(ticket.createdAt).toLocaleDateString("es-BO")}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )
+      ) : null}
 
       {isFetching && !isLoading ? (
         <p className="text-xs text-muted-foreground">Actualizando tablero...</p>

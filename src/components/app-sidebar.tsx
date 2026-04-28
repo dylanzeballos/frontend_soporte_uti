@@ -6,6 +6,7 @@ import {
   ChevronDownIcon,
   FileTextIcon,
   HouseIcon,
+  InboxIcon,
   LayoutDashboardIcon,
   SendIcon,
   SquareKanbanIcon,
@@ -18,7 +19,7 @@ import { useAuth } from "@/components/auth-context"
 import { ModeToggle } from "@/components/mode-toggle"
 import { NotificationCenter } from "@/components/notification-center"
 import { UserNav } from "@/components/user-nav"
-import type { UserRole } from "@/features/users/schemas"
+import { getAppUserRole, getDefaultRouteForUser, type UserRole } from "@/features/users/schemas"
 import { cn } from "@/lib/utils"
 import {
   Sidebar,
@@ -94,7 +95,42 @@ const navSections: NavSection[] = [
         title: "Dashboard",
         to: "/dashboard",
         icon: LayoutDashboardIcon,
-        roles: ["admin", "agent"],
+        roles: ["admin"],
+      },
+    ],
+  },
+  {
+    label: "Tecnico",
+    items: [
+      {
+        title: "Dashboard",
+        to: "/technician/dashboard",
+        icon: LayoutDashboardIcon,
+        roles: ["agent"],
+      },
+      {
+        title: "Kanban",
+        to: "/technician/kanban",
+        icon: SquareKanbanIcon,
+        roles: ["agent"],
+      },
+      {
+        title: "Mis asignaciones",
+        to: "/technician/assignments",
+        icon: TicketIcon,
+        roles: ["agent"],
+      },
+      {
+        title: "Tickets pendientes",
+        to: "/technician/pending",
+        icon: InboxIcon,
+        roles: ["agent"],
+      },
+      {
+        title: "Mis reportes",
+        to: "/technician/reports",
+        icon: FileTextIcon,
+        roles: ["agent"],
       },
     ],
   },
@@ -105,7 +141,7 @@ const navSections: NavSection[] = [
         title: "Gestion de tickets",
         to: "/tickets",
         icon: TicketIcon,
-        roles: ["admin", "agent"],
+        roles: ["admin"],
       },
       {
         title: "Modificar unidades",
@@ -143,6 +179,11 @@ function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/")) return "Inicio"
   if (isPathActive(pathname, "/dashboard")) return "Dashboard"
   if (isPathActive(pathname, "/kanban")) return "Tablero Kanban"
+  if (isPathActive(pathname, "/technician/dashboard")) return "Dashboard tecnico"
+  if (isPathActive(pathname, "/technician/kanban")) return "Kanban tecnico"
+  if (isPathActive(pathname, "/technician/assignments")) return "Mis asignaciones"
+  if (isPathActive(pathname, "/technician/pending")) return "Tickets pendientes"
+  if (isPathActive(pathname, "/technician/reports")) return "Mis reportes"
   if (isPathActive(pathname, "/tickets")) return "Tickets"
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
   if (isPathActive(pathname, "/admin/units")) return "Unidades"
@@ -175,15 +216,16 @@ function AppShell({ children }: { children?: React.ReactNode }) {
 
   const visibleSections = React.useMemo(() => {
     if (!user) return []
+    const appRole = getAppUserRole(user)
 
     return navSections
       .map((section) => ({
         ...section,
         items: section.items
-          .filter((item) => item.roles.includes(user.role))
+          .filter((item) => item.roles.includes(appRole))
           .map((item) => ({
             ...item,
-            children: item.children?.filter((child) => child.roles.includes(user.role)),
+            children: item.children?.filter((child) => child.roles.includes(appRole)),
           }))
           .filter((item) => item.to || item.children?.length),
       }))
@@ -237,7 +279,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
           <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
             <button
               type="button"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate(getDefaultRouteForUser(user))}
               className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-accent text-sidebar-accent-foreground ring-sidebar-ring transition-colors hover:bg-sidebar-accent/90 focus-visible:outline-none focus-visible:ring-2 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
               aria-label="Ir al dashboard"
             >

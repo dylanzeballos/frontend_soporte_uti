@@ -5,6 +5,13 @@ import { ServiceCreatePage, ServicesEntryPage, ServicesListPage } from '@/featur
 import { RoleCreatePage, RolesEntryPage, RolesListPage } from '@/features/roles/pages';
 import { UnitCreatePage, UnitsEntryPage, UnitsListPage } from '@/features/units/pages';
 import { KanbanPage } from '@/features/kanban/pages';
+import {
+  TechnicianAssignmentsPage,
+  TechnicianDashboardPage,
+  TechnicianKanbanPage,
+  TechnicianPendingTicketsPage,
+  TechnicianReportsPage,
+} from '@/features/technician/pages';
 import { UsersAdminPage } from '@/features/users/pages';
 import type { ReactNode } from 'react';
 
@@ -43,6 +50,31 @@ export const routes: AppRoute[] = [
   {
     path: '/kanban',
     element: <KanbanPage />,
+    protected: true,
+  },
+  {
+    path: '/technician/dashboard',
+    element: <TechnicianDashboardPage />,
+    protected: true,
+  },
+  {
+    path: '/technician/kanban',
+    element: <TechnicianKanbanPage />,
+    protected: true,
+  },
+  {
+    path: '/technician/assignments',
+    element: <TechnicianAssignmentsPage />,
+    protected: true,
+  },
+  {
+    path: '/technician/pending',
+    element: <TechnicianPendingTicketsPage />,
+    protected: true,
+  },
+  {
+    path: '/technician/reports',
+    element: <TechnicianReportsPage />,
     protected: true,
   },
   {

@@ -107,7 +107,7 @@ export function UserFormComponent({
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-role">Rol</Label>
-              <Select value={values.roleId} onValueChange={(value) => setField('roleId', value)}>
+              <Select value={values.roleId} onValueChange={(value) => setField('roleId', value ?? '')}>
                 <SelectTrigger id="user-role">
                   <SelectValue placeholder="Selecciona rol">{selectedRoleName}</SelectValue>
                 </SelectTrigger>
@@ -122,7 +122,10 @@ export function UserFormComponent({
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-corporation">Corporación</Label>
-              <Select value={values.corporationId || undefined} onValueChange={(value) => setField('corporationId', value)}>
+              <Select
+                value={values.corporationId || undefined}
+                onValueChange={(value) => setField('corporationId', value ?? '')}
+              >
                 <SelectTrigger id="user-corporation">
                   <SelectValue placeholder="Sin corporación">{selectedCorporationName}</SelectValue>
                 </SelectTrigger>
@@ -155,7 +158,10 @@ export function UserFormComponent({
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-status">Estado</Label>
-              <Select value={values.isActive ? 'true' : 'false'} onValueChange={(value) => setField('isActive', value === 'true')}>
+              <Select
+                value={values.isActive ? 'true' : 'false'}
+                onValueChange={(value) => setField('isActive', value === 'true')}
+              >
                 <SelectTrigger id="user-status">
                   <SelectValue>{selectedStatusLabel}</SelectValue>
                 </SelectTrigger>
