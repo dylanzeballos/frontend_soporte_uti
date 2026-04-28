@@ -1,13 +1,17 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import type { RoleItem } from '@/hooks/useApi';
 import { useRoles } from '@/hooks/useApi';
 
 export function RolesListPage() {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedRoleToDelete, setSelectedRoleToDelete] = useState<RoleItem | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { list, remove } = useRoles();
@@ -23,83 +27,104 @@ export function RolesListPage() {
       if (!result) return;
       toast.success('Rol o cargo eliminado correctamente');
       queryClient.invalidateQueries({ queryKey: ['roles'] });
+      setSelectedRoleToDelete(null);
     },
   });
 
   const handleDelete = (role: RoleItem) => {
-    const confirmed = confirm(`¿Seguro que deseas eliminar el rol o cargo "${role.name}"?`);
-    if (!confirmed) return;
+    setSelectedRoleToDelete(role);
+    setDeleteDialogOpen(true);
+  };
 
-    deleteMutation.mutate(role.id);
+  const handleConfirmDelete = () => {
+    if (selectedRoleToDelete) {
+      deleteMutation.mutate(selectedRoleToDelete.id);
+    }
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Lista de roles o cargos</h1>
-        <p className="text-sm text-muted-foreground">Roles y cargos registrados en el sistema.</p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <section className="lively-hero rounded-(--radius-panel) px-6 py-7 sm:px-8 sm:py-9">
+        <div className="relative z-10">
+          <div className="editorial-kicker">Administracion</div>
+          <h1 className="mt-5 text-[clamp(2rem,3vw,3rem)] font-bold tracking-[-0.02em] text-foreground">
+            Lista de roles o cargos
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+            Revisa, edita y elimina los roles o cargos registrados.
+          </p>
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Roles y cargos registrados</CardTitle>
-          <CardDescription>{roles.length} registros encontrados</CardDescription>
+      <Card className="ticket-entry-card rounded-(--radius-panel)">
+        <CardHeader className="px-6 pt-6 sm:px-7 sm:pt-7">
+          <CardTitle className="text-xl">Roles y cargos registrados</CardTitle>
+          <CardDescription className="leading-6">{roles.length} registros encontrados</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 pb-6 pt-2 sm:px-7 sm:pb-7">
           {isLoading ? (
             <div className="py-8 text-center text-muted-foreground">Cargando roles...</div>
           ) : roles.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-160 border-collapse text-sm">
-                <thead>
-                  <tr className="border-b text-left">
-                    <th className="px-3 py-2 font-semibold text-foreground">ID</th>
-                    <th className="px-3 py-2 font-semibold text-foreground">Nombre</th>
-                    <th className="px-3 py-2 font-semibold text-foreground">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {roles.map((role) => (
-                    <tr key={role.id} className="border-b last:border-b-0">
-                      <td className="px-3 py-2 text-muted-foreground">{role.id}</td>
-                      <td className="px-3 py-2">{role.name}</td>
-                      <td className="px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => navigate(`/admin/roles/${role.id}/edit`)}
-                            aria-label={`Editar rol o cargo ${role.id}`}
-                          >
-                            <Pencil data-icon="inline-start" />
-                            Editar
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(role)}
-                            aria-label={`Eliminar rol o cargo ${role.id}`}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 data-icon="inline-start" />
-                            Eliminar
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-3">
+              {roles.map((role) => (
+                <div
+                  key={role.id}
+                  className="rounded-[calc(var(--radius-panel)-0.35rem)] border border-border/60 bg-background/70 px-4 py-3 shadow-[0_1px_0_rgba(255,255,255,0.02)] transition-colors hover:bg-muted/30"
+                >
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/60 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                          ID {role.id}
+                        </span>
+                        <h3 className="truncate text-base font-semibold text-foreground">{role.name}</h3>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 lg:shrink-0 lg:justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/admin/roles/${role.id}/edit`)}
+                        aria-label={`Editar rol o cargo ${role.id}`}
+                      >
+                        <Pencil data-icon="inline-start" />
+                        Editar
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(role)}
+                        aria-label={`Eliminar rol o cargo ${role.id}`}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 data-icon="inline-start" />
+                        Eliminar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No hay roles o cargos para mostrar
-            </div>
+            <div className="py-8 text-center text-muted-foreground">No hay roles o cargos para mostrar</div>
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Eliminar rol o cargo"
+        description={`¿Estás seguro de que deseas eliminar el rol o cargo "${selectedRoleToDelete?.name}"? Esta acción no se puede deshacer.`}
+        actionLabel="Eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteMutation.isPending}
+        variant="destructive"
+      />
     </div>
   );
 }

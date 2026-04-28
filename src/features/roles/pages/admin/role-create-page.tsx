@@ -87,34 +87,37 @@ export function RoleCreatePage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          {isEditMode ? 'Editar rol o cargo' : 'Registrar rol o cargo'}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {isEditMode
-            ? 'Actualice los datos del rol o cargo seleccionado.'
-            : 'Complete el formulario para registrar un nuevo rol o cargo.'}
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <section className="lively-hero rounded-(--radius-panel) px-6 py-7 sm:px-8 sm:py-9">
+        <div className="relative z-10">
+          <div className="editorial-kicker">Administracion</div>
+          <h1 className="mt-5 text-[clamp(2rem,3vw,3rem)] font-bold tracking-[-0.02em] text-foreground">
+            {isEditMode ? 'Editar rol o cargo' : 'Registrar rol o cargo'}
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+            {isEditMode
+              ? 'Actualice los datos del rol o cargo seleccionado.'
+              : 'Complete el formulario para registrar un nuevo rol o cargo.'}
+          </p>
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{isEditMode ? 'Editar rol o cargo' : 'Nuevo rol o cargo'}</CardTitle>
-          <CardDescription>
+      <Card className="ticket-entry-card rounded-(--radius-panel)">
+        <CardHeader className="px-6 pt-6 sm:px-7 sm:pt-7">
+          <CardTitle className="text-xl">{isEditMode ? 'Editar rol o cargo' : 'Nuevo rol o cargo'}</CardTitle>
+          <CardDescription className="leading-6">
             {isEditMode
               ? 'Modifique el nombre del rol o cargo y guarde los cambios.'
               : 'Ingrese el nombre del rol o cargo que quiere registrar.'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 pb-6 pt-2 sm:px-7 sm:pb-7">
           {isEditMode && isLoadingRole ? (
             <p className="text-sm text-muted-foreground">Cargando datos del rol o cargo...</p>
           ) : isEditMode && !selectedRole ? (
             <p className="text-sm text-destructive">No se encontró el rol o cargo solicitado.</p>
           ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre del rol o cargo</Label>
                 <Controller

@@ -87,34 +87,37 @@ export function ServiceCreatePage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          {isEditMode ? 'Editar servicio' : 'Registrar servicio'}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {isEditMode
-            ? 'Actualice los datos del servicio seleccionado.'
-            : 'Complete el formulario para registrar un nuevo servicio.'}
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <section className="lively-hero rounded-(--radius-panel) px-6 py-7 sm:px-8 sm:py-9">
+        <div className="relative z-10">
+          <div className="editorial-kicker">Administracion</div>
+          <h1 className="mt-5 text-[clamp(2rem,3vw,3rem)] font-bold tracking-[-0.02em] text-foreground">
+            {isEditMode ? 'Editar servicio' : 'Registrar servicio'}
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+            {isEditMode
+              ? 'Actualice los datos del servicio seleccionado.'
+              : 'Complete el formulario para registrar un nuevo servicio.'}
+          </p>
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{isEditMode ? 'Editar servicio' : 'Nuevo servicio'}</CardTitle>
-          <CardDescription>
+      <Card className="ticket-entry-card rounded-(--radius-panel)">
+        <CardHeader className="px-6 pt-6 sm:px-7 sm:pt-7">
+          <CardTitle className="text-xl">{isEditMode ? 'Editar servicio' : 'Nuevo servicio'}</CardTitle>
+          <CardDescription className="leading-6">
             {isEditMode
               ? 'Modifique el nombre del servicio y guarde los cambios.'
               : 'Ingrese el nombre del servicio que quiere registrar.'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 pb-6 pt-2 sm:px-7 sm:pb-7">
           {isEditMode && isLoadingService ? (
             <p className="text-sm text-muted-foreground">Cargando datos del servicio...</p>
           ) : isEditMode && !selectedService ? (
             <p className="text-sm text-destructive">No se encontró el servicio solicitado.</p>
           ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="name">Nombre del servicio</Label>
               <Controller
@@ -129,17 +132,20 @@ export function ServiceCreatePage() {
                   />
                 )}
               />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
-              )}
+              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button type="submit" disabled={isSaving}>
                 {isSaving ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Registrar servicio'}
               </Button>
               {isEditMode ? (
-                <Button type="button" variant="outline" onClick={() => navigate('/admin/services/list')} disabled={isSaving}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/admin/services/list')}
+                  disabled={isSaving}
+                >
                   Volver a la lista
                 </Button>
               ) : (
@@ -148,7 +154,7 @@ export function ServiceCreatePage() {
                 </Button>
               )}
             </div>
-          </form>
+            </form>
           )}
         </CardContent>
       </Card>
