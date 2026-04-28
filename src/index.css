@@ -548,3 +548,11 @@
     pointer-events: none;
   }
 }
+
+@media (max-width: 639px) {
+  .login-video {
+    object-fit: cover;
+    object-position: center center;
+    transform: scale(1.08) translateZ(0);
+  }
+}
