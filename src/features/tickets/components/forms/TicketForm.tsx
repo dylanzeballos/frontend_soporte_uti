@@ -275,7 +275,7 @@ export function TicketForm({
                   : 'Describe el problema, el contexto y cualquier detalle relevante para gestionarlo.'
               }
               aria-invalid={Boolean(errors.description)}
-              className="min-h-32"
+              className="min-h-24"
               {...descriptionField}
               ref={registerFieldRef('description', descriptionField.ref)}
             />
