@@ -4,7 +4,7 @@ import type { Ticket } from '@/features/tickets/schemas/ticket.schema';
 import type { CreateTicketInput, UpdateTicketStatusInput, AssignTicketInput } from '@/features/tickets/schemas/ticket.schema';
 import type { UpdateTicketInput } from '@/features/tickets/schemas/ticket.schema';
 import type { TicketFilter } from '@/features/tickets/schemas/ticket.schema';
-import type { User, CreateUserInput } from '@/features/users/schemas';
+import type { User, CreateUserInput, UpdateUserInput } from '@/features/users/schemas';
 import type { LoginInput } from '@/features/auth/schemas/login.schema';
 import type { CreateRoleInput } from '@/features/roles/schemas';
 import type { CreateServiceInput } from '@/features/services/schemas';
@@ -22,12 +22,30 @@ export interface RoleItem {
   description?: string | null;
 }
 
-interface PaginatedResponse<T> {
+export interface CorporationItem {
+  id: number;
+  name: string;
+  isActive?: boolean;
+}
+
+export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   total: number;
   data: T[];
 }
+
+type ApiCollectionResponse<T> =
+  | T[]
+  | PaginatedResponse<T>
+  | {
+      data?: T[] | PaginatedResponse<T> | null;
+      items?: T[];
+      page?: number;
+      limit?: number;
+      total?: number;
+    }
+  | null;
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -76,6 +94,50 @@ function ensureData<T>(response: T | null, fallbackMessage: string): T {
   }
 
   return response;
+}
+
+function normalizeCollection<T>(result: ApiCollectionResponse<T>): T[] {
+  if (!result) return [];
+  if (Array.isArray(result)) return result;
+  if ('items' in result && Array.isArray(result.items)) return result.items;
+  if ('data' in result) {
+    if (Array.isArray(result.data)) return result.data;
+    if (result.data && typeof result.data === 'object' && 'data' in result.data) {
+      return result.data.data ?? [];
+    }
+  }
+  return [];
+}
+
+function normalizePaginated<T>(
+  result: ApiCollectionResponse<T>,
+  fallbackPage: number,
+  fallbackLimit: number
+): PaginatedResponse<T> {
+  if (!result) {
+    return { page: fallbackPage, limit: fallbackLimit, total: 0, data: [] };
+  }
+
+  if (Array.isArray(result)) {
+    return { page: fallbackPage, limit: fallbackLimit, total: result.length, data: result };
+  }
+
+  if ('data' in result && result.data && typeof result.data === 'object' && !Array.isArray(result.data) && 'data' in result.data) {
+    return {
+      page: typeof result.data.page === 'number' ? result.data.page : fallbackPage,
+      limit: typeof result.data.limit === 'number' ? result.data.limit : fallbackLimit,
+      total: typeof result.data.total === 'number' ? result.data.total : (result.data.data?.length ?? 0),
+      data: result.data.data ?? [],
+    };
+  }
+
+  const data = normalizeCollection(result);
+  return {
+    page: typeof result.page === 'number' ? result.page : fallbackPage,
+    limit: typeof result.limit === 'number' ? result.limit : fallbackLimit,
+    total: typeof result.total === 'number' ? result.total : data.length,
+    data,
+  };
 }
 
 export function useTickets() {
@@ -150,16 +212,34 @@ export function useTickets() {
 export function useUsers() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const list = useCallback(async (): Promise<User[]> => {
+  const listPaginated = useCallback(async (filters?: { page?: number; limit?: number; isActive?: boolean }): Promise<PaginatedResponse<User>> => {
     setIsLoading(true);
-    const result = await fetchApi<User[] | { data: User[] } | null>('/users');
-    setIsLoading(false);
-    if (!result) return [];
-    if (Array.isArray(result)) return result;
-    if (result && typeof result === 'object' && 'data' in result) {
-      return (result.data as User[]) ?? [];
+    try {
+      const page = filters?.page && filters.page > 0 ? filters.page : 1;
+      const limit = filters?.limit && filters.limit > 0 ? Math.min(filters.limit, 100) : 20;
+      const query = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+
+      if (typeof filters?.isActive === 'boolean') {
+        query.set('isActive', String(filters.isActive));
+      }
+
+      const result = await fetchApi<ApiCollectionResponse<User>>(`/users?${query.toString()}`);
+      return normalizePaginated(result, page, limit);
+    } finally {
+      setIsLoading(false);
     }
-    return [];
+  }, []);
+
+  const list = useCallback(async (filters?: { page?: number; limit?: number; isActive?: boolean }): Promise<User[]> => {
+    const result = await listPaginated(filters);
+    return result.data;
+  }, [listPaginated]);
+
+  const findOne = useCallback(async (id: number): Promise<User | null> => {
+    return await fetchApi<User>(`/users/${id}`);
   }, []);
 
   const create = useCallback(async (data: CreateUserInput) => {
@@ -167,6 +247,16 @@ export function useUsers() {
     try {
       const result = await fetchApi<User>('/users', 'POST', data);
       return ensureData(result, 'No se pudo crear el usuario');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: number, data: UpdateUserInput) => {
+    setIsLoading(true);
+    try {
+      const result = await fetchApi<User>(`/users/${id}`, 'PATCH', data);
+      return ensureData(result, 'No se pudo actualizar el usuario');
     } finally {
       setIsLoading(false);
     }
@@ -181,7 +271,27 @@ export function useUsers() {
     }
   }, []);
 
-  return { list, create, remove, isLoading };
+  return { list, listPaginated, findOne, create, update, remove, isLoading };
+}
+
+export function useCorporations() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const list = useCallback(async (): Promise<CorporationItem[]> => {
+    setIsLoading(true);
+    try {
+      const result = await fetchApi<ApiCollectionResponse<CorporationItem>>('/corporations?isActive=true');
+      return normalizeCollection(result);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const findOne = useCallback(async (id: number): Promise<CorporationItem | null> => {
+    return await fetchApi<CorporationItem>(`/corporations/${id}`);
+  }, []);
+
+  return { list, findOne, isLoading };
 }
 
 export function useServices() {
