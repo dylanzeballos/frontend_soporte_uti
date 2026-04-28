@@ -40,8 +40,8 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md border-transparent shadow-lg">
+    <div className="relative flex min-h-screen items-center justify-center bg-[url('/fce-ilustration.png')] bg-cover bg-center bg-no-repeat p-4">
+      <Card className="relative z-10 w-full max-w-md border-transparent shadow-lg">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
             <img src="/LogoFCE.webp" alt="UTI" className="h-16 w-auto" />
@@ -98,7 +98,7 @@ export function LoginPage() {
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="mt-2 flex flex-col gap-4 pt-2">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Ingresando...' : 'Iniciar sesión'}
             </Button>
