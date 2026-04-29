@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, normalizeCollectionResponse, normalizePaginatedResponse } from '@/lib/api';
 import type { Report, CreateReportInput, UpdateReportInput, ReportStatsResponse } from '@/features/reports/schemas';
 import type { PaginatedResponse } from '@/lib/api';
 
@@ -9,8 +9,8 @@ export function useReportsQuery() {
   return useQuery({
     queryKey: [REPORTS_KEY],
     queryFn: async () => {
-      const response = await apiRequest<Report[]>({ url: '/reports' });
-      return Array.isArray(response) ? response : [];
+      const response = await apiRequest<Report[] | { data?: Report[]; items?: Report[] }>({ url: '/reports' });
+      return normalizeCollectionResponse(response);
     },
   });
 }
@@ -20,10 +20,7 @@ export function usePaginatedReportsQuery(page = 1, limit = 20) {
     queryKey: [REPORTS_KEY, 'paginated', page, limit],
     queryFn: async () => {
       const response = await apiRequest<Report[] | PaginatedResponse<Report>>({ url: `/reports?page=${page}&limit=${limit}` });
-      if (Array.isArray(response)) {
-        return { page, limit, total: response.length, data: response } as PaginatedResponse<Report>;
-      }
-      return response;
+      return normalizePaginatedResponse(response, page, limit);
     },
   });
 }

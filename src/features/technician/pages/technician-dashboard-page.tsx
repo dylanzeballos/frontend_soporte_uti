@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -44,15 +43,29 @@ function isActiveStatus(status: TicketItem['status']) {
 export function TechnicianDashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isTechnician = !!user && isAgent(user);
+  const userId = user?.id ?? 0;
+
+  const { data: assignmentsResponse, isLoading: assignmentsLoading } = useFilteredTicketsQuery({
+    assignedToId: userId,
+    limit: 100,
+    enabled: isTechnician,
+  });
+  const { data: reportsResponse, isLoading: reportsLoading } = useFilteredTicketsQuery({
+    createdById: userId,
+    limit: 100,
+    enabled: isTechnician,
+  });
+  const { data: availableTicketsResponse, isLoading: pendingLoading } = useFilteredTicketsQuery({
+    limit: 100,
+    unassigned: true,
+    enabled: isTechnician,
+  });
 
   if (!user) return null;
-  if (!isAgent(user)) {
+  if (!isTechnician) {
     return <Navigate to={getDefaultRouteForUser(user)} replace />;
   }
-
-  const { data: assignmentsResponse, isLoading: assignmentsLoading } = useFilteredTicketsQuery({ assignedToId: user.id, limit: 100 });
-  const { data: reportsResponse, isLoading: reportsLoading } = useFilteredTicketsQuery({ createdById: user.id, limit: 100 });
-  const { data: availableTicketsResponse, isLoading: pendingLoading } = useFilteredTicketsQuery({ limit: 100, unassigned: true });
 
   const assignments = assignmentsResponse?.data ?? (Array.isArray(assignmentsResponse) ? assignmentsResponse : []);
   const reports = reportsResponse?.data ?? (Array.isArray(reportsResponse) ? reportsResponse : []);

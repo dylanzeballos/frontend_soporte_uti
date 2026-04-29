@@ -1,7 +1,6 @@
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -9,43 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createUnitSchema, type CreateUnitInput } from '@/features/units/schemas';
-import { useCreateUnitMutation } from '@/features/units/hooks';
+import { useCreateUnitMutation, useUnitQuery, useUpdateUnitMutation } from '@/features/units/hooks';
 
 export function UnitCreatePage() {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const unitId = Number(id);
   const isEditMode = Number.isInteger(unitId) && unitId > 0;
-  const { create, update, findOne } = useUnits();
-
-  const { data: selectedUnit, isLoading: isLoadingUnit } = useQuery({
-    queryKey: ['unit', unitId],
-    queryFn: () => findOne(unitId),
-    enabled: isEditMode,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: create,
-    onSuccess: (result) => {
-      if (!result) return;
-      toast.success(`Unidad "${result.name}" registrada correctamente`);
-      queryClient.invalidateQueries({ queryKey: ['units'] });
-      reset({ name: '' });
-      setFocus('name');
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (data: CreateUnitInput) => update(unitId, data),
-    onSuccess: (result) => {
-      if (!result) return;
-      toast.success(`Unidad "${result.name}" actualizada correctamente`);
-      queryClient.invalidateQueries({ queryKey: ['units'] });
-      queryClient.invalidateQueries({ queryKey: ['unit', unitId] });
-      navigate('/admin/units/list');
-    },
-  });
+  const { data: selectedUnit, isLoading: isLoadingUnit } = useUnitQuery(unitId);
+  const createMutation = useCreateUnitMutation();
+  const updateMutation = useUpdateUnitMutation();
 
   const {
     control,
@@ -71,11 +43,16 @@ export function UnitCreatePage() {
 
   const onSubmit = async (data: CreateUnitInput) => {
     if (isEditMode) {
-      await updateMutation.mutateAsync(data);
+      const result = await updateMutation.mutateAsync({ id: unitId, data });
+      toast.success(`Unidad "${result.name}" actualizada correctamente`);
+      navigate('/admin/units/list');
       return;
     }
 
-    await createMutation.mutateAsync(data);
+    const result = await createMutation.mutateAsync(data);
+    toast.success(`Unidad "${result.name}" registrada correctamente`);
+    reset({ name: '' });
+    setFocus('name');
   };
 
   const handleClear = () => {

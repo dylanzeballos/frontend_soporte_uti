@@ -1,4 +1,4 @@
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Save, X, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -38,9 +38,8 @@ export function ReportFormComponent({
     formState: { errors },
     control,
     setValue,
-    watch,
   } = useForm<ReportFormValues>({
-    resolver: zodResolver(reportFormSchema),
+    resolver: zodResolver(reportFormSchema) as Resolver<ReportFormValues>,
     defaultValues: initialValues,
   });
 
@@ -49,7 +48,8 @@ export function ReportFormComponent({
     name: 'components',
   });
 
-  const resolutionType = watch('resolutionType');
+  const resolutionType = useWatch({ control, name: 'resolutionType' });
+  const selectedComponents = useWatch({ control, name: 'components' }) ?? [];
 
   const onFormSubmit = handleSubmit(async (data) => {
     await onSubmit(data);
@@ -179,7 +179,7 @@ export function ReportFormComponent({
                 {fields.map((field, idx) => (
                   <div key={field.id} className="flex gap-2 rounded-md bg-background/50 p-3">
                     <Select
-                      value={watch(`components.${idx}.componentId`)?.toString() || ''}
+                      value={selectedComponents[idx]?.componentId?.toString() || ''}
                       onValueChange={(v) =>
                         setValue(`components.${idx}.componentId`, Number(v))
                       }

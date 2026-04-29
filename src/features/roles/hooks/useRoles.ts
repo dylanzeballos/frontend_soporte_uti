@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, normalizeCollectionResponse } from '@/lib/api';
 import type { Role, CreateRoleInput } from '@/features/roles/schemas';
 
 export interface RoleItem {
@@ -15,8 +15,8 @@ export function useRolesQuery() {
   return useQuery({
     queryKey: [ROLES_KEY],
     queryFn: async () => {
-      const response = await apiRequest<Role[]>({ url: '/roles' });
-      return Array.isArray(response) ? response : [];
+      const response = await apiRequest<Role[] | { data?: Role[]; items?: Role[] }>({ url: '/roles' });
+      return normalizeCollectionResponse(response);
     },
   });
 }

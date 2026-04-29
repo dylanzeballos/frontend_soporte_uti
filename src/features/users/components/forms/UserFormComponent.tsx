@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,16 +39,16 @@ export function UserFormComponent({
     register,
     handleSubmit,
     formState: { errors },
+    control,
     setValue,
-    watch,
   } = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: initialValues,
   });
 
-  const roleId = watch('roleId');
-  const corporationId = watch('corporationId');
-  const isActive = watch('isActive');
+  const roleId = useWatch({ control, name: 'roleId' });
+  const corporationId = useWatch({ control, name: 'corporationId' });
+  const isActive = useWatch({ control, name: 'isActive' });
 
   const selectedRoleName = roles.find((role) => String(role.id) === roleId)?.name;
   const selectedCorporationName = corporations.find(
@@ -148,7 +148,7 @@ export function UserFormComponent({
                 Rol <span className="text-destructive">*</span>
               </Label>
               <Select
-                value={roleId}
+                value={roleId ?? ''}
                 onValueChange={(value) => setValue('roleId', value)}
               >
                 <SelectTrigger id="user-role" aria-invalid={errors.roleId ? 'true' : 'false'}>
@@ -173,7 +173,7 @@ export function UserFormComponent({
               <Label htmlFor="user-corporation">Corporación</Label>
               <Select
                 value={corporationId || ''}
-                onValueChange={(value) => setValue('corporationId', value || null)}
+                onValueChange={(value) => setValue('corporationId', value || '')}
               >
                 <SelectTrigger id="user-corporation">
                   <SelectValue placeholder="Sin corporación">

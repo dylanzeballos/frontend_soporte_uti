@@ -37,7 +37,13 @@ api.interceptors.response.use(
 // Generic API request function
 export async function apiRequest<T>(config: AxiosRequestConfig): Promise<T> {
   const response = await api.request<T>(config);
-  return response.data?.data;
+  const payload = response.data as T | { data: T };
+
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return payload.data;
+  }
+
+  return payload as T;
 }
 
 // Helper to normalize paginated responses

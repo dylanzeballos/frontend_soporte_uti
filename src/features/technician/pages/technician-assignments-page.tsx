@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { ClipboardCheck, Inbox, Search, SquareKanban } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 
@@ -31,14 +30,13 @@ export function TechnicianAssignmentsPage() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
-  const { data: ticketsResponse, isLoading } = useFilteredTicketsQuery({ assignedToId: user.id, limit: 100 });
-
-  if (!user) return null;
-  if (!isAgent(user)) {
-    return <Navigate to={getDefaultRouteForUser(user)} replace />;
-  }
-
-  const assignments = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
+  const isTechnician = !!user && isAgent(user);
+  const { data: ticketsResponse, isLoading } = useFilteredTicketsQuery({
+    assignedToId: user?.id ?? 0,
+    limit: 100,
+    enabled: isTechnician,
+  });
+  const assignments = ticketsResponse?.data ?? [];
 
   const filteredAssignments = useMemo(() => {
     return assignments.filter((ticket) => {
@@ -53,6 +51,11 @@ export function TechnicianAssignmentsPage() {
       return matchesStatus && matchesSearch;
     });
   }, [assignments, search, status]);
+
+  if (!user) return null;
+  if (!isTechnician) {
+    return <Navigate to={getDefaultRouteForUser(user)} replace />;
+  }
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">

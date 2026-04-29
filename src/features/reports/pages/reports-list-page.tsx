@@ -1,5 +1,4 @@
 import { Plus, Search, FileText } from 'lucide-react';
-import { useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +8,6 @@ import { useReportsAdmin } from '@/features/reports/hooks/useReportsAdmin';
 
 export function ReportsListPage() {
   const reportsAdmin = useReportsAdmin();
-
-  useEffect(() => {
-    reportsAdmin.loadReports();
-  }, []);
 
   return (
     <div className="space-y-5">

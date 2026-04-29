@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, normalizeCollectionResponse } from '@/lib/api';
 import type { Service, CreateServiceInput } from '@/features/services/schemas';
 
 export interface ServiceItem {
@@ -11,12 +11,28 @@ export interface ServiceItem {
 
 const SERVICES_KEY = 'services';
 
-export function useServicesQuery() {
+type ServicesFilters = {
+  isActive?: boolean;
+  limit?: number;
+};
+
+function buildServicesParams(filters?: ServicesFilters) {
+  const queryParams = new URLSearchParams();
+  if (typeof filters?.isActive === 'boolean') queryParams.set('isActive', String(filters.isActive));
+  if (filters?.limit) queryParams.set('limit', String(Math.min(filters.limit, 100)));
+  return queryParams.toString();
+}
+
+export function useServicesQuery(filters: ServicesFilters = { isActive: true }) {
+  const queryString = buildServicesParams(filters);
+
   return useQuery({
-    queryKey: [SERVICES_KEY],
+    queryKey: [SERVICES_KEY, filters],
     queryFn: async () => {
-      const response = await apiRequest<Service[]>({ url: '/services?isActive=true' });
-      return Array.isArray(response) ? response : [];
+      const response = await apiRequest<Service[] | { data?: Service[]; items?: Service[] }>({
+        url: queryString ? `/services?${queryString}` : '/services',
+      });
+      return normalizeCollectionResponse(response);
     },
   });
 }

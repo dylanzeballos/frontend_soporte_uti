@@ -18,7 +18,7 @@ export function TicketRequestPage() {
   const createMutation = useCreateTicketMutation();
   const servicesQuery = useServicesQuery();
 
-  const { data: services = [], isLoading: servicesLoading } = servicesQuery;
+  const { data: services = [] } = servicesQuery;
 
   const serviceOptions = services.map((service) => ({
     value: service.id,

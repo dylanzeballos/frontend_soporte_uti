@@ -32,12 +32,12 @@ function getDashboardUserRole(user: DashboardUser | null) {
 export function DashboardPage() {
   const { user } = useAuth();
   const dashboardUser = user as DashboardUser | null;
+  const { data: ticketsResponse } = useFilteredTicketsQuery({ limit: 100 });
 
   if (getAppUserRole(user) === 'agent') {
     return <Navigate to="/technician/dashboard" replace />;
   }
 
-  const { data: ticketsResponse } = useFilteredTicketsQuery({ limit: 100 });
   const tickets = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
 
   const stats = {

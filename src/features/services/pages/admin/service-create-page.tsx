@@ -2,19 +2,26 @@ import { Controller, useForm } from 'react-hook-form';
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createServiceSchema, type CreateServiceInput } from '@/features/services/schemas';
-import { useServicesQuery } from '@/features/services/hooks';
+import {
+  useCreateServiceMutation,
+  useServiceQuery,
+  useUpdateServiceMutation,
+} from '@/features/services/hooks';
 
 export function ServiceCreatePage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const serviceId = Number(id);
   const isEditMode = Number.isInteger(serviceId) && serviceId > 0;
-  const { data: selectedService, isLoading: isLoadingService } = useServicesQuery();
+  const { data: selectedService, isLoading: isLoadingService } = useServiceQuery(serviceId);
+  const createMutation = useCreateServiceMutation();
+  const updateMutation = useUpdateServiceMutation();
 
 
   const {
@@ -38,6 +45,28 @@ export function ServiceCreatePage() {
 
     reset({ name: '' });
   }, [isEditMode, reset, selectedService]);
+
+  const onSubmit = async (data: CreateServiceInput) => {
+    if (isEditMode) {
+      const result = await updateMutation.mutateAsync({ id: serviceId, data });
+      toast.success(`Servicio "${result.name}" actualizado correctamente`);
+      navigate('/admin/services/list');
+      return;
+    }
+
+    const result = await createMutation.mutateAsync(data);
+    toast.success(`Servicio "${result.name}" registrado correctamente`);
+    reset({ name: '' });
+    setFocus('name');
+  };
+
+  const handleClear = () => {
+    reset({ name: '' });
+    setFocus('name');
+    toast.message('Formulario limpiado');
+  };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">

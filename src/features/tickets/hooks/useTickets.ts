@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, normalizeCollectionResponse, normalizePaginatedResponse } from '@/lib/api';
 import type {
   Ticket,
   CreateTicketInput,
@@ -16,13 +16,13 @@ export function useTicketsQuery() {
   return useQuery({
     queryKey: [TICKETS_KEY],
     queryFn: async () => {
-      const response = await apiRequest<Ticket[]>({ url: '/tickets' });
-      return Array.isArray(response) ? response : [];
+      const response = await apiRequest<Ticket[] | { data?: Ticket[]; items?: Ticket[] }>({ url: '/tickets' });
+      return normalizeCollectionResponse(response);
     },
   });
 }
 
-export function useFilteredTicketsQuery(filters?: Partial<TicketFilter>) {
+export function useFilteredTicketsQuery(filters?: Partial<TicketFilter> & { enabled?: boolean }) {
   const queryParams = new URLSearchParams();
   if (filters?.page) queryParams.set('page', String(filters.page));
   if (filters?.limit) queryParams.set('limit', String(Math.min(filters?.limit || 20, 100)));
@@ -38,14 +38,9 @@ export function useFilteredTicketsQuery(filters?: Partial<TicketFilter>) {
     queryKey: [TICKETS_KEY, 'filtered', filters],
     queryFn: async (): Promise<PaginatedResponse<Ticket>> => {
       const response = await apiRequest<PaginatedResponse<Ticket> | Ticket[]>({ url: `/tickets?${queryParams.toString()}` });
-      if (Array.isArray(response)) {
-        return { data: response, page: 1, limit: 100, total: response.length };
-      }
-      if (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data)) {
-        return response as PaginatedResponse<Ticket>;
-      }
-      return { data: [], page: 1, limit: 100, total: 0 };
+      return normalizePaginatedResponse(response, filters?.page ?? 1, Math.min(filters?.limit ?? 20, 100));
     },
+    enabled: filters?.enabled ?? true,
   });
 }
 

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,24 +11,9 @@ import { useUnitsQuery, useDeleteUnitMutation } from '@/features/units/hooks';
 export function UnitsListPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUnitToDelete, setSelectedUnitToDelete] = useState<Unit | null>(null);
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { list, remove } = useUnits();
-
-  const { data: units = [], isLoading } = useQuery<Unit[]>({
-    queryKey: ['units'],
-    queryFn: list,
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => remove(id),
-    onSuccess: (result) => {
-      if (!result) return;
-      toast.success('Unidad eliminada correctamente');
-      queryClient.invalidateQueries({ queryKey: ['units'] });
-      setSelectedUnitToDelete(null);
-    },
-  });
+  const { data: units = [], isLoading } = useUnitsQuery();
+  const deleteMutation = useDeleteUnitMutation();
 
   const handleDelete = (unit: Unit) => {
     setSelectedUnitToDelete(unit);
@@ -38,7 +22,12 @@ export function UnitsListPage() {
 
   const handleConfirmDelete = () => {
     if (selectedUnitToDelete) {
-      deleteMutation.mutate(selectedUnitToDelete.id);
+      deleteMutation.mutate(selectedUnitToDelete.id, {
+        onSuccess: () => {
+          toast.success('Unidad eliminada correctamente');
+          setSelectedUnitToDelete(null);
+        },
+      });
     }
   };
 

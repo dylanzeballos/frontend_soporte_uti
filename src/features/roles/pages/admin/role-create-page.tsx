@@ -1,7 +1,6 @@
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -9,43 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createRoleSchema, type CreateRoleInput } from '@/features/roles/schemas';
-import { useCreateRoleMutation } from '@/features/roles/hooks';
+import { useCreateRoleMutation, useRoleQuery, useUpdateRoleMutation } from '@/features/roles/hooks';
 
 export function RoleCreatePage() {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const roleId = Number(id);
   const isEditMode = Number.isInteger(roleId) && roleId > 0;
-  const { create, update, findOne } = useRoles();
-
-  const { data: selectedRole, isLoading: isLoadingRole } = useQuery({
-    queryKey: ['role', roleId],
-    queryFn: () => findOne(roleId),
-    enabled: isEditMode,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: create,
-    onSuccess: (result) => {
-      if (!result) return;
-      toast.success(`Rol o cargo "${result.name}" registrado correctamente`);
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
-      reset({ name: '' });
-      setFocus('name');
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (data: CreateRoleInput) => update(roleId, data),
-    onSuccess: (result) => {
-      if (!result) return;
-      toast.success(`Rol o cargo "${result.name}" actualizado correctamente`);
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
-      queryClient.invalidateQueries({ queryKey: ['role', roleId] });
-      navigate('/admin/roles/list');
-    },
-  });
+  const { data: selectedRole, isLoading: isLoadingRole } = useRoleQuery(roleId);
+  const createMutation = useCreateRoleMutation();
+  const updateMutation = useUpdateRoleMutation();
 
   const {
     control,
@@ -71,11 +43,16 @@ export function RoleCreatePage() {
 
   const onSubmit = async (data: CreateRoleInput) => {
     if (isEditMode) {
-      await updateMutation.mutateAsync(data);
+      const result = await updateMutation.mutateAsync({ id: roleId, data });
+      toast.success(`Rol o cargo "${result.name}" actualizado correctamente`);
+      navigate('/admin/roles/list');
       return;
     }
 
-    await createMutation.mutateAsync(data);
+    const result = await createMutation.mutateAsync(data);
+    toast.success(`Rol o cargo "${result.name}" registrado correctamente`);
+    reset({ name: '' });
+    setFocus('name');
   };
 
   const handleClear = () => {

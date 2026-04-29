@@ -48,22 +48,13 @@ export function TechnicianPendingTicketsPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [priority, setPriority] = useState<PriorityFilter>('all');
-
-  if (!user) return null;
-  if (!isAgent(user)) {
-    return <Navigate to={getDefaultRouteForUser(user)} replace />;
-  }
-
-  const { data: ticketsResponse, isLoading } = useFilteredTicketsQuery({ limit: 100, unassigned: true });
-  const tickets = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
-
-  const handleAssign = async (ticketId: number) => {
-    const updatedTicket = await assignMutation.mutateAsync({ id: ticketId, data: { assignedToId: user.id } });
-
-    toast.success('El ticket ya quedo asignado a tu cuenta');
-    syncUpdatedTicketCaches(queryClient, updatedTicket);
-    invalidateTicketCaches(queryClient);
-  };
+  const isTechnician = !!user && isAgent(user);
+  const { data: ticketsResponse, isLoading } = useFilteredTicketsQuery({
+    limit: 100,
+    unassigned: true,
+    enabled: isTechnician,
+  });
+  const tickets = ticketsResponse?.data ?? [];
 
   const pendingTickets = useMemo(() => {
     return tickets
@@ -85,6 +76,19 @@ export function TechnicianPendingTicketsPage() {
         return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
       });
   }, [tickets, priority, search, status]);
+
+  if (!user) return null;
+  if (!isTechnician) {
+    return <Navigate to={getDefaultRouteForUser(user)} replace />;
+  }
+
+  const handleAssign = async (ticketId: number) => {
+    const updatedTicket = await assignMutation.mutateAsync({ id: ticketId, data: { assignedToId: user.id } });
+
+    toast.success('El ticket ya quedo asignado a tu cuenta');
+    syncUpdatedTicketCaches(queryClient, updatedTicket);
+    invalidateTicketCaches(queryClient);
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -169,7 +173,7 @@ export function TechnicianPendingTicketsPage() {
             <div className="grid gap-4 xl:grid-cols-2">
               {pendingTickets.map((ticket) => {
                 const isAssigningThisTicket =
-                  assignMutation.isPending && assignMutation.variables === ticket.id;
+                  assignMutation.isPending && assignMutation.variables?.id === ticket.id;
 
                 return (
                   <Card key={ticket.id} className="ticket-record-card rounded-[var(--radius-panel)]">

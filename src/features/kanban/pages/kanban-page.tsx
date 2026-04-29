@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { useMemo, useState, type DragEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -143,14 +143,10 @@ export function KanbanPage({
   const [view, setView] = useState<BoardView>("board");
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
-  const [boardTickets, setBoardTickets] = useState<Ticket[]>([]);
+  const [optimisticTickets, setOptimisticTickets] = useState<Ticket[] | null>(null);
   const [draggedTicketId, setDraggedTicketId] = useState<number | null>(null);
   const [dragFromStatus, setDragFromStatus] = useState<TicketStatus | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<TicketStatus | null>(null);
-
-  if (!assignedToId && getAppUserRole(user) === "agent") {
-    return <Navigate to="/technician/kanban" replace />;
-  }
 
   const { data: ticketsResponse, isLoading, isFetching } = useFilteredTicketsQuery({
     page: 1,
@@ -161,27 +157,26 @@ export function KanbanPage({
   });
 
   const tickets = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
-
-  useEffect(() => {
-    setBoardTickets(
+  const normalizedTickets = useMemo(
+    () =>
       tickets.map((ticket) => ({
         ...ticket,
         status: normalizeStatus(ticket.status),
         priority: normalizePriority(ticket.priority),
-      }))
-    );
-  }, [tickets]);
+      })),
+    [tickets]
+  );
+  const boardTickets = optimisticTickets ?? normalizedTickets;
 
-const { mutateAsync: updateTicketStatus } = useUpdateTicketStatusMutation<Ticket>();
+  const { mutateAsync: updateTicketStatus } = useUpdateTicketStatusMutation();
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status, comment }: { id: number; status: TicketStatus; comment?: string }) =>
     updateTicketStatus({ id, data: { status, comment } }),
     onMutate: async ({ id, status }) => {
-      let previous: Ticket[] = [];
-      setBoardTickets((current) => {
-        previous = current;
-        return current.map((ticket) =>
+      const previous = boardTickets;
+      setOptimisticTickets(
+        boardTickets.map((ticket) =>
           ticket.id === id
             ? {
                 ...ticket,
@@ -189,19 +184,19 @@ const { mutateAsync: updateTicketStatus } = useUpdateTicketStatusMutation<Ticket
                 updatedAt: new Date().toISOString(),
               }
             : ticket
-        );
-      });
+        )
+      );
       return { previous };
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) {
-        setBoardTickets(context.previous);
+        setOptimisticTickets(context.previous);
       }
       toast.error("No se pudo mover el ticket. Se revirtio el cambio.");
     },
     onSuccess: (updatedTicket) => {
-      setBoardTickets((current) =>
-        current.map((ticket) => (ticket.id === updatedTicket.id ? updatedTicket : ticket))
+      setOptimisticTickets((current) =>
+        current?.map((ticket) => (ticket.id === updatedTicket.id ? updatedTicket : ticket)) ?? null
       );
       syncUpdatedTicketCaches(queryClient, updatedTicket);
       invalidateTicketCaches(queryClient);
@@ -221,6 +216,10 @@ const { mutateAsync: updateTicketStatus } = useUpdateTicketStatusMutation<Ticket
   const totalTickets = boardTickets.length;
   const activeColumns = columns.filter((column) => column.tickets.length > 0).length;
   const isEmpty = totalTickets === 0;
+
+  if (!assignedToId && getAppUserRole(user) === "agent") {
+    return <Navigate to="/technician/kanban" replace />;
+  }
 
   function onCardDragStart(event: DragEvent<HTMLDivElement>, ticketId: number, sourceStatus: TicketStatus) {
     setDraggedTicketId(ticketId);
@@ -369,7 +368,7 @@ const { mutateAsync: updateTicketStatus } = useUpdateTicketStatusMutation<Ticket
 
                   <div className="flex-1 space-y-3 overflow-y-auto p-3">
                     {column.tickets.map((ticket) => {
-                      const PriorityIcon = PRIORITY_ICON[ticket.priority];
+                      const PriorityIcon = PRIORITY_ICON[normalizePriority(ticket.priority)];
 
                       return (
                         <Card

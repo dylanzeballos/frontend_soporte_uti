@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Check,
   PencilLine,
@@ -19,10 +18,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TicketForm, type TicketSelectOption } from '@/features/tickets/components';
 import {
-  invalidateTicketCaches,
-  syncUpdatedTicketCaches,
-} from '@/features/tickets/lib/ticket-cache';
-import {
   getPriorityColor,
   getPriorityLabel,
   getStatusColor,
@@ -35,7 +30,7 @@ import {
 import { isAgent, type User } from '@/features/users/schemas';
 import { useUpdateTicketMutation, useAssignTicketMutation, useFilteredTicketsQuery } from '@/features/tickets/hooks';
 import { useUsersQuery } from '@/features/users/hooks';
-import { useServicesQuery } from '@/features/services/hooks';
+import { useServicesQuery, type ServiceItem } from '@/features/services/hooks';
 import { useRealtime } from '@/lib/realtime/context';
 
 type TicketFilterState = {
@@ -84,7 +79,6 @@ function toFormValues(ticket: Ticket): TicketFormValues {
 
 export function TicketsAdminPage() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const { status: wsStatus, notifications } = useRealtime();
   const [searchParams, setSearchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
@@ -96,10 +90,8 @@ export function TicketsAdminPage() {
     priority: 'all',
   });
   const editFormRef = useRef<HTMLDivElement | null>(null);
-
-  if (!isAgent(user)) {
-    return <Navigate to="/tickets" replace />;
-  }
+  const isAgentUser = isAgent(user);
+  const userId = user?.id ?? 0;
 
   const scope = searchParams.get('scope') === 'mine' ? 'mine' : 'all';
   const isMyRequestsView = scope === 'mine';
@@ -111,17 +103,18 @@ export function TicketsAdminPage() {
   ).length;
 
   const { data: ticketsResponse, isLoading: ticketsLoading } = useFilteredTicketsQuery({
-    createdById: isMyRequestsView ? user?.id : undefined,
-    excludeCreatedById: isMyRequestsView ? undefined : user?.id,
+    createdById: isMyRequestsView ? userId : undefined,
+    excludeCreatedById: isMyRequestsView ? undefined : userId,
     limit: 100,
+    enabled: isAgentUser,
   });
-  const tickets = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
+  const tickets = ticketsResponse?.data ?? [];
 
   const { data: usersResponse } = useUsersQuery({ limit: 100 });
   const users = usersResponse?.data ?? (Array.isArray(usersResponse) ? usersResponse : []);
 
   const { data: servicesResponse } = useServicesQuery({ limit: 100 });
-  const serviceOptions = (servicesResponse?.data ?? (Array.isArray(servicesResponse) ? servicesResponse : [])).map((service: any) => ({
+  const serviceOptions = (servicesResponse ?? []).map((service: ServiceItem) => ({
     value: service.id,
     label: service.name,
   }));
@@ -156,6 +149,10 @@ export function TicketsAdminPage() {
       firstField?.focus();
     }, 180);
   }, [selectedTicket, showForm]);
+
+  if (!isAgentUser) {
+    return <Navigate to="/tickets" replace />;
+  }
 
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch =

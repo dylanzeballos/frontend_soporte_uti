@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { Component, CreateComponentInput, UpdateComponentInput, ComponentFormValues } from '@/features/components/schemas';
 import {
@@ -30,7 +29,7 @@ function toFormValues(component: Component | null): ComponentFormValues {
 function toPayload(values: ComponentFormValues, mode: 'create' | 'edit'): CreateComponentInput | UpdateComponentInput {
   const base = {
     name: values.name.trim(),
-    description: values.description.trim() || undefined,
+    description: values.description?.trim() || undefined,
     isActive: values.isActive,
   };
 
@@ -42,7 +41,6 @@ function toPayload(values: ComponentFormValues, mode: 'create' | 'edit'): Create
 }
 
 export function useComponentsAdmin() {
-  const queryClient = useQueryClient();
   const componentsQuery = useComponentsQuery();
   const createMutation = useCreateComponentMutation();
   const updateMutation = useUpdateComponentMutation();

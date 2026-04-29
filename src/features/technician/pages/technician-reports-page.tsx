@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { FileText, Search } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
@@ -29,14 +28,13 @@ export function TechnicianReportsPage() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
-
-  if (!user) return null;
-  if (!isAgent(user)) {
-    return <Navigate to={getDefaultRouteForUser(user)} replace />;
-  }
-
-  const { data: reportsResponse, isLoading } = useFilteredTicketsQuery({ createdById: user.id, limit: 100 });
-  const reports = reportsResponse?.data ?? (Array.isArray(reportsResponse) ? reportsResponse : []);
+  const isTechnician = !!user && isAgent(user);
+  const { data: reportsResponse, isLoading } = useFilteredTicketsQuery({
+    createdById: user?.id ?? 0,
+    limit: 100,
+    enabled: isTechnician,
+  });
+  const reports = reportsResponse?.data ?? [];
 
   const filteredReports = useMemo(() => {
     return reports.filter((ticket) => {
@@ -51,6 +49,11 @@ export function TechnicianReportsPage() {
       return matchesStatus && matchesSearch;
     });
   }, [reports, search, status]);
+
+  if (!user) return null;
+  if (!isTechnician) {
+    return <Navigate to={getDefaultRouteForUser(user)} replace />;
+  }
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">

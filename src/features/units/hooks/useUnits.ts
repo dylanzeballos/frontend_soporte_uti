@@ -1,15 +1,31 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, normalizeCollectionResponse } from '@/lib/api';
 import type { Unit, CreateUnitInput, UpdateUnitInput } from '@/features/units/schemas';
 
 const UNITS_KEY = 'units';
 
-export function useUnitsQuery() {
+type UnitsFilters = {
+  isActive?: boolean;
+  limit?: number;
+};
+
+function buildUnitsParams(filters?: UnitsFilters) {
+  const queryParams = new URLSearchParams();
+  if (typeof filters?.isActive === 'boolean') queryParams.set('isActive', String(filters.isActive));
+  if (filters?.limit) queryParams.set('limit', String(Math.min(filters.limit, 100)));
+  return queryParams.toString();
+}
+
+export function useUnitsQuery(filters: UnitsFilters = { isActive: true }) {
+  const queryString = buildUnitsParams(filters);
+
   return useQuery({
-    queryKey: [UNITS_KEY],
+    queryKey: [UNITS_KEY, filters],
     queryFn: async () => {
-      const response = await apiRequest<Unit[]>({ url: '/units?isActive=true' });
-      return Array.isArray(response) ? response : [];
+      const response = await apiRequest<Unit[] | { data?: Unit[]; items?: Unit[] }>({
+        url: queryString ? `/units?${queryString}` : '/units',
+      });
+      return normalizeCollectionResponse(response);
     },
   });
 }

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, normalizeCollectionResponse } from '@/lib/api';
 import type { Component, CreateComponentInput, UpdateComponentInput } from '@/features/components/schemas';
 
 const COMPONENTS_KEY = 'components';
@@ -8,8 +8,10 @@ export function useComponentsQuery() {
   return useQuery({
     queryKey: [COMPONENTS_KEY],
     queryFn: async () => {
-      const response = await apiRequest<Component[]>({ url: '/components?isActive=true' });
-      return Array.isArray(response) ? response : [];
+      const response = await apiRequest<Component[] | { data?: Component[]; items?: Component[] }>({
+        url: '/components?isActive=true',
+      });
+      return normalizeCollectionResponse(response);
     },
   });
 }

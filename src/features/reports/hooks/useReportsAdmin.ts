@@ -1,10 +1,13 @@
-import { useState, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import type { Report, CreateReportInput, UpdateReportInput, ReportFormValues } from '@/features/reports/schemas';
-import { useReportsQuery } from '@/features/reports/hooks';
+import {
+  useCreateReportMutation,
+  useDeleteReportMutation,
+  useReportsQuery,
+  useUpdateReportMutation,
+} from '@/features/reports/hooks';
 import { useComponentsQuery } from '@/features/components/hooks';
-import { apiRequest } from '@/lib/api';
 
 export { type ReportFormValues };
 
@@ -36,7 +39,7 @@ function toPayload(values: ReportFormValues, mode: 'create' | 'edit'): CreateRep
   const base = {
     ticketId: Number(values.ticketId),
     summary: values.summary.trim(),
-    workPerformed: values.workPerformed.trim() || undefined,
+    workPerformed: values.workPerformed?.trim() || undefined,
     resolutionType: values.resolutionType?.trim() || undefined,
     startedAt: values.startedAt || undefined,
     finishedAt: values.finishedAt || undefined,
@@ -51,14 +54,15 @@ function toPayload(values: ReportFormValues, mode: 'create' | 'edit'): CreateRep
 }
 
 export function useReportsAdmin() {
-  const queryClient = useQueryClient();
   const reportsQuery = useReportsQuery();
   const componentsQuery = useComponentsQuery();
+  const createMutation = useCreateReportMutation();
+  const updateMutation = useUpdateReportMutation();
+  const deleteMutation = useDeleteReportMutation();
 
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
 
   const startCreate = useCallback(async () => {
     await componentsQuery.refetch();
@@ -78,24 +82,20 @@ export function useReportsAdmin() {
   };
 
   const submitForm = async (values: ReportFormValues) => {
-    setIsSaving(true);
     try {
       const payload = toPayload(values, editingReport ? 'edit' : 'create');
 
       if (editingReport) {
-        await apiRequest<Report>({ url: `/reports/${editingReport.id}`, method: 'PATCH', data: payload });
+        await updateMutation.mutateAsync({ id: editingReport.id, data: payload as UpdateReportInput });
         toast.success('Reporte actualizado correctamente');
       } else {
-        await apiRequest<Report>({ url: '/reports', method: 'POST', data: payload });
+        await createMutation.mutateAsync(payload as CreateReportInput);
         toast.success('Reporte creado correctamente');
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['reports'] });
       cancelForm();
     } catch {
       // Error handled by api interceptor
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -104,9 +104,8 @@ export function useReportsAdmin() {
     if (!confirmed) return;
 
     try {
-      await apiRequest<null>({ url: `/reports/${report.id}`, method: 'DELETE' });
+      await deleteMutation.mutateAsync(report.id);
       toast.success('Reporte eliminado correctamente');
-      await queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch {
       // Error handled by api interceptor
     }
@@ -118,7 +117,7 @@ export function useReportsAdmin() {
     page,
     setPage,
     isLoading: reportsQuery.isLoading,
-    isSaving,
+    isSaving: createMutation.isPending || updateMutation.isPending,
     showForm,
     editingReport,
     formValues: toFormValues(editingReport),

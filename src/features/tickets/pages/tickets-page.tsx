@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
   ClipboardPenLine,
@@ -17,7 +16,6 @@ import {
   getPriorityLabel,
   getStatusColor,
   getStatusLabel,
-  type Ticket,
 } from '@/features/tickets/schemas/ticket.schema';
 import { isAgent } from '@/features/users/schemas';
 import { useFilteredTicketsQuery } from '@/features/tickets/hooks';
@@ -51,7 +49,7 @@ function UserTicketsPage() {
     createdById: user?.id,
     limit: 50,
   });
-  const tickets = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
+  const tickets = ticketsResponse?.data ?? [];
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
