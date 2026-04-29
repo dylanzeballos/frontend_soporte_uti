@@ -89,7 +89,7 @@ const navSections: NavSection[] = [
         title: "Tablero Kanban",
         to: "/kanban",
         icon: SquareKanbanIcon,
-        roles: ["admin"],
+        roles: ["admin", "agent"],
       },
       {
         title: "Dashboard",
