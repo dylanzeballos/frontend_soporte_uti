@@ -53,6 +53,7 @@ type KanbanPageProps = {
 
 type BoardView = 'board' | 'list' | 'table';
 type PriorityFilter = 'all' | TicketPriority;
+type TicketsPerColumnLimit = '10' | '20' | '50' | 'all';
 
 const STATUS_COLUMNS: TicketStatus[] = ['open', 'in_progress', 'resolved', 'closed', 'cancelled'];
 
@@ -139,6 +140,21 @@ function hasTicketReport(ticket: Ticket) {
   return Boolean(ticket.report?.id);
 }
 
+function hasEnoughTicketsPerColumn(tickets: Ticket[], limit: number) {
+  const counts = new Map<TicketStatus, number>();
+
+  for (const status of STATUS_COLUMNS) {
+    counts.set(status, 0);
+  }
+
+  for (const ticket of tickets) {
+    const status = normalizeStatus(ticket.status);
+    counts.set(status, (counts.get(status) ?? 0) + 1);
+  }
+
+  return STATUS_COLUMNS.every((status) => (counts.get(status) ?? 0) >= limit);
+}
+
 function EmptyState({ message }: { message: string }) {
   return (
     <Card>
@@ -161,6 +177,7 @@ export function KanbanPage({
   const [view, setView] = useState<BoardView>('board');
   const [search, setSearch] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
+  const [ticketsPerColumn, setTicketsPerColumn] = useState<TicketsPerColumnLimit>('10');
   const [draggedTicketId, setDraggedTicketId] = useState<number | null>(null);
   const [dragFromStatus, setDragFromStatus] = useState<TicketStatus | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<TicketStatus | null>(null);
@@ -177,6 +194,7 @@ export function KanbanPage({
     effectiveAssignedToId ?? 'all',
     deferredSearch,
     priorityFilter,
+    ticketsPerColumn,
   ] as const;
 
   if (!assignedToId && appRole === 'agent') {
@@ -186,14 +204,41 @@ export function KanbanPage({
   const { data: tickets = [], isLoading, isFetching } = useQuery<Ticket[]>({
     queryKey: kanbanQueryKey,
     placeholderData: (previousData) => previousData,
-    queryFn: () =>
-      list({
-        page: 1,
-        limit: 100,
+    queryFn: async () => {
+      const baseFilters = {
         assignedToId: effectiveAssignedToId,
         search: deferredSearch || undefined,
         priority: priorityFilter === 'all' ? undefined : priorityFilter,
-      }),
+      };
+
+      const pageSize = 100;
+      const allTickets: Ticket[] = [];
+      const perColumnLimit =
+        ticketsPerColumn === 'all' ? Number.POSITIVE_INFINITY : Number(ticketsPerColumn);
+
+      for (let page = 1; page <= 50; page += 1) {
+        const batch = await list({
+          page,
+          limit: pageSize,
+          ...baseFilters,
+        });
+
+        allTickets.push(...batch);
+
+        if (batch.length < pageSize) {
+          break;
+        }
+
+        if (
+          Number.isFinite(perColumnLimit) &&
+          hasEnoughTicketsPerColumn(allTickets, perColumnLimit)
+        ) {
+          break;
+        }
+      }
+
+      return allTickets;
+    },
   });
 
   const boardTickets = useMemo(
@@ -205,6 +250,9 @@ export function KanbanPage({
       })),
     [tickets],
   );
+
+  const visibleRowsPerColumn =
+    ticketsPerColumn === 'all' ? Number.POSITIVE_INFINITY : Number(ticketsPerColumn);
 
   const reportTicket = useMemo(
     () => boardTickets.find((ticket) => ticket.id === reportTicketId) ?? null,
@@ -249,16 +297,28 @@ export function KanbanPage({
 
   const columns = useMemo(
     () =>
-      STATUS_COLUMNS.map((status) => ({
-        key: status,
-        title: getStatusLabel(status),
-        tickets: boardTickets.filter((ticket) => ticket.status === status),
-      })),
-    [boardTickets],
+      STATUS_COLUMNS.map((status) => {
+        const matchingTickets = boardTickets.filter((ticket) => ticket.status === status);
+
+        return {
+          key: status,
+          title: getStatusLabel(status),
+          totalCount: matchingTickets.length,
+          tickets: Number.isFinite(visibleRowsPerColumn)
+            ? matchingTickets.slice(0, visibleRowsPerColumn)
+            : matchingTickets,
+        };
+      }),
+    [boardTickets, visibleRowsPerColumn],
+  );
+
+  const visibleBoardTickets = useMemo(
+    () => columns.flatMap((column) => column.tickets),
+    [columns],
   );
 
   const totalTickets = boardTickets.length;
-  const activeColumns = columns.filter((column) => column.tickets.length > 0).length;
+  const activeColumns = columns.filter((column) => column.totalCount > 0).length;
   const isEmpty = totalTickets === 0;
 
   function openReport(ticket: Ticket) {
@@ -331,6 +391,11 @@ export function KanbanPage({
                 {totalTickets} {badgeLabel}
               </Badge>
               <Badge variant="outline">{activeColumns} columnas activas</Badge>
+              <Badge variant="outline">
+                {ticketsPerColumn === 'all'
+                  ? 'Todas las filas'
+                  : `${ticketsPerColumn} por columna`}
+              </Badge>
               {isTechnicianView ? <Badge variant="outline">Reporte integrado</Badge> : null}
 
               <div className="flex rounded-md border bg-muted/40 p-1">
@@ -365,7 +430,7 @@ export function KanbanPage({
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -388,6 +453,27 @@ export function KanbanPage({
                 <SelectItem value="medium">Media</SelectItem>
                 <SelectItem value="high">Alta</SelectItem>
                 <SelectItem value="urgent">Urgente</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={ticketsPerColumn}
+              onValueChange={(value) =>
+                setTicketsPerColumn((value ?? '10') as TicketsPerColumnLimit)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Cantidad visible">
+                  {ticketsPerColumn === 'all'
+                    ? 'Todas las filas'
+                    : `${ticketsPerColumn} filas por columna`}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 filas por columna</SelectItem>
+                <SelectItem value="20">20 filas por columna</SelectItem>
+                <SelectItem value="50">50 filas por columna</SelectItem>
+                <SelectItem value="all">Todas las filas</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -428,11 +514,17 @@ export function KanbanPage({
                           </div>
                           <div className="min-w-0">
                             <h2 className="truncate text-sm font-semibold">{column.title}</h2>
-                            <p className="text-xs text-muted-foreground">{column.tickets.length} ticket(s)</p>
+                            <p className="text-xs text-muted-foreground">
+                              {column.tickets.length}
+                              {column.tickets.length !== column.totalCount
+                                ? ` de ${column.totalCount}`
+                                : ''}
+                              {' '}ticket(s)
+                            </p>
                           </div>
                         </div>
                         <Badge variant="outline" className="shrink-0">
-                          {column.tickets.length}
+                          {column.totalCount}
                         </Badge>
                       </div>
                     </div>
@@ -548,7 +640,7 @@ export function KanbanPage({
                         );
                       })}
 
-                      {column.tickets.length === 0 ? (
+                      {column.totalCount === 0 ? (
                         <div className="rounded-lg border border-dashed border-border/70 bg-background/40 p-4 text-xs text-muted-foreground">
                           Sin tickets
                         </div>
@@ -570,7 +662,8 @@ export function KanbanPage({
                 <Card key={column.key}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">
-                      {column.title} ({column.tickets.length})
+                      {column.title} ({column.tickets.length}
+                      {column.tickets.length !== column.totalCount ? ` de ${column.totalCount}` : ''})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
@@ -612,7 +705,7 @@ export function KanbanPage({
                         </div>
                       );
                     })}
-                    {column.tickets.length === 0 ? <p className="text-sm text-muted-foreground">Sin tickets</p> : null}
+                    {column.totalCount === 0 ? <p className="text-sm text-muted-foreground">Sin tickets</p> : null}
                   </CardContent>
                 </Card>
               ))}
@@ -642,7 +735,7 @@ export function KanbanPage({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {boardTickets.map((ticket) => {
+                    {visibleBoardTickets.map((ticket) => {
                       const allowReport = canWriteReport(ticket, appRole, user?.id);
                       const allowAdminReportView = appRole === 'admin' && hasTicketReport(ticket);
 

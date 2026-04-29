@@ -4,6 +4,11 @@ import { io, type Socket } from 'socket.io-client';
 type EventHandler = (event: RealtimeEvent) => void;
 type StatusHandler = (status: ConnectionStatus) => void;
 
+function normalizeSocketUrl(url: string) {
+  const trimmed = url.trim().replace(/\/+$/, '');
+  return trimmed.endsWith('/notifications') ? trimmed : `${trimmed}/notifications`;
+}
+
 export class RealtimeClient {
   private socket: Socket | null = null;
   private readonly url: string;
@@ -34,7 +39,7 @@ export class RealtimeClient {
     if (this.socket?.connected) return;
 
     this.emitStatus('connecting');
-    const socket = io(this.url, {
+    const socket = io(normalizeSocketUrl(this.url), {
       auth: this.token ? { token: this.token } : undefined,
       transports: ['websocket'],
       reconnection: true,
@@ -83,6 +88,7 @@ export class RealtimeClient {
         ticketId: number;
         title: string;
         assignedBy: number;
+        assignedToId?: number;
         assignedToName?: string;
       }) => {
         const event: RealtimeEvent = {
@@ -93,7 +99,7 @@ export class RealtimeClient {
               title: payload.title,
             },
             assignedTo: {
-              id: payload.assignedBy,
+              id: payload.assignedToId ?? payload.assignedBy,
               name: payload.assignedToName ?? 'Asignado',
             },
           },
