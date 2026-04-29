@@ -6,6 +6,8 @@ import {
   TicketIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/components/auth-context';
+import { isAgent } from '@/features/users/schemas';
 import { useRealtime } from '@/lib/realtime/context';
 import { cn } from '@/lib/utils';
 import type { AppNotification } from '@/lib/realtime/types';
@@ -21,16 +23,18 @@ function formatRelativeTime(date: Date): string {
 function NotificationItem({
   notification,
   onRead,
+  ticketHref,
 }: {
   notification: AppNotification;
   onRead: (id: string) => void;
+  ticketHref: string;
 }) {
   const navigate = useNavigate();
 
   const handleClick = () => {
     onRead(notification.id);
     if (notification.ticketId) {
-      navigate('/tickets');
+      navigate(ticketHref);
     }
   };
 
@@ -91,9 +95,11 @@ const statusTitle: Record<string, string> = {
 
 export function NotificationCenter() {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead, status } =
     useRealtime();
   const containerRef = useRef<HTMLDivElement>(null);
+  const ticketHref = isAgent(user) ? '/tickets/admin' : '/tickets';
 
   useEffect(() => {
     if (!open) return;
@@ -152,7 +158,7 @@ export function NotificationCenter() {
         <div
           role="dialog"
           aria-label="Panel de notificaciones"
-          className="absolute right-0 top-full z-50 mt-2 w-80 rounded-md bg-popover shadow-[var(--shadow-2)] ring-1 ring-foreground/10"
+          className="absolute right-0 top-full z-50 mt-2 w-80 rounded-md bg-popover shadow-(--shadow-2) ring-1 ring-foreground/10"
         >
           <div className="flex items-center justify-between border-b border-foreground/8 px-3 py-2.5">
             <div className="flex items-center gap-2">
@@ -201,7 +207,11 @@ export function NotificationCenter() {
               <div className="space-y-0.5" role="list">
                 {notifications.map((n) => (
                   <div key={n.id} role="listitem">
-                    <NotificationItem notification={n} onRead={markAsRead} />
+                    <NotificationItem
+                      notification={n}
+                      onRead={markAsRead}
+                      ticketHref={ticketHref}
+                    />
                   </div>
                 ))}
               </div>

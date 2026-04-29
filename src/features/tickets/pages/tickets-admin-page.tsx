@@ -97,6 +97,10 @@ export function TicketsAdminPage() {
     priority: 'all',
   });
   const editFormRef = useRef<HTMLDivElement | null>(null);
+  const selectedTicketValues = useMemo(
+    () => (selectedTicket ? toFormValues(selectedTicket) : undefined),
+    [selectedTicket],
+  );
 
   if (!isAgent(user)) {
     return <Navigate to="/tickets" replace />;
@@ -300,7 +304,7 @@ export function TicketsAdminPage() {
           <TicketForm
             variant="admin"
             mode="edit"
-            initialValues={selectedTicket ? toFormValues(selectedTicket) : undefined}
+            initialValues={selectedTicketValues}
             assigneeOptions={userOptions}
             emitterOptions={userOptions}
             serviceOptions={serviceOptions}

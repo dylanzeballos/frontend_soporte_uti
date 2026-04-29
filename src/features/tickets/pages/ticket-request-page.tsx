@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ClipboardPenLine } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,7 +12,6 @@ export function TicketRequestPage() {
   const { user } = useAuth();
   const { create } = useTickets();
   const { list: listServices } = useServices();
-  const [formKey, setFormKey] = useState(0);
 
   const { data: serviceOptions = [] } = useQuery<TicketSelectOption[]>({
     queryKey: ['services'],
@@ -30,7 +28,6 @@ export function TicketRequestPage() {
     mutationFn: create,
     onSuccess: () => {
       toast.success('Solicitud enviada correctamente');
-      setFormKey((current) => current + 1);
       void queryClient.invalidateQueries({ queryKey: ['tickets'] });
       void queryClient.invalidateQueries({ queryKey: ['my-tickets', user?.id] });
     },
@@ -49,7 +46,7 @@ export function TicketRequestPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <section className="lively-hero rounded-[var(--radius-panel)] px-6 py-5 sm:px-8 sm:py-5">
+      <section className="lively-hero rounded-(--radius-panel) px-6 py-5 sm:px-8 sm:py-5">
         <div className="relative z-10">
           <div className="editorial-kicker">
             <ClipboardPenLine className="h-3.5 w-3.5" />
@@ -62,12 +59,11 @@ export function TicketRequestPage() {
       </section>
 
       <TicketForm
-        key={formKey}
         variant="request"
         isSubmitting={createMutation.isPending}
         serviceOptions={serviceOptions}
         submitLabel="Enviar solicitud"
-        className="rounded-[var(--radius-panel)]"
+        className="rounded-(--radius-panel)"
         onSubmit={handleSubmit}
       />
     </div>

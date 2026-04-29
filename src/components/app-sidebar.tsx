@@ -19,7 +19,7 @@ import { useAuth } from "@/components/auth-context"
 import { ModeToggle } from "@/components/mode-toggle"
 import { NotificationCenter } from "@/components/notification-center"
 import { UserNav } from "@/components/user-nav"
-import { getAppUserRole, getDefaultRouteForUser, type UserRole } from "@/features/users/schemas"
+import { getAppUserRole, getDefaultRouteForUser, type AppUserRole, type UserRole } from "@/features/users/schemas"
 import { cn } from "@/lib/utils"
 import {
   Sidebar,
@@ -171,7 +171,17 @@ const navSections: NavSection[] = [
   },
 ]
 
-function isPathActive(pathname: string, target: string) {
+function isPathActive(pathname: string, target: string, appRole?: AppUserRole) {
+  if (target === "/") return pathname === "/"
+
+  if (target === "/tickets") {
+    if (appRole === "user") {
+      return pathname === target
+    }
+
+    return pathname === target || pathname.startsWith(`${target}/`)
+  }
+
   return pathname === target || pathname.startsWith(`${target}/`)
 }
 
@@ -203,6 +213,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { isMobile, open, state, setOpenMobile } = useSidebar()
+  const appRole = getAppUserRole(user)
 
   const collapsed = state === "collapsed"
   const pathname = location.pathname
@@ -216,7 +227,6 @@ function AppShell({ children }: { children?: React.ReactNode }) {
 
   const visibleSections = React.useMemo(() => {
     if (!user) return []
-    const appRole = getAppUserRole(user)
 
     return navSections
       .map((section) => ({
@@ -238,14 +248,14 @@ function AppShell({ children }: { children?: React.ReactNode }) {
     visibleSections.forEach((section) => {
       section.items.forEach((item, itemIndex) => {
         const itemKey = `${section.label}-${itemIndex}-${item.title}`
-        if (item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))) {
+        if (item.children?.some((child) => (child.to ? isPathActive(pathname, child.to, appRole) : false))) {
           next.add(itemKey)
         }
       })
     })
 
     return next
-  }, [pathname, visibleSections])
+  }, [appRole, pathname, visibleSections])
 
   const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({})
 
@@ -311,9 +321,9 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                     const hasChildren = Boolean(item.children?.length)
                     const sectionOpen =
                       activeParents.has(itemKey) || Boolean(expandedSections[itemKey])
-                    const directActive = item.to ? isPathActive(pathname, item.to) : false
+                    const directActive = item.to ? isPathActive(pathname, item.to, appRole) : false
                     const childActive = Boolean(
-                      item.children?.some((child) => (child.to ? isPathActive(pathname, child.to) : false))
+                      item.children?.some((child) => (child.to ? isPathActive(pathname, child.to, appRole) : false))
                     )
                     const active = directActive || childActive
 
@@ -360,9 +370,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                               <div className="overflow-hidden">
                                 <SidebarMenuSub>
                                   {item.children?.map((child, index) => {
-                                    const isActive = child.to
-                                      ? pathname === child.to || pathname === `${child.to}/`
-                                      : false
+                                    const isActive = child.to ? isPathActive(pathname, child.to, appRole) : false
                                     const childDisabled =
                                       Boolean(child.disabled) ||
                                       (Boolean(child.statusAware) && !canMutateRequest)
