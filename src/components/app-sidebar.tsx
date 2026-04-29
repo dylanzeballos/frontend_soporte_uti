@@ -167,6 +167,12 @@ const navSections: NavSection[] = [
         icon: UserCogIcon,
         roles: ["admin"],
       },
+      {
+        title: "Reportes tecnicos",
+        to: "/admin/reports",
+        icon: FileTextIcon,
+        roles: ["admin"],
+      },
     ],
   },
 ]
@@ -186,6 +192,7 @@ function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/technician/reports")) return "Mis reportes"
   if (isPathActive(pathname, "/tickets")) return "Tickets"
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
+  if (isPathActive(pathname, "/admin/reports")) return "Reportes tecnicos"
   if (isPathActive(pathname, "/admin/units")) return "Unidades"
   if (isPathActive(pathname, "/admin/services")) return "Servicios"
   if (isPathActive(pathname, "/admin/roles")) return "Roles o cargos"

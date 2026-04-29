@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Clock3,
+  FileText,
   Inbox,
   SquareKanban,
   Ticket,
@@ -14,6 +15,7 @@ import { useAuth } from '@/components/auth-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { type Report } from '@/features/reports/schemas';
 import {
   getPriorityColor,
   getPriorityLabel,
@@ -22,7 +24,7 @@ import {
   type Ticket as TicketItem,
 } from '@/features/tickets/schemas/ticket.schema';
 import { getDefaultRouteForUser, isAgent } from '@/features/users/schemas';
-import { useTickets } from '@/hooks/useApi';
+import { useReports, useTickets } from '@/hooks/useApi';
 
 function getUserDisplayName(user: NonNullable<ReturnType<typeof useAuth>['user']>) {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
@@ -41,10 +43,20 @@ function isActiveStatus(status: TicketItem['status']) {
   return status === 'open' || status === 'in_progress';
 }
 
+function formatReportDate(value?: string | null) {
+  if (!value) return 'Sin fecha';
+  return new Date(value).toLocaleDateString('es-BO', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 export function TechnicianDashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { list } = useTickets();
+  const { list: listReports } = useReports();
 
   if (!user) return null;
   if (!isAgent(user)) {
@@ -57,10 +69,10 @@ export function TechnicianDashboardPage() {
     queryFn: async () => list({ assignedToId: user.id, limit: 100 }),
   });
 
-  const { data: reports = [], isLoading: reportsLoading } = useQuery<TicketItem[]>({
+  const { data: reports = [], isLoading: reportsLoading } = useQuery<Report[]>({
     queryKey: ['technician-dashboard', 'reports', user.id],
     enabled: Boolean(user.id),
-    queryFn: async () => list({ createdById: user.id, limit: 100 }),
+    queryFn: async () => listReports({ createdById: user.id, limit: 100 }),
   });
 
   const { data: availableTickets = [], isLoading: pendingLoading } = useQuery<TicketItem[]>({
@@ -72,7 +84,7 @@ export function TechnicianDashboardPage() {
   const loading = assignmentsLoading || reportsLoading || pendingLoading;
   const urgentAssignments = assignments.filter((ticket) => ticket.priority === 'urgent').length;
   const activeAssignments = assignments.filter((ticket) => isActiveStatus(ticket.status)).length;
-  const openReports = reports.filter((ticket) => isActiveStatus(ticket.status)).length;
+  const openReports = reports.filter((report) => report.ticket?.status && isActiveStatus(report.ticket.status)).length;
   const pendingTickets = availableTickets;
 
   const cards = [
@@ -126,6 +138,14 @@ export function TechnicianDashboardPage() {
             <Button onClick={() => navigate('/technician/assignments')} className="min-w-48 justify-center">
               <Ticket className="mr-2 h-4 w-4" />
               Ver asignaciones
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/technician/reports')}
+              className="min-w-48 justify-center"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Ver mis reportes
             </Button>
             <Button
               variant="outline"
@@ -232,27 +252,44 @@ export function TechnicianDashboardPage() {
         <Card className="rounded-[var(--radius-panel)]">
           <CardHeader>
             <CardTitle>Tus reportes</CardTitle>
-            <CardDescription>Tickets que abriste y que puedes seguir de cerca.</CardDescription>
+            <CardDescription>Reportes tecnicos que registraste y puedes monitorear.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loading ? (
               <p className="text-sm text-muted-foreground">Cargando reportes...</p>
             ) : reports.length > 0 ? (
-              reports.slice(0, 5).map((ticket) => (
-                <div key={ticket.id} className="flex items-start justify-between gap-4 rounded-xl border p-4">
+              reports.slice(0, 5).map((report) => (
+                <div key={report.id} className="flex items-start justify-between gap-4 rounded-xl border p-4">
                   <div className="min-w-0 space-y-2">
                     <div className="flex flex-wrap gap-2">
-                      <Badge className={getStatusColor(ticket.status)}>{getStatusLabel(ticket.status)}</Badge>
-                      <Badge className={getPriorityColor(ticket.priority)}>{getPriorityLabel(ticket.priority)}</Badge>
+                      {report.ticket?.status ? (
+                        <Badge className={getStatusColor(report.ticket.status)}>
+                          {getStatusLabel(report.ticket.status)}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Sin ticket</Badge>
+                      )}
+                      {report.ticket?.priority ? (
+                        <Badge className={getPriorityColor(report.ticket.priority)}>
+                          {getPriorityLabel(report.ticket.priority)}
+                        </Badge>
+                      ) : null}
+                      {report.resolutionType ? (
+                        <Badge variant="secondary">{report.resolutionType}</Badge>
+                      ) : null}
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">{ticket.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {ticket.assignedTo?.name || ticket.assignedTo?.email || 'Sin responsable'}
+                      <p className="font-medium text-foreground">
+                        {report.ticket?.title ?? `Ticket #${report.ticketId}`}
+                      </p>
+                      <p className="line-clamp-2 text-sm text-muted-foreground">
+                        {report.summary}
                       </p>
                     </div>
                   </div>
-                  <span className="shrink-0 text-xs text-muted-foreground">{formatDate(ticket.createdAt)}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {formatReportDate(report.createdAt)}
+                  </span>
                 </div>
               ))
             ) : (
