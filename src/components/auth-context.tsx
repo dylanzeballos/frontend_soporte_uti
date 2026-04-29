@@ -22,6 +22,11 @@ const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 const AUTH_USER_KEY = 'authUser';
 
+let inFlightProfileRequest: {
+  token: string;
+  promise: Promise<User | null>;
+} | null = null;
+
 type ApiUser = Partial<User> & {
   role?: User['role'] | { name?: string | null } | null;
   firstName?: string | null;
@@ -63,6 +68,42 @@ function clearStoredSession() {
   localStorage.removeItem(AUTH_USER_KEY);
 }
 
+function resetProfileRequestCache() {
+  inFlightProfileRequest = null;
+}
+
+async function fetchAuthenticatedUser(token: string): Promise<User | null> {
+  if (inFlightProfileRequest?.token === token) {
+    return inFlightProfileRequest.promise;
+  }
+
+  const promise = (async () => {
+    const response = await fetch(`${API_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const rawUser = (await response.json()) as ApiUser;
+    return normalizeUser(rawUser);
+  })();
+
+  inFlightProfileRequest = {
+    token,
+    promise,
+  };
+
+  try {
+    return await promise;
+  } finally {
+    if (inFlightProfileRequest?.promise === promise) {
+      resetProfileRequestCache();
+    }
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: (() => {
@@ -81,26 +122,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = useCallback(async () => {
     const token = localStorage.getItem(ACCESS_TOKEN_KEY);
     if (!token) {
+      resetProfileRequestCache();
       setState({ user: null, isAuthenticated: false, isLoading: false });
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const user = await fetchAuthenticatedUser(token);
 
-      if (response.ok) {
-        const rawUser = (await response.json()) as ApiUser;
-        const user = normalizeUser(rawUser);
+      if (user) {
         localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
         setState({ user, isAuthenticated: true, isLoading: false });
       } else {
         clearStoredSession();
+        resetProfileRequestCache();
         setState({ user: null, isAuthenticated: false, isLoading: false });
       }
     } catch {
       clearStoredSession();
+      resetProfileRequestCache();
       setState({ user: null, isAuthenticated: false, isLoading: false });
     }
   }, []);
@@ -129,13 +169,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
     localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
 
-    const profileRes = await fetch(`${API_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${data.accessToken}` },
-    });
+    const user = await fetchAuthenticatedUser(data.accessToken);
 
-    if (profileRes.ok) {
-      const rawUser = (await profileRes.json()) as ApiUser;
-      const user = normalizeUser(rawUser);
+    if (user) {
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
       setState({ user, isAuthenticated: true, isLoading: false });
       toast.success(`Bienvenido, ${user.name || user.email}`);
@@ -143,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     clearStoredSession();
+    resetProfileRequestCache();
     setState({ user: null, isAuthenticated: false, isLoading: false });
     throw new Error('No se pudo cargar el perfil del usuario');
   }, []);
@@ -162,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     clearStoredSession();
+    resetProfileRequestCache();
     setState({ user: null, isAuthenticated: false, isLoading: false });
     toast.info('Sesion cerrada');
   }, []);
