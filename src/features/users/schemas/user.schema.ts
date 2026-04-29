@@ -60,9 +60,24 @@ export const updateUserSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+// Form validation schema (string-based IDs for form inputs)
+export const userFormSchema = z.object({
+  ci: z.string().min(1, 'CI es requerido').max(20, 'Máximo 20 caracteres'),
+  firstName: z.string().min(1, 'Nombre es requerido').max(100, 'Máximo 100 caracteres'),
+  lastName: z.string().min(1, 'Apellido es requerido').max(100, 'Máximo 100 caracteres'),
+  email: z.email('Email inválido').min(1, 'Email es requerido'),
+  password: z.string().min(6, 'Mínimo 6 caracteres').max(100, 'Máximo 100 caracteres'),
+  roleId: z.string().min(1, 'Rol es requerido'),
+  corporationId: z.string().optional().nullable(),
+  phone: z.string().max(20, 'Máximo 20 caracteres').optional(),
+  cell: z.string().max(20, 'Máximo 20 caracteres').optional(),
+  isActive: z.boolean(),
+});
+
 export type User = z.infer<typeof userSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+export type UserFormValues = z.infer<typeof userFormSchema>;
 export type UserRole = z.infer<typeof roleNameSchema>;
 export type AppUserRole = 'admin' | 'agent' | 'user';
 

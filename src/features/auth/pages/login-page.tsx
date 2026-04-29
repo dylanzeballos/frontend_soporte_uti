@@ -110,7 +110,7 @@ export function LoginPage() {
 
                   <div className="space-y-2.5">
                     <Label htmlFor="password" className="text-sm font-semibold text-slate-700">
-                      Contrasena
+                      Contraseña
                     </Label>
                     <div className="relative">
                       <Lock className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-slate-400" />

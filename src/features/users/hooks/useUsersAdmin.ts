@@ -1,26 +1,19 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import type { CreateUserInput, UpdateUserInput, User } from '@/features/users/schemas';
+import type { CreateUserInput, UpdateUserInput, User, UserFormValues } from '@/features/users/schemas';
 import { getUserRoleName } from '@/features/users/schemas';
-import { useRoles, useUsers } from '@/hooks/useApi';
-import type { CorporationItem } from '@/hooks/useApi';
+import {
+  useUsersQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+} from '@/features/users/hooks';
+import { useRolesQuery } from '@/features/roles/hooks';
+import type { CorporationItem } from '@/features/corporations/hooks';
 
-export type UserFormValues = {
-  ci: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  roleId: string;
-  corporationId: string;
-  phone: string;
-  cell: string;
-  isActive: boolean;
-};
+export { type UserFormValues };
 
 const DEFAULT_LIMIT = 20;
-const FETCH_LIMIT = 100;
 
 export const emptyUserFormValues: UserFormValues = {
   ci: '',
@@ -73,8 +66,8 @@ function toPayload(values: UserFormValues, mode: 'create' | 'edit'): CreateUserI
     email: values.email.trim(),
     roleId: Number(values.roleId),
     corporationId: values.corporationId ? Number(values.corporationId) : undefined,
-    phone: values.phone.trim() || undefined,
-    cell: values.cell.trim() || undefined,
+    phone: values.phone?.trim() || undefined,
+    cell: values.cell?.trim() || undefined,
     isActive: values.isActive,
   };
 
@@ -92,9 +85,11 @@ function toPayload(values: UserFormValues, mode: 'create' | 'edit'): CreateUserI
 }
 
 export function useUsersAdmin() {
-  const queryClient = useQueryClient();
-  const { listPaginated, create, update, remove } = useUsers();
-  const { list: listRoles } = useRoles();
+  const usersQuery = useUsersQuery({ limit: 100 });
+  const rolesQuery = useRolesQuery();
+  const createMutation = useCreateUserMutation();
+  const updateMutation = useUpdateUserMutation();
+  const deleteMutation = useDeleteUserMutation();
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -103,37 +98,11 @@ export function useUsersAdmin() {
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const rolesQuery = useQuery({
-    queryKey: ['roles'],
-    queryFn: listRoles,
-  });
-
-  const usersQuery = useQuery({
-    queryKey: ['users-admin'],
-    queryFn: async () => {
-      const users: User[] = [];
-      let currentPage = 1;
-
-      while (true) {
-        const response = await listPaginated({ page: currentPage, limit: FETCH_LIMIT });
-        users.push(...response.data);
-
-        const totalPages = Math.max(1, Math.ceil(response.total / FETCH_LIMIT));
-        if (currentPage >= totalPages || response.data.length === 0) {
-          break;
-        }
-
-        currentPage += 1;
-      }
-
-      return users;
-    },
-  });
-
   const filteredUsers = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
+    const allUsers = usersQuery.data?.data ?? (Array.isArray(usersQuery.data) ? usersQuery.data : []);
 
-    return (usersQuery.data ?? []).filter((user) => {
+    return allUsers.filter((user: User) => {
       const searchable = [
         user.ci,
         getDisplayName(user),
@@ -158,8 +127,9 @@ export function useUsersAdmin() {
 
   const corporations = useMemo<CorporationItem[]>(() => {
     const byId = new Map<number, CorporationItem>();
+    const allUsers = usersQuery.data?.data ?? (Array.isArray(usersQuery.data) ? usersQuery.data : []);
 
-    for (const user of usersQuery.data ?? []) {
+    for (const user of allUsers) {
       const id = getUserCorporationId(user);
       if (!id || byId.has(id)) continue;
 
@@ -176,35 +146,6 @@ export function useUsersAdmin() {
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / DEFAULT_LIMIT));
   const currentPage = Math.min(page, totalPages);
   const pageUsers = filteredUsers.slice((currentPage - 1) * DEFAULT_LIMIT, currentPage * DEFAULT_LIMIT);
-
-  const createMutation = useMutation({
-    mutationFn: (values: UserFormValues) => create(toPayload(values, 'create') as CreateUserInput),
-    onSuccess: () => {
-      toast.success('Usuario creado');
-      setShowForm(false);
-      setEditingUser(null);
-      void queryClient.invalidateQueries({ queryKey: ['users-admin'] });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, values }: { id: number; values: UserFormValues }) =>
-      update(id, toPayload(values, 'edit') as UpdateUserInput),
-    onSuccess: () => {
-      toast.success('Usuario actualizado');
-      setShowForm(false);
-      setEditingUser(null);
-      void queryClient.invalidateQueries({ queryKey: ['users-admin'] });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: remove,
-    onSuccess: () => {
-      toast.success('Usuario archivado');
-      void queryClient.invalidateQueries({ queryKey: ['users-admin'] });
-    },
-  });
 
   const resetFilters = () => {
     setSearch('');
@@ -229,18 +170,27 @@ export function useUsersAdmin() {
   };
 
   const submitForm = async (values: UserFormValues) => {
-    if (editingUser) {
-      await updateMutation.mutateAsync({ id: editingUser.id, values });
-      return;
+    try {
+      if (editingUser) {
+        await updateMutation.mutateAsync({ id: editingUser.id, data: toPayload(values, 'edit') as UpdateUserInput });
+        toast.success('Usuario actualizado');
+      } else {
+        await createMutation.mutateAsync(toPayload(values, 'create') as CreateUserInput);
+        toast.success('Usuario creado');
+      }
+      cancelForm();
+    } catch {
+      // Error handled by mutation
     }
-
-    await createMutation.mutateAsync(values);
   };
 
   const archiveUser = (user: User) => {
     const confirmed = window.confirm(`Archivar usuario "${getDisplayName(user)}"?`);
     if (!confirmed) return;
-    deleteMutation.mutate(user.id);
+
+    deleteMutation.mutate(user.id, {
+      onSuccess: () => toast.success('Usuario archivado'),
+    });
   };
 
   return {

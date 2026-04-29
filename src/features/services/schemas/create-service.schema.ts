@@ -9,3 +9,12 @@ export const createServiceSchema = z.object({
 });
 
 export type CreateServiceInput = z.infer<typeof createServiceSchema>;
+
+export interface Service {
+  id: number;
+  name: string;
+  description?: string | null;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}

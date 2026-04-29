@@ -238,4 +238,4 @@ Not needed now:
 - Additional icon packs (lucide already configured)
 
 ## Changelog
-- 2026-04-23: Initial `design.md` created from scratch (no prior design document existed).
+- 2026-04-23: Initial `DESIGN.md` created from scratch (no prior design document existed).

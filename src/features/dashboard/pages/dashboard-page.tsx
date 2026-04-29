@@ -1,7 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useFilteredTicketsQuery } from '@/features/tickets';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth-context';
-import { useTickets } from '@/hooks/useApi';
 import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Ticket as TicketType } from '@/features/tickets/schemas/ticket.schema';
@@ -33,17 +32,13 @@ function getDashboardUserRole(user: DashboardUser | null) {
 export function DashboardPage() {
   const { user } = useAuth();
   const dashboardUser = user as DashboardUser | null;
-  const { list } = useTickets();
 
   if (getAppUserRole(user) === 'agent') {
     return <Navigate to="/technician/dashboard" replace />;
   }
 
-  const { data: tickets = [] } = useQuery<TicketType[]>({
-    queryKey: ['tickets', 'dashboard', user?.id],
-    enabled: Boolean(user?.id),
-    queryFn: async () => list({ limit: 100 }),
-  });
+  const { data: ticketsResponse } = useFilteredTicketsQuery({ limit: 100 });
+  const tickets = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
 
   const stats = {
     total: tickets.length,

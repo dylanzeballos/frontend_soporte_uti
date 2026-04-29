@@ -18,7 +18,7 @@ import {
   type TicketStatus,
 } from '@/features/tickets/schemas/ticket.schema';
 import { getDefaultRouteForUser, isAgent } from '@/features/users/schemas';
-import { useTickets } from '@/hooks/useApi';
+import { useFilteredTicketsQuery } from '@/features/tickets/hooks';
 
 type StatusFilter = 'all' | TicketStatus;
 
@@ -29,20 +29,16 @@ function getDisplayName(ticket: Ticket) {
 export function TechnicianAssignmentsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { list } = useTickets();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
+  const { data: ticketsResponse, isLoading } = useFilteredTicketsQuery({ assignedToId: user.id, limit: 100 });
 
   if (!user) return null;
   if (!isAgent(user)) {
     return <Navigate to={getDefaultRouteForUser(user)} replace />;
   }
 
-  const { data: assignments = [], isLoading } = useQuery<Ticket[]>({
-    queryKey: ['technician-assignments', user.id],
-    enabled: Boolean(user.id),
-    queryFn: async () => list({ assignedToId: user.id, limit: 100 }),
-  });
+  const assignments = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
 
   const filteredAssignments = useMemo(() => {
     return assignments.filter((ticket) => {

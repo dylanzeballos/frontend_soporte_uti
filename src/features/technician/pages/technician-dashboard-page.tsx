@@ -22,7 +22,7 @@ import {
   type Ticket as TicketItem,
 } from '@/features/tickets/schemas/ticket.schema';
 import { getDefaultRouteForUser, isAgent } from '@/features/users/schemas';
-import { useTickets } from '@/hooks/useApi';
+import { useFilteredTicketsQuery } from '@/features/tickets/hooks';
 
 function getUserDisplayName(user: NonNullable<ReturnType<typeof useAuth>['user']>) {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
@@ -44,30 +44,19 @@ function isActiveStatus(status: TicketItem['status']) {
 export function TechnicianDashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { list } = useTickets();
 
   if (!user) return null;
   if (!isAgent(user)) {
     return <Navigate to={getDefaultRouteForUser(user)} replace />;
   }
 
-  const { data: assignments = [], isLoading: assignmentsLoading } = useQuery<TicketItem[]>({
-    queryKey: ['technician-dashboard', 'assignments', user.id],
-    enabled: Boolean(user.id),
-    queryFn: async () => list({ assignedToId: user.id, limit: 100 }),
-  });
+  const { data: assignmentsResponse, isLoading: assignmentsLoading } = useFilteredTicketsQuery({ assignedToId: user.id, limit: 100 });
+  const { data: reportsResponse, isLoading: reportsLoading } = useFilteredTicketsQuery({ createdById: user.id, limit: 100 });
+  const { data: availableTicketsResponse, isLoading: pendingLoading } = useFilteredTicketsQuery({ limit: 100, unassigned: true });
 
-  const { data: reports = [], isLoading: reportsLoading } = useQuery<TicketItem[]>({
-    queryKey: ['technician-dashboard', 'reports', user.id],
-    enabled: Boolean(user.id),
-    queryFn: async () => list({ createdById: user.id, limit: 100 }),
-  });
-
-  const { data: availableTickets = [], isLoading: pendingLoading } = useQuery<TicketItem[]>({
-    queryKey: ['technician-dashboard', 'pending', user.id],
-    enabled: Boolean(user.id),
-    queryFn: async () => list({ limit: 100, unassigned: true }),
-  });
+  const assignments = assignmentsResponse?.data ?? (Array.isArray(assignmentsResponse) ? assignmentsResponse : []);
+  const reports = reportsResponse?.data ?? (Array.isArray(reportsResponse) ? reportsResponse : []);
+  const availableTickets = availableTicketsResponse?.data ?? (Array.isArray(availableTicketsResponse) ? availableTicketsResponse : []);
 
   const loading = assignmentsLoading || reportsLoading || pendingLoading;
   const urgentAssignments = assignments.filter((ticket) => ticket.priority === 'urgent').length;

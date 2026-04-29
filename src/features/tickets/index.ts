@@ -1,4 +1,12 @@
-export { useTickets } from '@/hooks/useApi';
+export {
+  useTicketsQuery,
+  useFilteredTicketsQuery,
+  useTicketQuery,
+  useCreateTicketMutation,
+  useUpdateTicketMutation,
+  useUpdateTicketStatusMutation,
+  useAssignTicketMutation,
+} from './hooks';
 export type {
   Ticket,
   TicketStatus,

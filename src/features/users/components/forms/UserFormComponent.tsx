@@ -1,13 +1,20 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { CorporationItem, RoleItem } from '@/hooks/useApi';
-import type { UserFormValues } from '../../hooks/useUsersAdmin';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { userFormSchema, type UserFormValues } from '@/features/users/schemas';
+import type { CorporationItem } from '@/features/corporations/hooks';
+import type { RoleItem } from '@/features/roles/hooks';
 
 type UserFormComponentProps = {
   initialValues: UserFormValues;
@@ -28,21 +35,29 @@ export function UserFormComponent({
   onSubmit,
   onCancel,
 }: UserFormComponentProps) {
-  const [values, setValues] = useState(initialValues);
-  const selectedRoleName = roles.find((role) => String(role.id) === values.roleId)?.name;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<UserFormValues>({
+    resolver: zodResolver(userFormSchema),
+    defaultValues: initialValues,
+  });
+
+  const roleId = watch('roleId');
+  const corporationId = watch('corporationId');
+  const isActive = watch('isActive');
+
+  const selectedRoleName = roles.find((role) => String(role.id) === roleId)?.name;
   const selectedCorporationName = corporations.find(
-    (corporation) => String(corporation.id) === values.corporationId
+    (corporation) => String(corporation.id) === corporationId
   )?.name;
-  const selectedStatusLabel = values.isActive ? 'Activo' : 'Inactivo';
 
-  const setField = <Key extends keyof UserFormValues>(key: Key, value: UserFormValues[Key]) => {
-    setValues((current) => ({ ...current, [key]: value }));
-  };
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    await onSubmit(values);
-  };
+  const onFormSubmit = handleSubmit(async (data) => {
+    await onSubmit(data);
+  });
 
   return (
     <Card className="border-primary/15 bg-card/95">
@@ -50,66 +65,96 @@ export function UserFormComponent({
         <CardTitle>{mode === 'create' ? 'Nuevo usuario' : 'Editar usuario'}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        <form className="space-y-5" onSubmit={onFormSubmit}>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="user-ci">CI</Label>
+              <Label htmlFor="user-ci">
+                CI <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="user-ci"
-                required
                 placeholder="Ej. 12345678"
-                value={values.ci}
-                onChange={(event) => setField('ci', event.target.value)}
+                {...register('ci')}
+                aria-invalid={errors.ci ? 'true' : 'false'}
               />
+              {errors.ci && <p className="text-sm text-destructive">{errors.ci.message}</p>}
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="user-first-name">Nombre</Label>
+              <Label htmlFor="user-first-name">
+                Nombre <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="user-first-name"
-                required
                 placeholder="Ej. Juan"
-                value={values.firstName}
-                onChange={(event) => setField('firstName', event.target.value)}
+                {...register('firstName')}
+                aria-invalid={errors.firstName ? 'true' : 'false'}
               />
+              {errors.firstName && (
+                <p className="text-sm text-destructive">{errors.firstName.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="user-last-name">Apellido</Label>
+              <Label htmlFor="user-last-name">
+                Apellido <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="user-last-name"
-                required
                 placeholder="Ej. Pérez"
-                value={values.lastName}
-                onChange={(event) => setField('lastName', event.target.value)}
+                {...register('lastName')}
+                aria-invalid={errors.lastName ? 'true' : 'false'}
               />
+              {errors.lastName && (
+                <p className="text-sm text-destructive">{errors.lastName.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="user-email">Email</Label>
+              <Label htmlFor="user-email">
+                Email <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="user-email"
-                required
                 type="email"
                 placeholder="Ej. usuario@empresa.com"
-                value={values.email}
-                onChange={(event) => setField('email', event.target.value)}
+                {...register('email')}
+                aria-invalid={errors.email ? 'true' : 'false'}
               />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="user-password">{mode === 'create' ? 'Password' : 'Password opcional'}</Label>
+              <Label htmlFor="user-password">
+                {mode === 'create' ? 'Contraseña' : 'Contraseña (opcional)'}{' '}
+                {mode === 'create' && <span className="text-destructive">*</span>}
+              </Label>
               <Input
                 id="user-password"
-                required={mode === 'create'}
                 type="password"
-                minLength={mode === 'create' ? 6 : undefined}
-                placeholder={mode === 'create' ? 'Mínimo 6 caracteres' : 'Solo si deseas cambiarlo'}
-                value={values.password}
-                onChange={(event) => setField('password', event.target.value)}
+                placeholder={mode === 'create' ? 'Mínimo 6 caracteres' : 'Solo si deseas cambiarla'}
+                {...register('password')}
+                aria-invalid={errors.password ? 'true' : 'false'}
               />
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="user-role">Rol</Label>
-              <Select value={values.roleId} onValueChange={(value) => setField('roleId', value ?? '')}>
-                <SelectTrigger id="user-role">
-                  <SelectValue placeholder="Selecciona rol">{selectedRoleName}</SelectValue>
+              <Label htmlFor="user-role">
+                Rol <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={roleId}
+                onValueChange={(value) => setValue('roleId', value)}
+              >
+                <SelectTrigger id="user-role" aria-invalid={errors.roleId ? 'true' : 'false'}>
+                  <SelectValue placeholder="Selecciona rol">
+                    {selectedRoleName}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((role) => (
@@ -119,15 +164,21 @@ export function UserFormComponent({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.roleId && (
+                <p className="text-sm text-destructive">{errors.roleId.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="user-corporation">Corporación</Label>
               <Select
-                value={values.corporationId || undefined}
-                onValueChange={(value) => setField('corporationId', value ?? '')}
+                value={corporationId || ''}
+                onValueChange={(value) => setValue('corporationId', value || null)}
               >
                 <SelectTrigger id="user-corporation">
-                  <SelectValue placeholder="Sin corporación">{selectedCorporationName}</SelectValue>
+                  <SelectValue placeholder="Sin corporación">
+                    {selectedCorporationName}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {corporations.map((corporation) => (
@@ -138,32 +189,41 @@ export function UserFormComponent({
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="user-phone">Teléfono</Label>
               <Input
                 id="user-phone"
                 placeholder="Ej. 22445566"
-                value={values.phone}
-                onChange={(event) => setField('phone', event.target.value)}
+                {...register('phone')}
               />
+              {errors.phone && (
+                <p className="text-sm text-destructive">{errors.phone.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="user-cell">Celular</Label>
               <Input
                 id="user-cell"
                 placeholder="Ej. 70000000"
-                value={values.cell}
-                onChange={(event) => setField('cell', event.target.value)}
+                {...register('cell')}
               />
+              {errors.cell && (
+                <p className="text-sm text-destructive">{errors.cell.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="user-status">Estado</Label>
               <Select
-                value={values.isActive ? 'true' : 'false'}
-                onValueChange={(value) => setField('isActive', value === 'true')}
+                value={isActive ? 'true' : 'false'}
+                onValueChange={(value) => setValue('isActive', value === 'true')}
               >
                 <SelectTrigger id="user-status">
-                  <SelectValue>{selectedStatusLabel}</SelectValue>
+                  <SelectValue>
+                    {isActive ? 'Activo' : 'Inactivo'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="true">Activo</SelectItem>
@@ -173,9 +233,13 @@ export function UserFormComponent({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={isSubmitting || !values.roleId}>
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          <div className="flex flex-wrap gap-2 pt-4">
+            <Button type="submit" disabled={isSubmitting || !roleId}>
+              {isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
               {mode === 'create' ? 'Guardar' : 'Actualizar'}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>

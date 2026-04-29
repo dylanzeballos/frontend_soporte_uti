@@ -33,7 +33,9 @@ import {
   type TicketStatus,
 } from '@/features/tickets/schemas/ticket.schema';
 import { isAgent, type User } from '@/features/users/schemas';
-import { useServices, useTickets, useUsers } from '@/hooks/useApi';
+import { useUpdateTicketMutation, useAssignTicketMutation, useFilteredTicketsQuery } from '@/features/tickets/hooks';
+import { useUsersQuery } from '@/features/users/hooks';
+import { useServicesQuery } from '@/features/services/hooks';
 import { useRealtime } from '@/lib/realtime/context';
 
 type TicketFilterState = {
@@ -83,10 +85,7 @@ function toFormValues(ticket: Ticket): TicketFormValues {
 export function TicketsAdminPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { list, update, assign } = useTickets();
   const { status: wsStatus, notifications } = useRealtime();
-  const { list: listUsers } = useUsers();
-  const { list: listServices } = useServices();
   const [searchParams, setSearchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -111,68 +110,25 @@ export function TicketsAdminPage() {
       notification.type === 'ticket.assigned',
   ).length;
 
-  const { data: tickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
-    queryKey: ['tickets', user?.id, scope],
-    queryFn: async () =>
-      list({
-        createdById: isMyRequestsView ? user?.id : undefined,
-        excludeCreatedById: isMyRequestsView ? undefined : user?.id,
-        limit: 100,
-      }),
+  const { data: ticketsResponse, isLoading: ticketsLoading } = useFilteredTicketsQuery({
+    createdById: isMyRequestsView ? user?.id : undefined,
+    excludeCreatedById: isMyRequestsView ? undefined : user?.id,
+    limit: 100,
   });
+  const tickets = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
 
-  const { data: users = [] } = useQuery<User[]>({
-    queryKey: ['ticket-form-users'],
-    queryFn: async () => listUsers(),
-  });
+  const { data: usersResponse } = useUsersQuery({ limit: 100 });
+  const users = usersResponse?.data ?? (Array.isArray(usersResponse) ? usersResponse : []);
 
-  const { data: serviceOptions = [] } = useQuery<TicketSelectOption[]>({
-    queryKey: ['services'],
-    queryFn: async () => {
-      const services = await listServices();
-      return services.map((service) => ({
-        value: service.id,
-        label: service.name,
-      }));
-    },
-  });
+  const { data: servicesResponse } = useServicesQuery({ limit: 100 });
+  const serviceOptions = (servicesResponse?.data ?? (Array.isArray(servicesResponse) ? servicesResponse : [])).map((service: any) => ({
+    value: service.id,
+    label: service.name,
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: TicketFormValues }) => update(id, data),
-    onSuccess: (updatedTicket) => {
-      toast.success('Ticket actualizado correctamente');
-      setShowForm(false);
-      setSelectedTicket(null);
-      syncUpdatedTicketCaches(queryClient, updatedTicket);
-      invalidateTicketCaches(queryClient);
-    },
-  });
+  const updateMutation = useUpdateTicketMutation();
 
-  const assignMutation = useMutation({
-    mutationFn: ({
-      ticketId,
-      assignedToId,
-    }: {
-      ticketId: number;
-      assignedToId: number;
-    }) => assign(ticketId, { assignedToId }),
-    onSuccess: (updatedTicket, variables) => {
-      toast.success('Responsable asignado correctamente');
-      setQuickAssignments((current) => {
-        const next = { ...current };
-        delete next[variables.ticketId];
-        return next;
-      });
-      setSelectedTicket((current) =>
-        current?.id === updatedTicket.id ? updatedTicket : current,
-      );
-      syncUpdatedTicketCaches(queryClient, updatedTicket);
-      invalidateTicketCaches(queryClient);
-    },
-    onError: () => {
-      toast.error('No se pudo asignar el responsable del ticket');
-    },
-  });
+  const assignMutation = useAssignTicketMutation();
 
   const userOptions = buildUserOptions(users);
   const technicianOptions = useMemo(
@@ -234,14 +190,32 @@ export function TicketsAdminPage() {
     }
 
     assignMutation.mutate({
-      ticketId: ticket.id,
-      assignedToId: nextAssigneeId,
+      id: ticket.id,
+      data: { assignedToId: nextAssigneeId },
+    }, {
+      onSuccess: () => {
+        toast.success('Responsable asignado correctamente');
+        setQuickAssignments((current) => {
+          const next = { ...current };
+          delete next[ticket.id];
+          return next;
+        });
+      },
+      onError: () => {
+        toast.error('No se pudo asignar el responsable del ticket');
+      }
     });
   };
 
   const handleSubmit = async (values: TicketFormValues) => {
     if (selectedTicket) {
-      await updateMutation.mutateAsync({ id: selectedTicket.id, data: values });
+      await updateMutation.mutateAsync({ id: selectedTicket.id, data: values }, {
+        onSuccess: () => {
+          toast.success('Ticket actualizado correctamente');
+          setShowForm(false);
+          setSelectedTicket(null);
+        }
+      });
     }
   };
 
@@ -405,7 +379,7 @@ export function TicketsAdminPage() {
                 const selectedAssigneeId = quickAssignments[ticket.id];
                 const isAssigningThisTicket =
                   assignMutation.isPending &&
-                  assignMutation.variables?.ticketId === ticket.id;
+                  assignMutation.variables?.id === ticket.id;
 
                 return (
                   <Card key={ticket.id} className="ticket-record-card rounded-(--radius-panel)">

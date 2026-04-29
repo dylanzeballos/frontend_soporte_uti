@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type DragEvent } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -28,7 +28,7 @@ import {
   invalidateTicketCaches,
   syncUpdatedTicketCaches,
 } from "@/features/tickets/lib/ticket-cache";
-import { useTickets } from "@/hooks/useApi";
+import { useFilteredTicketsQuery, useUpdateTicketStatusMutation } from '@/features/tickets/hooks';
 import { cn } from "@/lib/utils";
 import {
   getPriorityColor,
@@ -139,7 +139,6 @@ export function KanbanPage({
 }: KanbanPageProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { list, updateStatus } = useTickets();
 
   const [view, setView] = useState<BoardView>("board");
   const [search, setSearch] = useState("");
@@ -153,17 +152,15 @@ export function KanbanPage({
     return <Navigate to="/technician/kanban" replace />;
   }
 
-  const { data: tickets = [], isLoading, isFetching } = useQuery<Ticket[]>({
-    queryKey: ["kanban-tickets", assignedToId ?? "all", search, priorityFilter],
-    queryFn: () =>
-      list({
-        page: 1,
-        limit: 20,
-        assignedToId,
-        search: search || undefined,
-        priority: priorityFilter === "all" ? undefined : priorityFilter,
-      }),
+  const { data: ticketsResponse, isLoading, isFetching } = useFilteredTicketsQuery({
+    page: 1,
+    limit: 20,
+    assignedToId,
+    search: search || undefined,
+    priority: priorityFilter === "all" ? undefined : priorityFilter,
   });
+
+  const tickets = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
 
   useEffect(() => {
     setBoardTickets(
@@ -175,9 +172,11 @@ export function KanbanPage({
     );
   }, [tickets]);
 
+const { mutateAsync: updateTicketStatus } = useUpdateTicketStatusMutation<Ticket>();
+
   const statusMutation = useMutation({
     mutationFn: ({ id, status, comment }: { id: number; status: TicketStatus; comment?: string }) =>
-      updateStatus(id, { status, comment }),
+    updateTicketStatus({ id, data: { status, comment } }),
     onMutate: async ({ id, status }) => {
       let previous: Ticket[] = [];
       setBoardTickets((current) => {

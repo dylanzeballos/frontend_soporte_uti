@@ -9,3 +9,12 @@ export const createRoleSchema = z.object({
 });
 
 export type CreateRoleInput = z.infer<typeof createRoleSchema>;
+
+export interface Role {
+  id: number;
+  name: string;
+  description?: string | null;
+  permissions?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}

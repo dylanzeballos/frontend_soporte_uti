@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Inbox, Loader2, Search, UserPlus2 } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -24,7 +24,7 @@ import {
   type TicketStatus,
 } from '@/features/tickets/schemas/ticket.schema';
 import { getDefaultRouteForUser, isAgent } from '@/features/users/schemas';
-import { useTickets } from '@/hooks/useApi';
+import { useFilteredTicketsQuery, useAssignTicketMutation } from '@/features/tickets/hooks';
 
 type StatusFilter = 'all' | TicketStatus;
 type PriorityFilter = 'all' | TicketPriority;
@@ -44,7 +44,7 @@ export function TechnicianPendingTicketsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { list, assign } = useTickets();
+  const assignMutation = useAssignTicketMutation();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [priority, setPriority] = useState<PriorityFilter>('all');
@@ -54,23 +54,16 @@ export function TechnicianPendingTicketsPage() {
     return <Navigate to={getDefaultRouteForUser(user)} replace />;
   }
 
-  const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
-    queryKey: ['technician-pending', user.id],
-    enabled: Boolean(user.id),
-    queryFn: async () => list({ limit: 100, unassigned: true }),
-  });
+  const { data: ticketsResponse, isLoading } = useFilteredTicketsQuery({ limit: 100, unassigned: true });
+  const tickets = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
 
-  const assignMutation = useMutation({
-    mutationFn: (ticketId: number) => assign(ticketId, { assignedToId: user.id }),
-    onSuccess: (updatedTicket) => {
-      toast.success('El ticket ya quedo asignado a tu cuenta');
-      syncUpdatedTicketCaches(queryClient, updatedTicket);
-      invalidateTicketCaches(queryClient);
-    },
-    onError: () => {
-      toast.error('No se pudo asignar el ticket a tu cuenta');
-    },
-  });
+  const handleAssign = async (ticketId: number) => {
+    const updatedTicket = await assignMutation.mutateAsync({ id: ticketId, data: { assignedToId: user.id } });
+
+    toast.success('El ticket ya quedo asignado a tu cuenta');
+    syncUpdatedTicketCaches(queryClient, updatedTicket);
+    invalidateTicketCaches(queryClient);
+  };
 
   const pendingTickets = useMemo(() => {
     return tickets
@@ -223,7 +216,7 @@ export function TechnicianPendingTicketsPage() {
                         type="button"
                         className="min-w-44 justify-center"
                         disabled={assignMutation.isPending}
-                        onClick={() => assignMutation.mutate(ticket.id)}
+                        onClick={() => handleAssign(ticket.id)}
                       >
                         {isAssigningThisTicket ? (
                           <>

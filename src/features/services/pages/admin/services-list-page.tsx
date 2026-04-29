@@ -1,35 +1,18 @@
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import type { ServiceItem } from '@/hooks/useApi';
-import { useServices } from '@/hooks/useApi';
+import { useDeleteServiceMutation, useServicesQuery, type ServiceItem } from '../../hooks';
+import { useState } from 'react';
 
 export function ServicesListPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedServiceToDelete, setSelectedServiceToDelete] = useState<ServiceItem | null>(null);
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { list, remove } = useServices();
+  const deleteMutation = useDeleteServiceMutation();
 
-  const { data: services = [], isLoading } = useQuery<ServiceItem[]>({
-    queryKey: ['services'],
-    queryFn: list,
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => remove(id),
-    onSuccess: (result) => {
-      if (!result) return;
-      toast.success('Servicio eliminado correctamente');
-      queryClient.invalidateQueries({ queryKey: ['services'] });
-      setSelectedServiceToDelete(null);
-    },
-  });
+  const { data: services = [], isLoading } = useServicesQuery();
 
   const handleDelete = (service: ServiceItem) => {
     setSelectedServiceToDelete(service);

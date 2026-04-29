@@ -1,50 +1,48 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { ClipboardPenLine } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/components/auth-context';
-import { TicketForm, type TicketSelectOption } from '@/features/tickets/components';
+import { TicketForm } from '@/features/tickets/components';
 import type { TicketFormValues } from '@/features/tickets/schemas/ticket.schema';
-import { useServices, useTickets } from '@/hooks/useApi';
+import { useServicesQuery } from '@/features/services/hooks';
+import { useCreateTicketMutation } from '@/features/tickets/hooks';
 
 export function TicketRequestPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { create } = useTickets();
-  const { list: listServices } = useServices();
+  const navigate = useNavigate();
   const [formKey, setFormKey] = useState(0);
+  const createMutation = useCreateTicketMutation();
+  const servicesQuery = useServicesQuery();
 
-  const { data: serviceOptions = [] } = useQuery<TicketSelectOption[]>({
-    queryKey: ['services'],
-    queryFn: async () => {
-      const services = await listServices();
-      return services.map((service) => ({
-        value: service.id,
-        label: service.name,
-      }));
-    },
-  });
+  const { data: services = [], isLoading: servicesLoading } = servicesQuery;
 
-  const createMutation = useMutation({
-    mutationFn: create,
-    onSuccess: () => {
+  const serviceOptions = services.map((service) => ({
+    value: service.id,
+    label: service.name,
+  }));
+
+  const handleSubmit = async (values: TicketFormValues) => {
+    try {
+      await createMutation.mutateAsync({
+        ...values,
+        status: 'open',
+        priority: 'medium',
+        assignedToId: null,
+        emitterId: user?.id ?? null,
+        slaMinutes: null,
+      });
       toast.success('Solicitud enviada correctamente');
       setFormKey((current) => current + 1);
       void queryClient.invalidateQueries({ queryKey: ['tickets'] });
       void queryClient.invalidateQueries({ queryKey: ['my-tickets', user?.id] });
-    },
-  });
-
-  const handleSubmit = async (values: TicketFormValues) => {
-    await createMutation.mutateAsync({
-      ...values,
-      status: 'open',
-      priority: 'medium',
-      assignedToId: null,
-      emitterId: user?.id ?? null,
-      slaMinutes: null,
-    });
+      navigate('/tickets');
+    } catch {
+      // Error handled by mutation
+    }
   };
 
   return (

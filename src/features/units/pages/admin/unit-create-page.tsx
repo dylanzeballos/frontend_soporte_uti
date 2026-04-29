@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createUnitSchema, type CreateUnitInput } from '@/features/units/schemas';
-import { useUnits } from '@/hooks/useApi';
+import { useCreateUnitMutation } from '@/features/units/hooks';
 
 export function UnitCreatePage() {
   const queryClient = useQueryClient();

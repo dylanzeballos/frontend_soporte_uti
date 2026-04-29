@@ -13,6 +13,8 @@ import {
   TicketIcon,
   UserCogIcon,
   WrenchIcon,
+  BoxIcon,
+  BarChart3Icon,
 } from "lucide-react"
 
 import { useAuth } from "@/components/auth-context"
@@ -132,6 +134,12 @@ const navSections: NavSection[] = [
         icon: FileTextIcon,
         roles: ["agent"],
       },
+      {
+        title: "Estadísticas",
+        to: "/technician/reports/stats",
+        icon: BarChart3Icon,
+        roles: ["agent"],
+      },
     ],
   },
   {
@@ -153,6 +161,12 @@ const navSections: NavSection[] = [
         title: "Agregar servicios",
         to: "/admin/services",
         icon: WrenchIcon,
+        roles: ["admin"],
+      },
+      {
+        title: "Gestionar componentes",
+        to: "/admin/components/list",
+        icon: BoxIcon,
         roles: ["admin"],
       },
       {
@@ -263,12 +277,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
 
   return (
     <>
-      <a
-        href="#main-content"
-        className="skip-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        Saltar al contenido
-      </a>
+      
 
       <Sidebar
         role="navigation"

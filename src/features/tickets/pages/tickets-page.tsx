@@ -20,7 +20,7 @@ import {
   type Ticket,
 } from '@/features/tickets/schemas/ticket.schema';
 import { isAgent } from '@/features/users/schemas';
-import { useTickets } from '@/hooks/useApi';
+import { useFilteredTicketsQuery } from '@/features/tickets/hooks';
 
 const adminTicketViews = [
   {
@@ -46,13 +46,12 @@ function formatTicketDate(value: string) {
 function UserTicketsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { list } = useTickets();
 
-  const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
-    queryKey: ['my-tickets', user?.id],
-    enabled: Boolean(user?.id),
-    queryFn: async () => list({ createdById: user?.id, limit: 50 }),
+  const { data: ticketsResponse, isLoading } = useFilteredTicketsQuery({
+    createdById: user?.id,
+    limit: 50,
   });
+  const tickets = ticketsResponse?.data ?? (Array.isArray(ticketsResponse) ? ticketsResponse : []);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

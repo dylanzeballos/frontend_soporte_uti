@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createRoleSchema, type CreateRoleInput } from '@/features/roles/schemas';
-import { useRoles } from '@/hooks/useApi';
+import { useCreateRoleMutation } from '@/features/roles/hooks';
 
 export function RoleCreatePage() {
   const queryClient = useQueryClient();

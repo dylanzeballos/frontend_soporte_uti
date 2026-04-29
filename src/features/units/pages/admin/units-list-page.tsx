@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import type { Unit } from '@/features/units/schemas';
-import { useUnits } from '@/hooks/useApi';
+import { useUnitsQuery, useDeleteUnitMutation } from '@/features/units/hooks';
 
 export function UnitsListPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

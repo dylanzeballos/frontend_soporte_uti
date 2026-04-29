@@ -1,5 +1,5 @@
-export { userSchema, createUserSchema, updateUserSchema } from './user.schema';
-export type { AppUserRole, User, CreateUserInput, UpdateUserInput, UserRole } from './user.schema';
+export { userSchema, userFormSchema, createUserSchema, updateUserSchema } from './user.schema';
+export type { AppUserRole, User, CreateUserInput, UpdateUserInput, UserRole, UserFormValues } from './user.schema';
 export {
   getAppUserRole,
   getDefaultRouteForUser,

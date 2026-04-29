@@ -1,51 +1,21 @@
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createServiceSchema, type CreateServiceInput } from '@/features/services/schemas';
-import { useServices } from '@/hooks/useApi';
+import { useServicesQuery } from '@/features/services/hooks';
 
 export function ServiceCreatePage() {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const serviceId = Number(id);
   const isEditMode = Number.isInteger(serviceId) && serviceId > 0;
-  const { create, update, findOne } = useServices();
+  const { data: selectedService, isLoading: isLoadingService } = useServicesQuery();
 
-  const { data: selectedService, isLoading: isLoadingService } = useQuery({
-    queryKey: ['service', serviceId],
-    queryFn: () => findOne(serviceId),
-    enabled: isEditMode,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: create,
-    onSuccess: (result) => {
-      if (!result) return;
-      toast.success(`Servicio "${result.name}" registrado correctamente`);
-      queryClient.invalidateQueries({ queryKey: ['services'] });
-      reset({ name: '' });
-      setFocus('name');
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (data: CreateServiceInput) => update(serviceId, data),
-    onSuccess: (result) => {
-      if (!result) return;
-      toast.success(`Servicio "${result.name}" actualizado correctamente`);
-      queryClient.invalidateQueries({ queryKey: ['services'] });
-      queryClient.invalidateQueries({ queryKey: ['service', serviceId] });
-      navigate('/admin/services/list');
-    },
-  });
 
   const {
     control,
@@ -68,23 +38,6 @@ export function ServiceCreatePage() {
 
     reset({ name: '' });
   }, [isEditMode, reset, selectedService]);
-
-  const onSubmit = async (data: CreateServiceInput) => {
-    if (isEditMode) {
-      await updateMutation.mutateAsync(data);
-      return;
-    }
-
-    await createMutation.mutateAsync(data);
-  };
-
-  const handleClear = () => {
-    reset({ name: '' });
-    setFocus('name');
-    toast.message('Formulario limpiado');
-  };
-
-  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">

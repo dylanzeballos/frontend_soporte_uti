@@ -1,35 +1,19 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import type { RoleItem } from '@/hooks/useApi';
-import { useRoles } from '@/hooks/useApi';
+import type { RoleItem } from '@/features/roles/hooks';
+import { useRolesQuery, useDeleteRoleMutation } from '@/features/roles/hooks';
 
 export function RolesListPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRoleToDelete, setSelectedRoleToDelete] = useState<RoleItem | null>(null);
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { list, remove } = useRoles();
+  const { data: roles = [], isLoading } = useRolesQuery();
+  const deleteMutation = useDeleteRoleMutation();
 
-  const { data: roles = [], isLoading } = useQuery<RoleItem[]>({
-    queryKey: ['roles'],
-    queryFn: list,
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => remove(id),
-    onSuccess: (result) => {
-      if (!result) return;
-      toast.success('Rol o cargo eliminado correctamente');
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
-      setSelectedRoleToDelete(null);
-    },
-  });
 
   const handleDelete = (role: RoleItem) => {
     setSelectedRoleToDelete(role);

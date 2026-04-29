@@ -10,9 +10,10 @@ import {
   TechnicianDashboardPage,
   TechnicianKanbanPage,
   TechnicianPendingTicketsPage,
-  TechnicianReportsPage,
 } from '@/features/technician/pages';
 import { UsersAdminPage } from '@/features/users/pages';
+import { ComponentsListPage } from '@/features/components/pages';
+import { ReportsListPage, ReportsStatsPage } from '@/features/reports/pages';
 import type { ReactNode } from 'react';
 
 export interface AppRoute {
@@ -74,12 +75,22 @@ export const routes: AppRoute[] = [
   },
   {
     path: '/technician/reports',
-    element: <TechnicianReportsPage />,
+    element: <ReportsListPage />,
+    protected: true,
+  },
+  {
+    path: '/technician/reports/stats',
+    element: <ReportsStatsPage />,
     protected: true,
   },
   {
     path: '/admin/users',
     element: <UsersAdminPage />,
+    protected: true,
+  },
+  {
+    path: '/admin/components',
+    element: <ComponentsListPage />,
     protected: true,
   },
   {
