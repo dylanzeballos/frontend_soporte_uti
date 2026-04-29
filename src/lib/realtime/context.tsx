@@ -169,7 +169,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
 
     // Avoid opening an unauthenticated socket; reconnect once login updates auth state.
     if (!isAuthenticated || !token) {
-      setStatus('disconnected');
+      queueMicrotask(() => setStatus('disconnected'));
       if (clientRef.current) {
         clientRef.current.disconnect();
         clientRef.current = null;
@@ -195,11 +195,11 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     }
 
     if (import.meta.env.DEV) {
-      setStatus('connected');
+      queueMicrotask(() => setStatus('connected'));
       const stop = startMockSimulation(handleEvent);
       return () => {
         stop();
-        setStatus('disconnected');
+        queueMicrotask(() => setStatus('disconnected'));
       };
     }
   }, [handleEvent, isAuthenticated]);

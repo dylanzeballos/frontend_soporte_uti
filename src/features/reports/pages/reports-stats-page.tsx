@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { BarChart3 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,30 +9,23 @@ import { apiRequest } from '@/lib/api';
 import type { ReportStatsResponse } from '@/features/reports/schemas';
 
 export function ReportsStatsPage() {
-  const [stats, setStats] = useState<ReportStatsResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
-  const loadStats = async () => {
-    setIsLoading(true);
-    try {
+  const {
+    data: stats = null,
+    isFetching: isLoading,
+    refetch: loadStats,
+  } = useQuery<ReportStatsResponse | null>({
+    queryKey: ['reports', 'stats', 'summary', fromDate, toDate],
+    queryFn: async () => {
       const query = new URLSearchParams();
       if (fromDate) query.set('fromDate', fromDate);
       if (toDate) query.set('toDate', toDate);
       const suffix = query.toString() ? `?${query.toString()}` : '';
-      const result = await apiRequest<ReportStatsResponse>({ url: `/reports/stats/summary${suffix}` });
-      setStats(result);
-    } catch (error) {
-      console.error('Error loading stats:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadStats();
-  }, []);
+      return apiRequest<ReportStatsResponse>({ url: `/reports/stats/summary${suffix}` });
+    },
+  });
 
   return (
     <div className="space-y-5">
@@ -76,7 +70,7 @@ export function ReportsStatsPage() {
           </div>
           <div className="mt-4 flex justify-end">
             <button
-              onClick={loadStats}
+              onClick={() => void loadStats()}
               className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
             >
               Filtrar

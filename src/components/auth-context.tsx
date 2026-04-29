@@ -167,7 +167,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    refreshProfile();
+    queueMicrotask(() => {
+      void refreshProfile();
+    });
   }, [refreshProfile]);
 
   return (
