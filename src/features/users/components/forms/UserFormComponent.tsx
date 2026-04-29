@@ -149,7 +149,7 @@ export function UserFormComponent({
               </Label>
               <Select
                 value={roleId ?? ''}
-                onValueChange={(value) => setValue('roleId', value)}
+                onValueChange={(value) => setValue('roleId', value ?? '')}
               >
                 <SelectTrigger id="user-role" aria-invalid={errors.roleId ? 'true' : 'false'}>
                   <SelectValue placeholder="Selecciona rol">
