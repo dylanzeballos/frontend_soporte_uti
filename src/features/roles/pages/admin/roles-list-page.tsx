@@ -65,19 +65,19 @@ export function RolesListPage() {
           {isLoading ? (
             <div className="py-8 text-center text-muted-foreground">Cargando roles...</div>
           ) : roles.length > 0 ? (
-            <div className="space-y-3">
-              {roles.map((role) => (
+            <div className="space-y-1">
+              {roles.map((role, index) => (
                 <div
                   key={role.id}
-                  className="rounded-[calc(var(--radius-panel)-0.35rem)] border border-border/60 bg-background/70 px-4 py-3 shadow-[0_1px_0_rgba(255,255,255,0.02)] transition-colors hover:bg-muted/30"
+                  className="rounded-[calc(var(--radius-panel)-0.35rem)] border border-border/60 bg-background/70 px-4 py-2 md:py-1 shadow-[0_1px_0_rgba(255,255,255,0.02)] transition-colors hover:bg-muted/30"
                 >
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/60 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                          ID {role.id}
+                          {index + 1}
                         </span>
-                        <h3 className="truncate text-base font-semibold text-foreground">{role.name}</h3>
+                        <h3 className="truncate text-base font-normal text-foreground">{role.name}</h3>
                       </div>
                     </div>
 
@@ -87,7 +87,7 @@ export function RolesListPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => navigate(`/admin/roles/${role.id}/edit`)}
-                        aria-label={`Editar rol o cargo ${role.id}`}
+                        aria-label={`Editar rol o cargo ${role.name}`}
                       >
                         <Pencil data-icon="inline-start" />
                         Editar
@@ -97,7 +97,7 @@ export function RolesListPage() {
                         size="sm"
                         variant="destructive"
                         onClick={() => handleDelete(role)}
-                        aria-label={`Eliminar rol o cargo ${role.id}`}
+                        aria-label={`Eliminar rol o cargo ${role.name}`}
                         disabled={deleteMutation.isPending}
                       >
                         <Trash2 data-icon="inline-start" />
