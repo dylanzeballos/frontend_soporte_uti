@@ -1,6 +1,7 @@
 import { LoginPage } from '@/features/auth/pages';
 import { DashboardPage } from '@/features/dashboard/pages';
 import { AdminReportsPage } from '@/features/reports/pages';
+import { AdminStatsPage } from '@/features/stats/pages';
 import { TicketRequestPage, TicketsAdminPage, TicketsPage } from '@/features/tickets/pages';
 import { ServiceCreatePage, ServicesEntryPage, ServicesListPage } from '@/features/services/pages';
 import { RoleCreatePage, RolesEntryPage, RolesListPage } from '@/features/roles/pages';
@@ -86,6 +87,11 @@ export const routes: AppRoute[] = [
   {
     path: '/admin/reports',
     element: <AdminReportsPage />,
+    protected: true,
+  },
+  {
+    path: '/admin/stats',
+    element: <AdminStatsPage />,
     protected: true,
   },
   {

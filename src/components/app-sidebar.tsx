@@ -1,6 +1,7 @@
 import * as React from "react"
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
 import {
+  BarChart3Icon,
   BriefcaseBusinessIcon,
   Building2Icon,
   ChevronDownIcon,
@@ -173,6 +174,12 @@ const navSections: NavSection[] = [
         icon: FileTextIcon,
         roles: ["admin"],
       },
+      {
+        title: "Estadisticas",
+        to: "/admin/stats",
+        icon: BarChart3Icon,
+        roles: ["admin"],
+      },
     ],
   },
 ]
@@ -203,6 +210,7 @@ function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/tickets")) return "Tickets"
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
   if (isPathActive(pathname, "/admin/reports")) return "Reportes tecnicos"
+  if (isPathActive(pathname, "/admin/stats")) return "Estadisticas"
   if (isPathActive(pathname, "/admin/units")) return "Unidades"
   if (isPathActive(pathname, "/admin/services")) return "Servicios"
   if (isPathActive(pathname, "/admin/roles")) return "Roles o cargos"
