@@ -1,14 +1,15 @@
 import type { QueryClient } from '@tanstack/react-query';
 
+import { invalidateReportCaches } from '@/features/reports/lib/report-cache';
 import type { Ticket, TicketStatus } from '@/features/tickets/schemas/ticket.schema';
 
 const ticketQueryKeys = [
   ['tickets'],
   ['my-tickets'],
   ['kanban-tickets'],
-  ['technician-dashboard'],
+  ['technician-dashboard', 'assignments'],
+  ['technician-dashboard', 'pending'],
   ['technician-assignments'],
-  ['technician-reports'],
   ['technician-pending'],
 ] as const;
 
@@ -68,4 +69,6 @@ export function invalidateTicketCaches(queryClient: QueryClient) {
   for (const queryKey of ticketQueryKeys) {
     void queryClient.invalidateQueries({ queryKey });
   }
+
+  invalidateReportCaches(queryClient);
 }

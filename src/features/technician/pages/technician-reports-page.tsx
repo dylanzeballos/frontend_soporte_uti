@@ -7,50 +7,75 @@ import { useAuth } from '@/components/auth-context';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { ReportDetailSheet } from '@/features/reports/components';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { type Report } from '@/features/reports/schemas';
 import {
   getPriorityColor,
   getPriorityLabel,
   getStatusColor,
   getStatusLabel,
-  type Ticket,
   type TicketStatus,
 } from '@/features/tickets/schemas/ticket.schema';
 import { getDefaultRouteForUser, isAgent } from '@/features/users/schemas';
-import { useTickets } from '@/hooks/useApi';
+import { useReports } from '@/hooks/useApi';
 
 type StatusFilter = 'all' | TicketStatus;
 
-function getAssigneeName(ticket: Ticket) {
-  return ticket.assignedTo?.name || ticket.assignedTo?.email || 'Sin responsable';
+function getAssigneeName(report: Report) {
+  const actor = report.ticket?.assignedTo;
+  if (!actor) return 'Sin responsable';
+
+  const fullName = [actor.firstName, actor.lastName].filter(Boolean).join(' ').trim();
+  return fullName || actor.name || actor.email || 'Sin responsable';
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return 'Sin fecha';
+
+  return new Date(value).toLocaleDateString('es-BO', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 export function TechnicianReportsPage() {
   const { user } = useAuth();
-  const { list } = useTickets();
+  const { list } = useReports();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
   if (!user) return null;
   if (!isAgent(user)) {
     return <Navigate to={getDefaultRouteForUser(user)} replace />;
   }
 
-  const { data: reports = [], isLoading } = useQuery<Ticket[]>({
+  const { data: reports = [], isLoading } = useQuery<Report[]>({
     queryKey: ['technician-reports', user.id],
     enabled: Boolean(user.id),
     queryFn: async () => list({ createdById: user.id, limit: 100 }),
   });
 
   const filteredReports = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
     return reports.filter((ticket) => {
-      const matchesStatus = status === 'all' || ticket.status === status;
-      const term = search.trim().toLowerCase();
+      const matchesStatus = status === 'all' || ticket.ticket?.status === status;
+      const componentNames = (ticket.components ?? [])
+        .map((component) => component.component?.name ?? '')
+        .join(' ')
+        .toLowerCase();
       const matchesSearch =
         term.length === 0 ||
-        ticket.title.toLowerCase().includes(term) ||
-        ticket.description.toLowerCase().includes(term) ||
-        String(ticket.id).includes(term);
+        ticket.summary.toLowerCase().includes(term) ||
+        ticket.workPerformed.toLowerCase().includes(term) ||
+        ticket.resolutionType?.toLowerCase().includes(term) === true ||
+        ticket.ticket?.title.toLowerCase().includes(term) === true ||
+        componentNames.includes(term) ||
+        String(ticket.id).includes(term) ||
+        String(ticket.ticketId).includes(term);
 
       return matchesStatus && matchesSearch;
     });
@@ -65,7 +90,7 @@ export function TechnicianReportsPage() {
             Mis reportes
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Aqui puedes ver los tickets que registraste desde tu cuenta y hacer seguimiento a su estado.
+            Aqui puedes ver los reportes tecnicos que registraste y seguir el estado del ticket asociado.
           </p>
         </div>
       </section>
@@ -81,7 +106,7 @@ export function TechnicianReportsPage() {
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar por titulo, descripcion o ID"
+              placeholder="Buscar por ticket, resumen, trabajo realizado, componente o ID"
               className="pl-9"
             />
           </div>
@@ -105,7 +130,7 @@ export function TechnicianReportsPage() {
       <Card className="rounded-[var(--radius-panel)]">
         <CardHeader>
           <CardTitle>Historial de reportes</CardTitle>
-          <CardDescription>{filteredReports.length} ticket(s) encontrados.</CardDescription>
+          <CardDescription>{filteredReports.length} reporte(s) encontrados.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (
@@ -113,17 +138,37 @@ export function TechnicianReportsPage() {
           ) : filteredReports.length > 0 ? (
             <div className="grid gap-4 xl:grid-cols-2">
               {filteredReports.map((ticket) => (
-                <Card key={ticket.id} className="ticket-record-card rounded-[var(--radius-panel)]">
+                <button
+                  key={ticket.id}
+                  type="button"
+                  onClick={() => setSelectedReport(ticket)}
+                  className="ticket-record-card group flex w-full flex-col overflow-hidden rounded-[var(--radius-panel)] border border-border/60 bg-card text-left shadow-[var(--shadow-1)] transition-all duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[var(--shadow-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
                   <CardHeader className="px-5 pb-0 pt-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
-                          <Badge className={getStatusColor(ticket.status)}>{getStatusLabel(ticket.status)}</Badge>
-                          <Badge className={getPriorityColor(ticket.priority)}>{getPriorityLabel(ticket.priority)}</Badge>
+                          {ticket.ticket?.status ? (
+                            <Badge className={getStatusColor(ticket.ticket.status)}>
+                              {getStatusLabel(ticket.ticket.status)}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">Sin ticket</Badge>
+                          )}
+                          {ticket.ticket?.priority ? (
+                            <Badge className={getPriorityColor(ticket.ticket.priority)}>
+                              {getPriorityLabel(ticket.ticket.priority)}
+                            </Badge>
+                          ) : null}
+                          {ticket.resolutionType ? (
+                            <Badge variant="secondary">{ticket.resolutionType}</Badge>
+                          ) : null}
                         </div>
-                        <CardTitle className="text-lg">{ticket.title}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {ticket.ticket?.title ?? `Ticket #${ticket.ticketId}`}
+                        </CardTitle>
                         <CardDescription className="line-clamp-2 leading-6">
-                          {ticket.description}
+                          {ticket.summary}
                         </CardDescription>
                       </div>
 
@@ -133,38 +178,85 @@ export function TechnicianReportsPage() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="grid gap-3 px-5 pb-5 pt-4 text-sm">
-                    <div className="grid gap-3 sm:grid-cols-2">
+                  <CardContent className="grid gap-4 px-5 pb-5 pt-4 text-sm">
+                    <div className="editorial-inset rounded-md p-3.5">
+                      <div className="editorial-label">Trabajo realizado</div>
+                      <p className="mt-1 line-clamp-4 leading-6 text-foreground">
+                        {ticket.workPerformed}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
                       <div className="editorial-inset rounded-md p-3.5">
                         <div className="editorial-label">Responsable</div>
-                        <div className="mt-1 font-medium text-foreground">{getAssigneeName(ticket)}</div>
+                        <div className="mt-1 font-medium text-foreground">
+                          {getAssigneeName(ticket)}
+                        </div>
                       </div>
                       <div className="editorial-inset rounded-md p-3.5">
                         <div className="editorial-label">Servicio</div>
                         <div className="mt-1 font-medium text-foreground">
-                          {ticket.service?.name ?? 'Sin servicio'}
+                          {ticket.ticket?.service?.name ?? 'Sin servicio'}
+                        </div>
+                      </div>
+                      <div className="editorial-inset rounded-md p-3.5">
+                        <div className="editorial-label">Componentes</div>
+                        <div className="mt-1 font-medium text-foreground">
+                          {(ticket.components ?? []).length > 0
+                            ? `${ticket.components?.length ?? 0} registrado(s)`
+                            : 'Sin componentes'}
                         </div>
                       </div>
                     </div>
 
+                    {(ticket.components ?? []).length > 0 ? (
+                      <div className="space-y-2">
+                        <div className="editorial-label">Detalle de componentes</div>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          {ticket.components
+                            ?.map((component) =>
+                              component.component?.name
+                                ? `${component.component.name} x${component.quantity}`
+                                : `Componente #${component.componentId} x${component.quantity}`,
+                            )
+                            .join(', ')}
+                        </p>
+                      </div>
+                    ) : null}
+
                     <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-                      <span>#{ticket.id}</span>
-                      <span>Creado {new Date(ticket.createdAt).toLocaleDateString('es-BO')}</span>
+                      <span>Reporte #{ticket.id}</span>
+                      <span>Ticket #{ticket.ticketId}</span>
+                      <span>Registrado {formatDate(ticket.createdAt)}</span>
+                    </div>
+
+                    <div className="text-xs font-medium text-primary/80 transition-colors group-hover:text-primary">
+                      Ver detalle del reporte
                     </div>
                   </CardContent>
-                </Card>
+                </button>
               ))}
             </div>
           ) : (
             <div className="editorial-inset rounded-md py-14 text-center">
               <p className="text-base font-medium text-foreground">No hay reportes para mostrar</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Cuando registres tickets desde tu cuenta apareceran aqui.
+                Cuando completes un reporte tecnico desde tus tickets asignados aparecera aqui.
               </p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <ReportDetailSheet
+        open={Boolean(selectedReport)}
+        report={selectedReport}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedReport(null);
+          }
+        }}
+      />
     </div>
   );
 }

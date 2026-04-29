@@ -9,6 +9,14 @@ import type { LoginInput } from '@/features/auth/schemas/login.schema';
 import type { CreateRoleInput } from '@/features/roles/schemas';
 import type { CreateServiceInput } from '@/features/services/schemas';
 import type { CreateUnitInput, Unit, UpdateUnitInput } from '@/features/units/schemas';
+import type {
+  ComponentCatalogFilter,
+  ComponentCatalogItem,
+  CreateReportInput,
+  Report,
+  ReportFilter,
+  UpdateReportInput,
+} from '@/features/reports/schemas';
 
 export interface ServiceItem {
   id: number;
@@ -156,6 +164,7 @@ export function useTickets() {
     if (filters?.createdById) query.set('createdById', String(filters.createdById));
     if (filters?.excludeCreatedById) query.set('excludeCreatedById', String(filters.excludeCreatedById));
     if (filters?.search) query.set('search', filters.search);
+    query.set('includeTotal', String(filters?.includeTotal ?? false));
     const suffix = query.toString() ? `?${query.toString()}` : '';
     const result = await fetchApi<Ticket[] | { data: Ticket[] } | PaginatedResponse<Ticket> | null>(`/tickets${suffix}`);
     setIsLoading(false);
@@ -379,6 +388,95 @@ export function useRoles() {
   }, []);
 
   return { list, findOne, create, update, remove, isLoading };
+}
+
+export function useComponents() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const list = useCallback(async (filters?: ComponentCatalogFilter): Promise<ComponentCatalogItem[]> => {
+    setIsLoading(true);
+    const query = new URLSearchParams();
+    const safeLimit = filters?.limit ? Math.min(filters.limit, 100) : undefined;
+    if (filters?.page) query.set('page', String(filters.page));
+    if (safeLimit) query.set('limit', String(safeLimit));
+    if (typeof filters?.isActive === 'boolean') query.set('isActive', String(filters.isActive));
+    if (filters?.search) query.set('search', filters.search);
+    const suffix = query.toString() ? `?${query.toString()}` : '';
+    const result = await fetchApi<ComponentCatalogItem[] | { data: ComponentCatalogItem[] } | PaginatedResponse<ComponentCatalogItem> | null>(`/components${suffix}`);
+    setIsLoading(false);
+    if (!result) return [];
+    if (Array.isArray(result)) return result;
+    if (result && typeof result === 'object' && 'data' in result) {
+      return (result.data as ComponentCatalogItem[]) ?? [];
+    }
+    return [];
+  }, []);
+
+  return { list, isLoading };
+}
+
+export function useReports() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const list = useCallback(async (filters?: Partial<ReportFilter>): Promise<Report[]> => {
+    setIsLoading(true);
+    const query = new URLSearchParams();
+    const safeLimit = filters?.limit ? Math.min(filters.limit, 100) : undefined;
+    if (filters?.page) query.set('page', String(filters.page));
+    if (safeLimit) query.set('limit', String(safeLimit));
+    if (filters?.ticketId) query.set('ticketId', String(filters.ticketId));
+    if (filters?.createdById) query.set('createdById', String(filters.createdById));
+    if (filters?.componentId) query.set('componentId', String(filters.componentId));
+    if (filters?.ticketStatus) query.set('ticketStatus', filters.ticketStatus);
+    if (filters?.fromDate) query.set('fromDate', filters.fromDate);
+    if (filters?.toDate) query.set('toDate', filters.toDate);
+    query.set('includeTotal', String(filters?.includeTotal ?? false));
+    const suffix = query.toString() ? `?${query.toString()}` : '';
+    const result = await fetchApi<Report[] | { data: Report[] } | PaginatedResponse<Report> | null>(`/reports${suffix}`);
+    setIsLoading(false);
+    if (!result) return [];
+    if (Array.isArray(result)) return result;
+    if (result && typeof result === 'object' && 'data' in result) {
+      return (result.data as Report[]) ?? [];
+    }
+    return [];
+  }, []);
+
+  const findOne = useCallback(async (id: number): Promise<Report | null> => {
+    return await fetchApi<Report>(`/reports/${id}`);
+  }, []);
+
+  const findByTicketId = useCallback(async (ticketId: number): Promise<Report | null> => {
+    const reports = await list({ ticketId, limit: 1 });
+    const match = reports[0];
+    if (!match?.id) {
+      return null;
+    }
+
+    return await findOne(match.id);
+  }, [findOne, list]);
+
+  const create = useCallback(async (data: CreateReportInput) => {
+    setIsLoading(true);
+    try {
+      const result = await fetchApi<Report>('/reports', 'POST', data);
+      return ensureData(result, 'No se pudo crear el reporte');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: number, data: UpdateReportInput) => {
+    setIsLoading(true);
+    try {
+      const result = await fetchApi<Report>(`/reports/${id}`, 'PATCH', data);
+      return ensureData(result, 'No se pudo actualizar el reporte');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { list, findOne, findByTicketId, create, update, isLoading };
 }
 
 export function useAuthApi() {

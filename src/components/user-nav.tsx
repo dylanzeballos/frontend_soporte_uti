@@ -25,16 +25,18 @@ export function UserNav() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button
-          variant="ghost"
-          className="topbar-icon-button relative h-10 w-10 rounded-full p-0 hover:translate-y-0"
-          aria-label="Abrir menu de perfil"
-        >
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            className="topbar-icon-button relative h-10 w-10 rounded-full p-0 hover:translate-y-0"
+            aria-label="Abrir menu de perfil"
+          />
+        }
+      >
           <div className="topbar-avatar">
             {String(user.name || user.email || 'U').charAt(0).toUpperCase()}
           </div>
-        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <div className="flex items-center justify-start gap-2 p-2">
