@@ -27,6 +27,7 @@ import {
   invalidateTicketCaches,
   syncUpdatedTicketCaches,
 } from '@/features/tickets/lib/ticket-cache';
+import { invalidateReportCaches } from '@/features/reports/lib/report-cache';
 import {
   getPriorityColor,
   getPriorityLabel,
@@ -204,7 +205,7 @@ export function TicketReportSheet({
         : await create(payload);
 
       queryClient.setQueryData(reportQueryKey, savedReport);
-      void queryClient.invalidateQueries({ queryKey: ['reports'] });
+      invalidateReportCaches(queryClient);
 
       if (submitIntent === 'resolve' && canResolve) {
         try {

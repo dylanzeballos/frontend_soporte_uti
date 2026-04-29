@@ -34,6 +34,12 @@ const ticketServiceReferenceSchema = z.object({
   name: z.string(),
 });
 
+const ticketReportReferenceSchema = z.object({
+  id: z.number(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
 export const ticketSchema = z.object({
   id: z.number(),
   title: z.string(),
@@ -49,6 +55,7 @@ export const ticketSchema = z.object({
   createdBy: ticketUserReferenceSchema.optional(),
   emitter: ticketUserReferenceSchema.nullable().optional(),
   service: ticketServiceReferenceSchema.nullable().optional(),
+  report: ticketReportReferenceSchema.nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   resolvedAt: z.string().nullable().optional(),
@@ -112,6 +119,7 @@ export const ticketFilterSchema = z.object({
   createdById: z.number().int().positive().optional(),
   excludeCreatedById: z.number().int().positive().optional(),
   search: z.string().trim().optional(),
+  includeTotal: z.boolean().optional(),
 });
 
 export type TicketStatus = z.infer<typeof ticketStatusEnum>;

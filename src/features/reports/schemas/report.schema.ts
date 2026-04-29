@@ -135,6 +135,7 @@ export interface ReportFilter {
   ticketStatus?: string;
   fromDate?: string;
   toDate?: string;
+  includeTotal?: boolean;
 }
 
 export interface ComponentCatalogFilter {

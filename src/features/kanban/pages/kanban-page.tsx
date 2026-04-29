@@ -1,4 +1,4 @@
-import { useMemo, useState, type DragEvent } from 'react';
+import { useDeferredValue, useMemo, useState, type DragEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -25,7 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TicketReportSheet } from '@/features/reports';
+import { ReportDetailSheet, TicketReportSheet } from '@/features/reports';
 import {
   invalidateTicketCaches,
   syncUpdatedTicketCaches,
@@ -130,9 +130,13 @@ function normalizePriority(value: string | undefined): TicketPriority {
 }
 
 function canWriteReport(ticket: Ticket, role: string | undefined, userId: number | undefined) {
-  if (role === 'admin') return true;
+  if (role === 'admin') return false;
   if (!userId) return false;
   return ticket.assignedToId === userId;
+}
+
+function hasTicketReport(ticket: Ticket) {
+  return Boolean(ticket.report?.id);
 }
 
 function EmptyState({ message }: { message: string }) {
@@ -161,15 +165,17 @@ export function KanbanPage({
   const [dragFromStatus, setDragFromStatus] = useState<TicketStatus | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<TicketStatus | null>(null);
   const [reportTicketId, setReportTicketId] = useState<number | null>(null);
+  const [reportDetailId, setReportDetailId] = useState<number | null>(null);
 
   const appRole = getAppUserRole(user);
   const isTechnicianView = Boolean(assignedToId) || appRole === 'agent';
   const effectiveAssignedToId = assignedToId ?? (appRole === 'agent' ? user?.id : undefined);
+  const deferredSearch = useDeferredValue(search);
 
   const kanbanQueryKey = [
     'kanban-tickets',
     effectiveAssignedToId ?? 'all',
-    search,
+    deferredSearch,
     priorityFilter,
   ] as const;
 
@@ -179,12 +185,13 @@ export function KanbanPage({
 
   const { data: tickets = [], isLoading, isFetching } = useQuery<Ticket[]>({
     queryKey: kanbanQueryKey,
+    placeholderData: (previousData) => previousData,
     queryFn: () =>
       list({
         page: 1,
         limit: 100,
         assignedToId: effectiveAssignedToId,
-        search: search || undefined,
+        search: deferredSearch || undefined,
         priority: priorityFilter === 'all' ? undefined : priorityFilter,
       }),
   });
@@ -255,6 +262,13 @@ export function KanbanPage({
   const isEmpty = totalTickets === 0;
 
   function openReport(ticket: Ticket) {
+    if (appRole === 'admin') {
+      if (ticket.report?.id) {
+        setReportDetailId(ticket.report.id);
+      }
+      return;
+    }
+
     setReportTicketId(ticket.id);
   }
 
@@ -427,6 +441,8 @@ export function KanbanPage({
                       {column.tickets.map((ticket) => {
                         const PriorityIcon = PRIORITY_ICON[ticket.priority];
                         const allowReport = canWriteReport(ticket, appRole, user?.id);
+                        const allowAdminReportView = appRole === 'admin' && hasTicketReport(ticket);
+                        const showDisabledAdminReport = appRole === 'admin' && !hasTicketReport(ticket);
 
                         return (
                           <Card
@@ -499,7 +515,32 @@ export function KanbanPage({
                                   onClick={() => openReport(ticket)}
                                 >
                                   <ClipboardCheck className="mr-2 h-4 w-4" />
-                                  Abrir reporte
+                                  {ticket.report?.id ? 'Editar reporte' : 'Abrir reporte'}
+                                </Button>
+                              ) : allowAdminReportView ? (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full justify-center"
+                                  draggable={false}
+                                  onMouseDown={(event) => event.stopPropagation()}
+                                  onClick={() => openReport(ticket)}
+                                >
+                                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                                  Ver reporte
+                                </Button>
+                              ) : showDisabledAdminReport ? (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full justify-center"
+                                  draggable={false}
+                                  disabled
+                                >
+                                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                                  Sin reporte
                                 </Button>
                               ) : null}
                             </CardContent>
@@ -535,6 +576,8 @@ export function KanbanPage({
                   <CardContent className="space-y-2">
                     {column.tickets.map((ticket) => {
                       const allowReport = canWriteReport(ticket, appRole, user?.id);
+                      const allowAdminReportView = appRole === 'admin' && hasTicketReport(ticket);
+                      const showDisabledAdminReport = appRole === 'admin' && !hasTicketReport(ticket);
 
                       return (
                         <div key={ticket.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-sm">
@@ -552,7 +595,17 @@ export function KanbanPage({
                             {allowReport ? (
                               <Button type="button" size="sm" variant="outline" onClick={() => openReport(ticket)}>
                                 <ClipboardCheck className="mr-2 h-4 w-4" />
-                                Reporte
+                                {ticket.report?.id ? 'Editar reporte' : 'Abrir reporte'}
+                              </Button>
+                            ) : allowAdminReportView ? (
+                              <Button type="button" size="sm" variant="outline" onClick={() => openReport(ticket)}>
+                                <ClipboardCheck className="mr-2 h-4 w-4" />
+                                Ver reporte
+                              </Button>
+                            ) : showDisabledAdminReport ? (
+                              <Button type="button" size="sm" variant="outline" disabled>
+                                <ClipboardCheck className="mr-2 h-4 w-4" />
+                                Sin reporte
                               </Button>
                             ) : null}
                           </div>
@@ -591,6 +644,7 @@ export function KanbanPage({
                   <TableBody>
                     {boardTickets.map((ticket) => {
                       const allowReport = canWriteReport(ticket, appRole, user?.id);
+                      const allowAdminReportView = appRole === 'admin' && hasTicketReport(ticket);
 
                       return (
                         <TableRow key={ticket.id}>
@@ -612,10 +666,17 @@ export function KanbanPage({
                             {allowReport ? (
                               <Button type="button" size="sm" variant="outline" onClick={() => openReport(ticket)}>
                                 <ClipboardCheck className="mr-2 h-4 w-4" />
-                                Reporte
+                                {ticket.report?.id ? 'Editar reporte' : 'Abrir reporte'}
+                              </Button>
+                            ) : allowAdminReportView ? (
+                              <Button type="button" size="sm" variant="outline" onClick={() => openReport(ticket)}>
+                                <ClipboardCheck className="mr-2 h-4 w-4" />
+                                Ver reporte
                               </Button>
                             ) : (
-                              <span className="text-xs text-muted-foreground">Sin acceso</span>
+                              <span className="text-xs text-muted-foreground">
+                                {appRole === 'admin' ? 'Sin reporte' : 'Sin acceso'}
+                              </span>
                             )}
                           </TableCell>
                         </TableRow>
@@ -650,6 +711,16 @@ export function KanbanPage({
           }}
         />
       ) : null}
+
+      <ReportDetailSheet
+        open={Boolean(reportDetailId)}
+        reportId={reportDetailId}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setReportDetailId(null);
+          }
+        }}
+      />
     </>
   );
 }

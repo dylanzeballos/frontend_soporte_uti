@@ -164,6 +164,7 @@ export function useTickets() {
     if (filters?.createdById) query.set('createdById', String(filters.createdById));
     if (filters?.excludeCreatedById) query.set('excludeCreatedById', String(filters.excludeCreatedById));
     if (filters?.search) query.set('search', filters.search);
+    query.set('includeTotal', String(filters?.includeTotal ?? false));
     const suffix = query.toString() ? `?${query.toString()}` : '';
     const result = await fetchApi<Ticket[] | { data: Ticket[] } | PaginatedResponse<Ticket> | null>(`/tickets${suffix}`);
     setIsLoading(false);
@@ -429,6 +430,7 @@ export function useReports() {
     if (filters?.ticketStatus) query.set('ticketStatus', filters.ticketStatus);
     if (filters?.fromDate) query.set('fromDate', filters.fromDate);
     if (filters?.toDate) query.set('toDate', filters.toDate);
+    query.set('includeTotal', String(filters?.includeTotal ?? false));
     const suffix = query.toString() ? `?${query.toString()}` : '';
     const result = await fetchApi<Report[] | { data: Report[] } | PaginatedResponse<Report> | null>(`/reports${suffix}`);
     setIsLoading(false);
