@@ -1,3 +1,4 @@
+import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,6 +12,7 @@ import {
   ShieldAlert,
   Trash2,
   Wrench,
+  XIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -18,17 +20,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { invalidateTicketCaches, syncUpdatedTicketCaches } from '@/features/tickets/lib/ticket-cache';
+import {
+  invalidateTicketCaches,
+  syncUpdatedTicketCaches,
+} from '@/features/tickets/lib/ticket-cache';
 import {
   getPriorityColor,
   getPriorityLabel,
@@ -118,7 +116,7 @@ function buildPayload(ticketId: number, values: ReportFormValues) {
     ...(values.startedAt ? { startedAt: new Date(values.startedAt).toISOString() } : {}),
     ...(values.finishedAt ? { finishedAt: new Date(values.finishedAt).toISOString() } : {}),
     components: values.components.map((component) => ({
-      componentId: component.componentId,
+      componentId: Number(component.componentId),
       quantity: Number(component.quantity),
       ...(component.note?.trim() ? { note: component.note.trim() } : {}),
     })),
@@ -129,17 +127,6 @@ function FormError({ message }: { message?: string }) {
   if (!message) return null;
 
   return <p className="text-xs leading-5 text-destructive">{message}</p>;
-}
-
-function ComponentOptionLabel({ component }: { component: ComponentCatalogItem }) {
-  return (
-    <span className="flex flex-col">
-      <span>{component.name}</span>
-      {component.description ? (
-        <span className="text-xs text-muted-foreground">{component.description}</span>
-      ) : null}
-    </span>
-  );
 }
 
 export function TicketReportSheet({
@@ -177,10 +164,7 @@ export function TicketReportSheet({
     queryFn: () => (ticket?.id ? findByTicketId(ticket.id) : Promise.resolve(null)),
   });
 
-  const initialValues = useMemo(
-    () => toFormValues(existingReport),
-    [existingReport],
-  );
+  const initialValues = useMemo(() => toFormValues(existingReport), [existingReport]);
 
   const {
     control,
@@ -203,6 +187,8 @@ export function TicketReportSheet({
   }, [initialValues, reset]);
 
   const canResolve = ticket?.status !== 'resolved' && ticket?.status !== 'closed';
+  const isBusy = isSubmitting || reportLoading;
+  const hasComponents = componentCatalog.length > 0;
 
   const submitReport = handleSubmit(async (values) => {
     if (!ticket || !canWrite) {
@@ -259,29 +245,31 @@ export function TicketReportSheet({
     }
   });
 
-  const isBusy = isSubmitting || reportLoading;
-  const hasComponents = componentCatalog.length > 0;
-
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full gap-0 overflow-hidden border-l bg-background p-0 sm:max-w-2xl"
-      >
-        <div className="flex h-full flex-col">
-          <SheetHeader className="border-b bg-gradient-to-br from-sky-500/10 via-background to-emerald-500/10 px-6 py-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0" />
+        <DialogPrimitive.Popup className="fixed left-1/2 top-1/2 z-50 flex h-[min(92vh,980px)] w-[min(960px,calc(100vw-1rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[var(--radius-panel)] border border-border/60 bg-background shadow-[var(--shadow-3)] transition-all duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
+          <DialogPrimitive.Close
+            render={<Button variant="ghost" size="icon-sm" className="absolute right-4 top-4 z-10" />}
+          >
+            <XIcon className="h-4 w-4" />
+            <span className="sr-only">Cerrar reporte</span>
+          </DialogPrimitive.Close>
+
+          <div className="border-b bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_40%),var(--card)] px-5 py-5 sm:px-7">
+            <div className="flex flex-wrap items-start justify-between gap-3 pr-10">
               <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-background/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                   <ClipboardCheck className="h-3.5 w-3.5" />
                   Reporte tecnico
                 </div>
-                <SheetTitle className="text-xl leading-7">
+                <DialogPrimitive.Title className="text-xl font-semibold leading-7 text-foreground">
                   {ticket ? ticket.title : 'Selecciona un ticket'}
-                </SheetTitle>
-                <SheetDescription className="max-w-xl text-sm leading-6">
-                  Registra el trabajo realizado y, si corresponde, cierra el ticket desde aqui.
-                </SheetDescription>
+                </DialogPrimitive.Title>
+                <DialogPrimitive.Description className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                  Registra la atencion realizada y las piezas que deben reemplazarse. Si ya terminaste, puedes resolver el ticket desde este mismo formulario.
+                </DialogPrimitive.Description>
               </div>
 
               {ticket ? (
@@ -323,20 +311,20 @@ export function TicketReportSheet({
                 </div>
               </div>
             ) : null}
-          </SheetHeader>
+          </div>
 
           {!ticket ? (
             <div className="flex flex-1 items-center justify-center px-6 text-sm text-muted-foreground">
               Selecciona un ticket para continuar.
             </div>
+          ) : reportLoading ? (
+            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+              Cargando reporte...
+            </div>
           ) : (
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              {reportLoading ? (
-                <div className="flex min-h-56 items-center justify-center text-sm text-muted-foreground">
-                  Cargando reporte...
-                </div>
-              ) : (
-                <form className="space-y-5" onSubmit={submitReport} noValidate>
+            <form className="flex min-h-0 flex-1 flex-col" onSubmit={submitReport} noValidate>
+              <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-7">
+                <div className="space-y-5">
                   {!canWrite ? (
                     <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/8 px-4 py-3 text-sm">
                       <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
@@ -346,65 +334,75 @@ export function TicketReportSheet({
                     </div>
                   ) : null}
 
-                  <section className="space-y-4 rounded-[var(--radius-panel)] border bg-card/60 p-5">
+                  <section className="form-panel p-5 sm:p-6">
                     <div className="flex items-center gap-2">
                       <ClipboardCheck className="h-4 w-4 text-primary" />
                       <h3 className="text-sm font-semibold">Resultado</h3>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="report-summary">Resumen</Label>
-                      <Input
-                        id="report-summary"
-                        placeholder="Ej. Reemplazo de unidad y verificacion final"
-                        disabled={!canWrite || isBusy}
-                        aria-invalid={Boolean(errors.summary)}
-                        {...register('summary')}
-                      />
-                      <FormError message={errors.summary?.message} />
-                    </div>
+                    <div className="mt-5 space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="report-summary" className="text-sm font-medium text-muted-foreground">
+                          Resumen
+                        </Label>
+                        <Input
+                          id="report-summary"
+                          placeholder="Ej. Cambio de SSD y pruebas finales correctas"
+                          disabled={!canWrite || isBusy}
+                          aria-invalid={Boolean(errors.summary)}
+                          {...register('summary')}
+                        />
+                        <FormError message={errors.summary?.message} />
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="report-workPerformed">Trabajo realizado</Label>
-                      <Textarea
-                        id="report-workPerformed"
-                        placeholder="Describe en pocas lineas el diagnostico y las acciones ejecutadas."
-                        className="min-h-32"
-                        disabled={!canWrite || isBusy}
-                        aria-invalid={Boolean(errors.workPerformed)}
-                        {...register('workPerformed')}
-                      />
-                      <FormError message={errors.workPerformed?.message} />
-                    </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="report-workPerformed" className="text-sm font-medium text-muted-foreground">
+                          Trabajo realizado
+                        </Label>
+                        <Textarea
+                          id="report-workPerformed"
+                          placeholder="Describe el diagnostico y lo que hiciste para resolver o atender el caso."
+                          className="min-h-28"
+                          disabled={!canWrite || isBusy}
+                          aria-invalid={Boolean(errors.workPerformed)}
+                          {...register('workPerformed')}
+                        />
+                        <FormError message={errors.workPerformed?.message} />
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="report-resolutionType">Tipo de solucion</Label>
-                      <Input
-                        id="report-resolutionType"
-                        list="report-resolution-type-options"
-                        placeholder="Ej. hardware"
-                        disabled={!canWrite || isBusy}
-                        aria-invalid={Boolean(errors.resolutionType)}
-                        {...register('resolutionType')}
-                      />
-                      <datalist id="report-resolution-type-options">
-                        {resolutionSuggestions.map((option) => (
-                          <option key={option} value={option} />
-                        ))}
-                      </datalist>
-                      <FormError message={errors.resolutionType?.message} />
+                      <div className="space-y-2">
+                        <Label htmlFor="report-resolutionType" className="text-sm font-medium text-muted-foreground">
+                          Tipo de solucion
+                        </Label>
+                        <Input
+                          id="report-resolutionType"
+                          list="report-resolution-type-options"
+                          placeholder="Ej. hardware"
+                          disabled={!canWrite || isBusy}
+                          aria-invalid={Boolean(errors.resolutionType)}
+                          {...register('resolutionType')}
+                        />
+                        <datalist id="report-resolution-type-options">
+                          {resolutionSuggestions.map((option) => (
+                            <option key={option} value={option} />
+                          ))}
+                        </datalist>
+                        <FormError message={errors.resolutionType?.message} />
+                      </div>
                     </div>
                   </section>
 
-                  <section className="space-y-4 rounded-[var(--radius-panel)] border bg-card/60 p-5">
+                  <section className="form-panel p-5 sm:p-6">
                     <div className="flex items-center gap-2">
                       <Clock3 className="h-4 w-4 text-primary" />
                       <h3 className="text-sm font-semibold">Tiempo</h3>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="report-startedAt">Inicio</Label>
+                        <Label htmlFor="report-startedAt" className="text-sm font-medium text-muted-foreground">
+                          Inicio
+                        </Label>
                         <Input
                           id="report-startedAt"
                           type="datetime-local"
@@ -416,7 +414,9 @@ export function TicketReportSheet({
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="report-finishedAt">Fin</Label>
+                        <Label htmlFor="report-finishedAt" className="text-sm font-medium text-muted-foreground">
+                          Fin
+                        </Label>
                         <Input
                           id="report-finishedAt"
                           type="datetime-local"
@@ -429,11 +429,16 @@ export function TicketReportSheet({
                     </div>
                   </section>
 
-                  <section className="space-y-4 rounded-[var(--radius-panel)] border bg-card/60 p-5">
+                  <section className="form-panel p-5 sm:p-6">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <PackagePlus className="h-4 w-4 text-primary" />
-                        <h3 className="text-sm font-semibold">Componentes usados</h3>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <PackagePlus className="h-4 w-4 text-primary" />
+                          <h3 className="text-sm font-semibold">Componentes a reemplazar</h3>
+                        </div>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          Registra aqui solo las piezas que deben cambiarse en la atencion.
+                        </p>
                       </div>
 
                       <Button
@@ -450,166 +455,200 @@ export function TicketReportSheet({
                         }
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Agregar
+                        Agregar componente
                       </Button>
                     </div>
 
-                    {componentsLoading ? (
-                      <div className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-                        Cargando catalogo de componentes...
-                      </div>
-                    ) : fields.length > 0 ? (
-                      <div className="space-y-4">
-                        {fields.map((field, index) => (
-                          <div
-                            key={field.id}
-                            className="rounded-2xl border border-dashed border-primary/20 bg-primary/5 p-4"
-                          >
-                            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_8rem_auto]">
-                              <Controller
-                                control={control}
-                                name={`components.${index}.componentId`}
-                                render={({ field: componentField }) => (
-                                  <div className="space-y-2">
-                                    <Label>Componente</Label>
-                                    <Select
-                                      value={
-                                        componentField.value > 0
-                                          ? String(componentField.value)
-                                          : undefined
-                                      }
-                                      onValueChange={(value) =>
-                                        componentField.onChange(Number(value))
-                                      }
-                                      disabled={!canWrite || isBusy}
-                                    >
-                                      <SelectTrigger aria-invalid={Boolean(errors.components?.[index]?.componentId)}>
-                                        <SelectValue placeholder="Selecciona un componente" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {componentCatalog.map((component) => (
-                                          <SelectItem key={component.id} value={String(component.id)}>
-                                            <ComponentOptionLabel component={component} />
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                    <FormError message={errors.components?.[index]?.componentId?.message} />
-                                  </div>
-                                )}
-                              />
+                    <div className="mt-5">
+                      {componentsLoading ? (
+                        <div className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
+                          Cargando catalogo de componentes...
+                        </div>
+                      ) : fields.length > 0 ? (
+                        <div className="space-y-4">
+                          {fields.map((field, index) => (
+                            <div
+                              key={field.id}
+                              className="rounded-2xl border border-dashed border-primary/20 bg-primary/5 p-4"
+                            >
+                              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_9rem_auto]">
+                                <Controller
+                                  control={control}
+                                  name={`components.${index}.componentId`}
+                                  render={({ field: componentField }) => {
+                                    const selectedComponent =
+                                      componentCatalog.find((component) => component.id === componentField.value) ?? null;
 
-                              <div className="space-y-2">
-                                <Label htmlFor={`report-component-quantity-${index}`}>Cantidad</Label>
-                                <Input
-                                  id={`report-component-quantity-${index}`}
-                                  type="number"
-                                  min={1}
-                                  step={1}
-                                  inputMode="numeric"
-                                  disabled={!canWrite || isBusy}
-                                  aria-invalid={Boolean(errors.components?.[index]?.quantity)}
-                                  {...register(`components.${index}.quantity`, {
-                                    valueAsNumber: true,
-                                  })}
+                                    return (
+                                      <div className="min-w-0 space-y-2">
+                                        <Label className="text-sm font-medium text-muted-foreground">
+                                          Componente
+                                        </Label>
+                                        <Select
+                                          value={componentField.value > 0 ? String(componentField.value) : undefined}
+                                          onValueChange={(value) => componentField.onChange(Number(value))}
+                                          disabled={!canWrite || isBusy}
+                                        >
+                                          <SelectTrigger
+                                            className="w-full min-w-0"
+                                            aria-invalid={Boolean(errors.components?.[index]?.componentId)}
+                                          >
+                                            <SelectValue placeholder="Selecciona un componente" />
+                                          </SelectTrigger>
+                                          <SelectContent
+                                            align="start"
+                                            alignItemWithTrigger={false}
+                                            className="min-w-[18rem] sm:min-w-[26rem]"
+                                          >
+                                            {componentCatalog.map((component) => (
+                                              <SelectItem key={component.id} value={String(component.id)}>
+                                                {component.name}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <p className="text-xs leading-5 text-muted-foreground">
+                                          {selectedComponent?.description ?? 'Selecciona la pieza que se debe reemplazar.'}
+                                        </p>
+                                        <FormError message={errors.components?.[index]?.componentId?.message} />
+                                      </div>
+                                    );
+                                  }}
                                 />
-                                <FormError message={errors.components?.[index]?.quantity?.message} />
+
+                                <div className="space-y-2">
+                                  <Label
+                                    htmlFor={`report-component-quantity-${index}`}
+                                    className="text-sm font-medium text-muted-foreground"
+                                  >
+                                    Cantidad
+                                  </Label>
+                                  <Input
+                                    id={`report-component-quantity-${index}`}
+                                    type="number"
+                                    min={1}
+                                    step={1}
+                                    inputMode="numeric"
+                                    disabled={!canWrite || isBusy}
+                                    aria-invalid={Boolean(errors.components?.[index]?.quantity)}
+                                    {...register(`components.${index}.quantity`, {
+                                      valueAsNumber: true,
+                                    })}
+                                  />
+                                  <FormError message={errors.components?.[index]?.quantity?.message} />
+                                </div>
+
+                                <div className="flex items-start justify-end xl:pt-7">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label={`Eliminar componente ${index + 1}`}
+                                    disabled={!canWrite || isBusy}
+                                    onClick={() => remove(index)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
 
-                              <div className="flex items-end">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  aria-label={`Eliminar componente ${index + 1}`}
-                                  disabled={!canWrite || isBusy}
-                                  onClick={() => remove(index)}
+                              <div className="mt-4 space-y-2">
+                                <Label
+                                  htmlFor={`report-component-note-${index}`}
+                                  className="text-sm font-medium text-muted-foreground"
                                 >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                  Detalle
+                                </Label>
+                                <Input
+                                  id={`report-component-note-${index}`}
+                                  placeholder="Ej. desgaste del componente o motivo del cambio"
+                                  disabled={!canWrite || isBusy}
+                                  aria-invalid={Boolean(errors.components?.[index]?.note)}
+                                  {...register(`components.${index}.note`)}
+                                />
+                                <FormError message={errors.components?.[index]?.note?.message} />
                               </div>
                             </div>
-
-                            <div className="mt-4 space-y-2">
-                              <Label htmlFor={`report-component-note-${index}`}>Nota</Label>
-                              <Input
-                                id={`report-component-note-${index}`}
-                                placeholder="Opcional"
-                                disabled={!canWrite || isBusy}
-                                aria-invalid={Boolean(errors.components?.[index]?.note)}
-                                {...register(`components.${index}.note`)}
-                              />
-                              <FormError message={errors.components?.[index]?.note?.message} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-                        {hasComponents
-                          ? 'Agrega solo los componentes que realmente usaste.'
-                          : 'Aun no hay componentes cargados por administracion.'}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
+                          {hasComponents
+                            ? 'Agrega solo las piezas que necesiten reemplazo en este ticket.'
+                            : 'Aun no hay componentes cargados por administracion.'}
+                        </div>
+                      )}
+                    </div>
                   </section>
+                </div>
+              </div>
 
-                  <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:justify-end">
-                    {existingReport?.id ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        disabled={isBusy}
-                        onClick={() => {
-                          void refetchReport();
-                        }}
-                      >
-                        Recargar
-                      </Button>
-                    ) : null}
-
+              <div className="border-t bg-background/95 px-5 py-4 sm:px-7">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+                  {existingReport?.id ? (
                     <Button
-                      type="submit"
-                      variant="outline"
-                      disabled={!canWrite || isBusy}
-                      onClick={() => setSubmitIntent('save')}
+                      type="button"
+                      variant="ghost"
+                      disabled={isBusy}
+                      onClick={() => {
+                        void refetchReport();
+                      }}
                     >
-                      {isSubmitting && submitIntent === 'save' ? (
-                        <>
-                          <Spinner className="mr-2 h-4 w-4" />
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          <Wrench className="mr-2 h-4 w-4" />
-                          {existingReport?.id ? 'Actualizar reporte' : 'Guardar reporte'}
-                        </>
-                      )}
+                      Recargar
                     </Button>
+                  ) : null}
 
-                    <Button
-                      type="submit"
-                      disabled={!canWrite || isBusy}
-                      onClick={() => setSubmitIntent('resolve')}
-                    >
-                      {isSubmitting && submitIntent === 'resolve' ? (
-                        <>
-                          <Spinner className="mr-2 h-4 w-4" />
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                          {canResolve ? 'Guardar y resolver' : 'Guardar cambios'}
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!canWrite || isBusy}
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Cerrar
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    disabled={!canWrite || isBusy}
+                    onClick={() => setSubmitIntent('save')}
+                  >
+                    {isSubmitting && submitIntent === 'save' ? (
+                      <>
+                        <Spinner className="mr-2 h-4 w-4" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Wrench className="mr-2 h-4 w-4" />
+                        {existingReport?.id ? 'Actualizar reporte' : 'Guardar reporte'}
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    disabled={!canWrite || isBusy}
+                    onClick={() => setSubmitIntent('resolve')}
+                  >
+                    {isSubmitting && submitIntent === 'resolve' ? (
+                      <>
+                        <Spinner className="mr-2 h-4 w-4" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        {canResolve ? 'Guardar y resolver' : 'Guardar cambios'}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </form>
           )}
-        </div>
-      </SheetContent>
-    </Sheet>
+        </DialogPrimitive.Popup>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
