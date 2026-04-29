@@ -45,6 +45,32 @@ export const reportSchema = z.object({
   deletedAt: z.string().nullable().optional(),
 });
 
+const customerReportTechnicianSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+});
+
+const customerReportComponentSchema = z.object({
+  id: z.number().optional(),
+  componentId: z.number().int().positive(),
+  quantity: z.number().int().positive(),
+  name: z.string(),
+});
+
+export const customerReportSummarySchema = z.object({
+  id: z.number(),
+  ticketId: z.number().int().positive(),
+  summary: z.string(),
+  workPerformed: z.string(),
+  resolutionType: z.string().nullable().optional(),
+  startedAt: z.string().nullable().optional(),
+  finishedAt: z.string().nullable().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  technician: customerReportTechnicianSchema.nullable().optional(),
+  components: z.array(customerReportComponentSchema).default([]),
+});
+
 export const reportComponentFormSchema = z.object({
   componentId: z.number().int().positive('Selecciona un componente'),
   quantity: z
@@ -123,6 +149,7 @@ export const reportFormSchema = z
 export type ComponentCatalogItem = z.infer<typeof componentCatalogSchema>;
 export type ReportUsedComponent = z.infer<typeof reportUsedComponentSchema>;
 export type Report = z.infer<typeof reportSchema>;
+export type CustomerReportSummary = z.infer<typeof customerReportSummarySchema>;
 export type ReportComponentFormValue = z.infer<typeof reportComponentFormSchema>;
 export type ReportFormValues = z.infer<typeof reportFormSchema>;
 
@@ -136,6 +163,59 @@ export interface ReportFilter {
   fromDate?: string;
   toDate?: string;
   includeTotal?: boolean;
+}
+
+export interface ReportSummaryStatsFilter {
+  fromDate?: string;
+  toDate?: string;
+  corporationId?: number;
+}
+
+export interface ReportSummaryStats {
+  filters: {
+    fromDate: string | null;
+    toDate: string | null;
+    corporationId: number | null;
+  };
+  totals: {
+    tickets: number;
+    reports: number;
+    open: number;
+    inProgress: number;
+    resolved: number;
+    closed: number;
+    cancelled: number;
+    averageResolutionHours: number | null;
+  };
+  byStatus: Array<{
+    status: string;
+    count: number;
+  }>;
+  byPriority: Array<{
+    priority: string;
+    count: number;
+  }>;
+  byUnit: Array<{
+    corporationId: number | null;
+    name: string;
+    count: number;
+  }>;
+  topServices: Array<{
+    serviceId: number;
+    name: string;
+    count: number;
+  }>;
+  byTechnician: Array<{
+    userId: number;
+    name: string;
+    count: number;
+  }>;
+  topComponents: Array<{
+    componentId: number;
+    name: string;
+    usageCount: number;
+    totalQuantity: number;
+  }>;
 }
 
 export interface ComponentCatalogFilter {

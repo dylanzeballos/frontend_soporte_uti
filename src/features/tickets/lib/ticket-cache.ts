@@ -25,6 +25,21 @@ function updateTicketInList(
   return tickets.map((ticket) => (matcher(ticket) ? updater(ticket) : ticket));
 }
 
+function prependTicketToList(
+  tickets: Ticket[] | undefined,
+  createdTicket: Ticket,
+) {
+  if (!tickets) {
+    return tickets;
+  }
+
+  if (tickets.some((ticket) => ticket.id === createdTicket.id)) {
+    return tickets;
+  }
+
+  return [createdTicket, ...tickets];
+}
+
 export function syncUpdatedTicketCaches(
   queryClient: QueryClient,
   updatedTicket: Ticket,
@@ -63,6 +78,20 @@ export function syncTicketStatusCaches(
       ),
     );
   }
+}
+
+export function syncCreatedRequesterTicketCaches(
+  queryClient: QueryClient,
+  createdTicket: Ticket,
+) {
+  queryClient.setQueriesData<Ticket[]>({ queryKey: ['my-tickets'] }, (tickets) =>
+    prependTicketToList(tickets, createdTicket),
+  );
+
+  queryClient.setQueriesData<Ticket[]>(
+    { queryKey: ['tickets', 'dashboard'] },
+    (tickets) => prependTicketToList(tickets, createdTicket),
+  );
 }
 
 export function invalidateTicketCaches(queryClient: QueryClient) {

@@ -13,8 +13,11 @@ import type {
   ComponentCatalogFilter,
   ComponentCatalogItem,
   CreateReportInput,
+  CustomerReportSummary,
   Report,
   ReportFilter,
+  ReportSummaryStats,
+  ReportSummaryStatsFilter,
   UpdateReportInput,
 } from '@/features/reports/schemas';
 
@@ -456,6 +459,19 @@ export function useReports() {
     return await findOne(match.id);
   }, [findOne, list]);
 
+  const findCustomerSummaryByTicketId = useCallback(async (ticketId: number): Promise<CustomerReportSummary | null> => {
+    return await fetchApi<CustomerReportSummary>(`/reports/ticket/${ticketId}/customer-summary`);
+  }, []);
+
+  const getSummaryStats = useCallback(async (filters?: ReportSummaryStatsFilter): Promise<ReportSummaryStats | null> => {
+    const query = new URLSearchParams();
+    if (filters?.fromDate) query.set('fromDate', filters.fromDate);
+    if (filters?.toDate) query.set('toDate', filters.toDate);
+    if (filters?.corporationId) query.set('corporationId', String(filters.corporationId));
+    const suffix = query.toString() ? `?${query.toString()}` : '';
+    return await fetchApi<ReportSummaryStats>(`/reports/stats/summary${suffix}`);
+  }, []);
+
   const create = useCallback(async (data: CreateReportInput) => {
     setIsLoading(true);
     try {
@@ -476,7 +492,16 @@ export function useReports() {
     }
   }, []);
 
-  return { list, findOne, findByTicketId, create, update, isLoading };
+  return {
+    list,
+    findOne,
+    findByTicketId,
+    findCustomerSummaryByTicketId,
+    getSummaryStats,
+    create,
+    update,
+    isLoading,
+  };
 }
 
 export function useAuthApi() {

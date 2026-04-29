@@ -1,14 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ClipboardPenLine } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/components/auth-context';
 import { TicketForm, type TicketSelectOption } from '@/features/tickets/components';
+import { syncCreatedRequesterTicketCaches } from '@/features/tickets/lib/ticket-cache';
 import type { TicketFormValues } from '@/features/tickets/schemas/ticket.schema';
+import { getDefaultRouteForUser } from '@/features/users/schemas';
 import { useServices, useTickets } from '@/hooks/useApi';
 
 export function TicketRequestPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { create } = useTickets();
   const { list: listServices } = useServices();
@@ -26,10 +30,13 @@ export function TicketRequestPage() {
 
   const createMutation = useMutation({
     mutationFn: create,
-    onSuccess: () => {
+    onSuccess: (createdTicket) => {
+      syncCreatedRequesterTicketCaches(queryClient, createdTicket);
       toast.success('Solicitud enviada correctamente');
       void queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      void queryClient.invalidateQueries({ queryKey: ['tickets', 'dashboard', user?.id] });
       void queryClient.invalidateQueries({ queryKey: ['my-tickets', user?.id] });
+      navigate(getDefaultRouteForUser(user));
     },
   });
 
