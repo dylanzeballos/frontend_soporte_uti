@@ -1,17 +1,48 @@
 import { useQuery } from '@tanstack/react-query';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth-context';
 import { useTickets } from '@/hooks/useApi';
 import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Ticket as TicketType } from '@/features/tickets/schemas/ticket.schema';
+import { getAppUserRole, type User } from '@/features/users/schemas';
+
+type DashboardUser = User & {
+  firstName?: string;
+  lastName?: string;
+  role?: unknown;
+};
+
+function getDashboardUserName(user: DashboardUser | null) {
+  if (!user) return 'Usuario';
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+  return fullName || user.name || user.email;
+}
+
+function getDashboardUserRole(user: DashboardUser | null) {
+  if (!user) return 'Sin rol';
+  const roleValue = user.role as string | { name?: string } | undefined;
+  if (typeof roleValue === 'string') return roleValue;
+  if (roleValue && typeof roleValue === 'object') {
+    const roleName = roleValue.name;
+    return typeof roleName === 'string' ? roleName : 'Sin rol';
+  }
+  return 'Sin rol';
+}
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const dashboardUser = user as DashboardUser | null;
   const { list } = useTickets();
 
+  if (getAppUserRole(user) === 'agent') {
+    return <Navigate to="/technician/dashboard" replace />;
+  }
+
   const { data: tickets = [] } = useQuery<TicketType[]>({
-    queryKey: ['tickets'],
-    queryFn: list,
+    queryKey: ['tickets', 'dashboard', user?.id],
+    enabled: Boolean(user?.id),
+    queryFn: async () => list({ limit: 100 }),
   });
 
   const stats = {
@@ -32,7 +63,7 @@ export function DashboardPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">
-          Bienvenido, {user?.firstName + ' ' + user?.lastName || user?.email}
+          Bienvenido, {getDashboardUserName(dashboardUser)}
         </h1>
       </div>
 
@@ -80,11 +111,11 @@ export function DashboardPage() {
           <CardContent className="space-y-2">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Tu rol</span>
-              <span className="font-medium capitalize">{String(user?.role?.name)}</span>
+              <span className="font-medium capitalize">{getDashboardUserRole(dashboardUser)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Email</span>
-              <span className="font-medium">{String(user?.email)}</span>
+              <span className="font-medium">{String(dashboardUser?.email)}</span>
             </div>
           </CardContent>
         </Card>

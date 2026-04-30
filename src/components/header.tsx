@@ -1,19 +1,19 @@
 import { useAuth } from '@/components/auth-context';
 import { ModeToggle } from '@/components/mode-toggle';
-import { type UserRole } from '@/features/users/schemas';
+import { getAppUserRole, type AppUserRole } from '@/features/users/schemas';
 import { UserNav } from './user-nav';
 
 const navItems = [
-  { label: 'Dashboard', href: '/dashboard', roles: ['admin', 'agent', 'user'] as UserRole[] },
-  { label: 'Tickets', href: '/tickets', roles: ['admin', 'agent', 'user'] as UserRole[] },
-  { label: 'Usuarios', href: '/admin/users', roles: ['admin'] as UserRole[] },
+  { label: 'Dashboard', href: '/dashboard', roles: ['admin', 'agent', 'user'] as AppUserRole[] },
+  { label: 'Tickets', href: '/tickets', roles: ['admin', 'agent', 'user'] as AppUserRole[] },
+  { label: 'Usuarios', href: '/admin/users', roles: ['admin'] as AppUserRole[] },
 ];
 
 export function Header() {
   const { user } = useAuth();
 
   const filteredNav = navItems.filter(item =>
-    user && item.roles.includes(user.role)
+    user && item.roles.includes(getAppUserRole(user))
   );
 
   return (

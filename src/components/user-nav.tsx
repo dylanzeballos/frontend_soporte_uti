@@ -1,5 +1,5 @@
 import { useAuth } from '@/components/auth-context';
-import { isAdmin } from '@/features/users/schemas';
+import { getDefaultRouteForUser, isAdmin } from '@/features/users/schemas';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -25,12 +25,18 @@ export function UserNav() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            className="topbar-icon-button relative h-10 w-10 rounded-full p-0 hover:translate-y-0"
+            aria-label="Abrir menu de perfil"
+          />
+        }
+      >
+          <div className="topbar-avatar">
             {String(user.name || user.email || 'U').charAt(0).toUpperCase()}
           </div>
-        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <div className="flex items-center justify-start gap-2 p-2">
@@ -42,7 +48,7 @@ export function UserNav() {
           </div>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+        <DropdownMenuItem onClick={() => navigate(getDefaultRouteForUser(user))}>
           <User className="mr-2 h-4 w-4" />
           Dashboard
         </DropdownMenuItem>
