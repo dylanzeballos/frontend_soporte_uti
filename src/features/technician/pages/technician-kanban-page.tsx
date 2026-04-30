@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 
 import { useAuth } from '@/components/auth-context';
-import { KanbanPage } from '@/features/kanban/pages';
+import { KanbanPage } from '@/features/kanban/pages/kanban-page';
 import { getDefaultRouteForUser, isAgent } from '@/features/users/schemas';
 
 export function TechnicianKanbanPage() {
