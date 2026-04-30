@@ -5,7 +5,7 @@ import { TicketRequestPage, TicketsAdminPage, TicketsPage } from '@/features/tic
 import { ServiceCreatePage, ServicesEntryPage, ServicesListPage } from '@/features/services/pages';
 import { RoleCreatePage, RolesEntryPage, RolesListPage } from '@/features/roles/pages';
 import { UnitCreatePage, UnitsEntryPage, UnitsListPage } from '@/features/units/pages';
-import { KanbanPage } from '@/features/kanban/pages';
+import { KanbanPage } from '@/features/kanban/pages/kanban-page';
 import {
   TechnicianAssignmentsPage,
   TechnicianDashboardPage,

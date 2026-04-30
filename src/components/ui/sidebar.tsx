@@ -25,8 +25,7 @@ import {
 } from "@/components/ui/tooltip"
 import { PanelLeftIcon } from "lucide-react"
 
-const SIDEBAR_STORAGE_KEY = "sidebar_state"
-const SIDEBAR_COOKIE_NAME = SIDEBAR_STORAGE_KEY
+const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
@@ -72,12 +71,7 @@ function SidebarProvider({
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(() => {
-    if (typeof window === "undefined") return defaultOpen
-    const stored = window.localStorage.getItem(SIDEBAR_STORAGE_KEY)
-    if (stored === null) return defaultOpen
-    return stored === "true"
-  })
+  const [_open, _setOpen] = React.useState(defaultOpen)
   const open = openProp ?? _open
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
@@ -88,14 +82,7 @@ function SidebarProvider({
         _setOpen(openState)
       }
 
-      // Persist state on client storage for consistent UX between sessions.
-      try {
-        window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(openState))
-      } catch {
-        // Ignore storage failures (private mode / quota).
-      }
-
-      // Keep cookie write for backward compatibility.
+      // This sets the cookie to keep the sidebar state.
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
     },
     [setOpenProp, open]
