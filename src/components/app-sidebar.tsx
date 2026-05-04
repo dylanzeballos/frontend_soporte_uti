@@ -109,12 +109,6 @@ const navSections: NavSection[] = [
         roles: ["agent"],
       },
       {
-        title: "Kanban",
-        to: "/technician/kanban",
-        icon: SquareKanbanIcon,
-        roles: ["agent"],
-      },
-      {
         title: "Mis asignaciones",
         to: "/technician/assignments",
         icon: TicketIcon,
