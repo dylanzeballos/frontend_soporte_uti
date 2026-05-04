@@ -2,7 +2,7 @@ services:
   frontend_soporte_uti:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
+      dockerfile: Dockerfile
     container_name: frontend_soporte_uti
     restart: unless-stopped
     ports:
