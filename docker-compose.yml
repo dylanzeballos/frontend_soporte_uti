@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: frontend_soporte_uti
+    container_name: fd_soporte_uti
     restart: unless-stopped
     ports:
       - "3001:3001"
