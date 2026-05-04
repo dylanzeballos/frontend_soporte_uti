@@ -1,0 +1,15 @@
+services:
+  frontend_soporte_uti:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: frontend_soporte_uti
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    networks:
+      - dbpg_dbpg
+
+networks:
+  dbpg_dbpg:
+    external: true
