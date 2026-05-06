@@ -290,7 +290,7 @@ export function useCorporations() {
   const list = useCallback(async (): Promise<CorporationItem[]> => {
     setIsLoading(true);
     try {
-      const result = await fetchApi<ApiCollectionResponse<CorporationItem>>('/corporations?isActive=true');
+      const result = await fetchApi<ApiCollectionResponse<CorporationItem>>('/units?isActive=true');
       return normalizeCollection(result);
     } finally {
       setIsLoading(false);
@@ -298,7 +298,7 @@ export function useCorporations() {
   }, []);
 
   const findOne = useCallback(async (id: number): Promise<CorporationItem | null> => {
-    return await fetchApi<CorporationItem>(`/corporations/${id}`);
+    return await fetchApi<CorporationItem>(`/units/${id}`);
   }, []);
 
   return { list, findOne, isLoading };

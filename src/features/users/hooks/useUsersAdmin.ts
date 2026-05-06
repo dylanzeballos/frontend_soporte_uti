@@ -3,8 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { CreateUserInput, UpdateUserInput, User } from '@/features/users/schemas';
 import { getUserRoleName } from '@/features/users/schemas';
-import { useRoles, useUsers } from '@/hooks/useApi';
-import type { CorporationItem } from '@/hooks/useApi';
+import { useCorporations, useRoles, useUsers } from '@/hooks/useApi';
 
 export type UserFormValues = {
   ci: string;
@@ -95,6 +94,7 @@ export function useUsersAdmin() {
   const queryClient = useQueryClient();
   const { listPaginated, create, update, remove } = useUsers();
   const { list: listRoles } = useRoles();
+  const { list: listCorporations } = useCorporations();
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -106,6 +106,11 @@ export function useUsersAdmin() {
   const rolesQuery = useQuery({
     queryKey: ['roles'],
     queryFn: listRoles,
+  });
+
+  const corporationsQuery = useQuery({
+    queryKey: ['corporations'],
+    queryFn: listCorporations,
   });
 
   const usersQuery = useQuery({
@@ -156,22 +161,7 @@ export function useUsersAdmin() {
     });
   }, [corporationId, roleId, search, usersQuery.data]);
 
-  const corporations = useMemo<CorporationItem[]>(() => {
-    const byId = new Map<number, CorporationItem>();
-
-    for (const user of usersQuery.data ?? []) {
-      const id = getUserCorporationId(user);
-      if (!id || byId.has(id)) continue;
-
-      byId.set(id, {
-        id,
-        name: user.corporation?.name ?? `Corporación #${id}`,
-        isActive: user.corporation?.isActive,
-      });
-    }
-
-    return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [usersQuery.data]);
+  const corporations = corporationsQuery.data ?? [];
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / DEFAULT_LIMIT));
   const currentPage = Math.min(page, totalPages);

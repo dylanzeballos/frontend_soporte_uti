@@ -1,13 +1,25 @@
-import { FilterX, Plus, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserFormComponent } from '@/features/users/components/forms/UserFormComponent';
-import { UsersTable } from '@/features/users/components/tables/UsersTable';
-import { useUsersAdmin } from '@/features/users/hooks/useUsersAdmin';
+import {
+  FilterX,
+  Plus,
+  Search,
+  ShieldCheck,
+  SlidersHorizontal,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { UserFormComponent } from "@/features/users/components/forms/UserFormComponent";
+import { UsersTable } from "@/features/users/components/tables/UsersTable";
+import { useUsersAdmin } from "@/features/users/hooks/useUsersAdmin";
 
 export function UsersAdminPage() {
   const usersAdmin = useUsersAdmin();
@@ -21,9 +33,12 @@ export function UsersAdminPage() {
               <ShieldCheck className="h-3.5 w-3.5 text-primary" />
               Gestión administrativa
             </div>
-            <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Usuarios</h1>
+            <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+              Usuarios
+            </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Alta, edición, archivo, búsqueda y filtros sobre datos reales de `/api/users`.
+              Alta, edición, archivo, búsqueda y filtros sobre datos reales de
+              `/api/users`.
             </p>
           </div>
 
@@ -31,7 +46,10 @@ export function UsersAdminPage() {
             <Badge variant="outline" className="h-10 px-3">
               Total: {usersAdmin.total}
             </Badge>
-            <Button onClick={usersAdmin.startCreate} disabled={usersAdmin.showForm}>
+            <Button
+              onClick={usersAdmin.startCreate}
+              disabled={usersAdmin.showForm}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Nuevo usuario
             </Button>
@@ -41,9 +59,9 @@ export function UsersAdminPage() {
 
       {usersAdmin.showForm ? (
         <UserFormComponent
-          key={usersAdmin.editingUser?.id ?? 'new-user'}
+          key={usersAdmin.editingUser?.id ?? "new-user"}
           initialValues={usersAdmin.formValues}
-          mode={usersAdmin.editingUser ? 'edit' : 'create'}
+          mode={usersAdmin.editingUser ? "edit" : "create"}
           roles={usersAdmin.roles}
           corporations={usersAdmin.corporations}
           isSubmitting={usersAdmin.isSaving}
@@ -78,13 +96,16 @@ export function UsersAdminPage() {
               <Label htmlFor="user-role-filter">Rol</Label>
               <Select
                 value={usersAdmin.filters.roleId}
-                onValueChange={(value) => usersAdmin.setRoleId(value ?? 'all')}
+                onValueChange={(value) => usersAdmin.setRoleId(value ?? "all")}
               >
                 <SelectTrigger id="user-role-filter">
                   <SelectValue placeholder="Rol">
-                    {usersAdmin.filters.roleId === 'all'
-                      ? 'Todos los roles'
-                      : usersAdmin.roles.find((role) => String(role.id) === usersAdmin.filters.roleId)?.name}
+                    {usersAdmin.filters.roleId === "all"
+                      ? "Todos los roles"
+                      : usersAdmin.roles.find(
+                          (role) =>
+                            String(role.id) === usersAdmin.filters.roleId,
+                        )?.name}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -99,24 +120,43 @@ export function UsersAdminPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="user-corporation-filter">Corporación</Label>
+              <Label htmlFor="user-corporation-filter">Unidad</Label>
               <Select
                 value={usersAdmin.filters.corporationId}
-                onValueChange={(value) => usersAdmin.setCorporationId(value ?? 'all')}
+                onValueChange={(value) =>
+                  usersAdmin.setCorporationId(value ?? "all")
+                }
               >
-                <SelectTrigger id="user-corporation-filter">
-                  <SelectValue placeholder="Corporación">
-                    {usersAdmin.filters.corporationId === 'all'
-                      ? 'Todas las corporaciones'
+                <SelectTrigger
+                  id="user-corporation-filter"
+                  className="h-auto min-h-12 py-2 whitespace-normal *:data-[slot=select-value]:line-clamp-none"
+                >
+                  <SelectValue placeholder="Unidad">
+                    {usersAdmin.filters.corporationId === "all"
+                      ? "Todas las Unidades"
                       : usersAdmin.corporations.find(
-                          (corporation) => String(corporation.id) === usersAdmin.filters.corporationId
+                          (corporation) =>
+                            String(corporation.id) ===
+                            usersAdmin.filters.corporationId,
                         )?.name}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las corporaciones</SelectItem>
+                <SelectContent
+                  alignItemWithTrigger={false}
+                  className="w-max max-w-[32rem]"
+                >
+                  <SelectItem
+                    value="all"
+                    className="[&_*]:whitespace-normal! [&_*]:break-words!"
+                  >
+                    Todas las Unidades
+                  </SelectItem>
                   {usersAdmin.corporations.map((corporation) => (
-                    <SelectItem key={corporation.id} value={String(corporation.id)}>
+                    <SelectItem
+                      key={corporation.id}
+                      value={String(corporation.id)}
+                      className="[&_*]:whitespace-normal! [&_*]:break-words!"
+                    >
                       {corporation.name}
                     </SelectItem>
                   ))}
@@ -125,7 +165,11 @@ export function UsersAdminPage() {
             </div>
 
             <div className="flex items-end">
-              <Button className="w-full" variant="outline" onClick={usersAdmin.resetFilters}>
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={usersAdmin.resetFilters}
+              >
                 <FilterX className="mr-2 h-4 w-4" />
                 Limpiar
               </Button>
