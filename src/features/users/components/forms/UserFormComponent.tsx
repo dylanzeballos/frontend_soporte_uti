@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Loader2, Save, X } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,7 @@ export function UserFormComponent({
   onCancel,
 }: UserFormComponentProps) {
   const [values, setValues] = useState(initialValues);
+  const [showPassword, setShowPassword] = useState(false);
   const selectedRoleName = roles.find((role) => String(role.id) === values.roleId)?.name;
   const selectedCorporationName = corporations.find(
     (corporation) => String(corporation.id) === values.corporationId
@@ -94,16 +95,28 @@ export function UserFormComponent({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="user-password">{mode === 'create' ? 'Password' : 'Password opcional'}</Label>
-              <Input
-                id="user-password"
-                required={mode === 'create'}
-                type="password"
-                minLength={mode === 'create' ? 6 : undefined}
-                placeholder={mode === 'create' ? 'Mínimo 6 caracteres' : 'Solo si deseas cambiarlo'}
-                value={values.password}
-                onChange={(event) => setField('password', event.target.value)}
-              />
+              <Label htmlFor="user-password">{mode === 'create' ? 'Contraseña' : 'Contraseña opcional'}</Label>
+              <div className="relative">
+                <Input
+                  id="user-password"
+                  required={mode === 'create'}
+                  type={showPassword ? 'text' : 'password'}
+                  minLength={mode === 'create' ? 6 : undefined}
+                  placeholder={mode === 'create' ? 'Mínimo 6 caracteres' : 'Solo si deseas cambiarlo'}
+                  value={values.password}
+                  onChange={(event) => setField('password', event.target.value)}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-role">Rol</Label>
