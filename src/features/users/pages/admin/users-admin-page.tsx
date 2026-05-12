@@ -1,13 +1,15 @@
+import { useEffect, useRef, useState } from "react";
 import {
   FilterX,
   Plus,
   Search,
-  ShieldCheck,
   SlidersHorizontal,
+  UserCog,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,56 +22,91 @@ import {
 import { UserFormComponent } from "@/features/users/components/forms/UserFormComponent";
 import { UsersTable } from "@/features/users/components/tables/UsersTable";
 import { useUsersAdmin } from "@/features/users/hooks/useUsersAdmin";
+import type { User } from "@/features/users/schemas";
+
+function getDisplayName(user: User): string {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+  return fullName || user.name || user.email;
+}
 
 export function UsersAdminPage() {
   const usersAdmin = useUsersAdmin();
+  const formRef = useRef<HTMLDivElement>(null);
+
+  // Confirm-dialog state for archive action
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [userToArchive, setUserToArchive] = useState<User | null>(null);
+
+  // Auto-scroll to the form when it opens
+  useEffect(() => {
+    if (usersAdmin.showForm && formRef.current) {
+      formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [usersAdmin.showForm]);
+
+  const handleArchiveRequest = (user: User) => {
+    setUserToArchive(user);
+    setArchiveDialogOpen(true);
+  };
+
+  const handleConfirmArchive = () => {
+    if (userToArchive) {
+      usersAdmin.archiveUser(userToArchive);
+      setUserToArchive(null);
+    }
+  };
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-[var(--radius-panel)] border border-primary/10 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_12%,transparent),transparent_45%),var(--card)] px-5 py-5 shadow-[var(--shadow-1)] sm:px-7">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-md border bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-              Gestión administrativa
-            </div>
-            <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-              Usuarios
-            </h1>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Alta, edición, archivo, búsqueda y filtros sobre datos reales de
-              `/api/users`.
-            </p>
+    <div className="mx-auto max-w-7xl space-y-6">
+      {/* ── Header ── */}
+      <section className="lively-hero rounded-(--radius-panel) px-6 py-7 sm:px-8 sm:py-9">
+        <div className="relative z-10">
+          <div className="editorial-kicker">
+            <UserCog className="inline-block h-3.5 w-3.5" />
+            &nbsp;Administración
           </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="h-10 px-3">
-              Total: {usersAdmin.total}
-            </Badge>
-            <Button
-              onClick={usersAdmin.startCreate}
-              disabled={usersAdmin.showForm}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Nuevo usuario
-            </Button>
+          <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h1 className="text-[clamp(2rem,3vw,3rem)] font-semibold tracking-[-0.02em] text-foreground">
+                Usuarios
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+                Alta, edición, archivo y búsqueda de usuarios del sistema.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
+              <Badge variant="outline" className="h-10 px-3 text-sm">
+                Total: {usersAdmin.total}
+              </Badge>
+              <Button
+                onClick={usersAdmin.startCreate}
+                disabled={usersAdmin.showForm}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nuevo usuario
+              </Button>
+            </div>
           </div>
         </div>
       </section>
 
+      {/* ── Inline form (create / edit) ── */}
       {usersAdmin.showForm ? (
-        <UserFormComponent
-          key={usersAdmin.editingUser?.id ?? "new-user"}
-          initialValues={usersAdmin.formValues}
-          mode={usersAdmin.editingUser ? "edit" : "create"}
-          roles={usersAdmin.roles}
-          corporations={usersAdmin.corporations}
-          isSubmitting={usersAdmin.isSaving}
-          onSubmit={usersAdmin.submitForm}
-          onCancel={usersAdmin.cancelForm}
-        />
+        <div ref={formRef}>
+          <UserFormComponent
+            key={usersAdmin.editingUser?.id ?? "new-user"}
+            initialValues={usersAdmin.formValues}
+            mode={usersAdmin.editingUser ? "edit" : "create"}
+            roles={usersAdmin.roles}
+            corporations={usersAdmin.corporations}
+            isSubmitting={usersAdmin.isSaving}
+            onSubmit={usersAdmin.submitForm}
+            onCancel={usersAdmin.cancelForm}
+          />
+        </div>
       ) : null}
 
+      {/* ── Filters ── */}
       <Card className="border-border/70 bg-card/95">
         <CardContent className="space-y-4 pt-6">
           <div className="flex items-center gap-2 text-sm font-medium">
@@ -178,6 +215,7 @@ export function UsersAdminPage() {
         </CardContent>
       </Card>
 
+      {/* ── Table ── */}
       <UsersTable
         users={usersAdmin.users}
         total={usersAdmin.total}
@@ -186,9 +224,22 @@ export function UsersAdminPage() {
         isLoading={usersAdmin.isLoading || usersAdmin.isFetching}
         isDeleting={usersAdmin.isDeleting}
         onEdit={usersAdmin.startEdit}
-        onArchive={usersAdmin.archiveUser}
+        onArchive={handleArchiveRequest}
         onPreviousPage={() => usersAdmin.setPage(usersAdmin.page - 1)}
         onNextPage={() => usersAdmin.setPage(usersAdmin.page + 1)}
+      />
+
+      {/* ── Confirm archive dialog ── */}
+      <ConfirmDialog
+        open={archiveDialogOpen}
+        onOpenChange={setArchiveDialogOpen}
+        title="Archivar usuario"
+        description={`¿Estás seguro de que deseas archivar al usuario "${userToArchive ? getDisplayName(userToArchive) : ""}"? Esta acción desactivará su acceso al sistema.`}
+        actionLabel="Archivar"
+        cancelLabel="Cancelar"
+        onConfirm={handleConfirmArchive}
+        isLoading={usersAdmin.isDeleting}
+        variant="destructive"
       />
     </div>
   );

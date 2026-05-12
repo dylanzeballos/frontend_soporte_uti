@@ -228,8 +228,6 @@ export function useUsersAdmin() {
   };
 
   const archiveUser = (user: User) => {
-    const confirmed = window.confirm(`Archivar usuario "${getDisplayName(user)}"?`);
-    if (!confirmed) return;
     deleteMutation.mutate(user.id);
   };
 
