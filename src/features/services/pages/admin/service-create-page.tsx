@@ -31,8 +31,7 @@ export function ServiceCreatePage() {
       if (!result) return;
       toast.success(`Servicio "${result.name}" registrado correctamente`);
       queryClient.invalidateQueries({ queryKey: ['services'] });
-      reset({ name: '' });
-      setFocus('name');
+      navigate('/admin/services/list');
     },
   });
 

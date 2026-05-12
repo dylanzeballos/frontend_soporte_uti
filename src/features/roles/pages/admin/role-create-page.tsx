@@ -31,8 +31,7 @@ export function RoleCreatePage() {
       if (!result) return;
       toast.success(`Rol o cargo "${result.name}" registrado correctamente`);
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      reset({ name: '' });
-      setFocus('name');
+      navigate('/admin/roles/list');
     },
   });
 
