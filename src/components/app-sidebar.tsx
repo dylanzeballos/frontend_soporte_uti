@@ -100,7 +100,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: "Tecnico",
+    label: "Técnico",
     items: [
       {
         title: "Dashboard",
@@ -129,40 +129,40 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: "Administracion",
+    label: "Administración",
     items: [
       {
-        title: "Gestion de tickets",
+        title: "Gestión de tickets",
         to: "/tickets",
         icon: TicketIcon,
         roles: ["admin"],
       },
       {
-        title: "Modificar unidades",
+        title: "Gestión de unidades",
         to: "/admin/units",
         icon: Building2Icon,
         roles: ["admin"],
       },
       {
-        title: "Agregar servicios",
+        title: "Gestión de servicios",
         to: "/admin/services",
         icon: WrenchIcon,
         roles: ["admin"],
       },
       {
-        title: "Agregar roles o cargos",
+        title: "Gestión de roles o cargos",
         to: "/admin/roles",
         icon: BriefcaseBusinessIcon,
         roles: ["admin"],
       },
       {
-        title: "Administrar usuarios",
+        title: "Gestión de usuarios",
         to: "/admin/users",
         icon: UserCogIcon,
         roles: ["admin"],
       },
       {
-        title: "Reportes tecnicos",
+        title: "Reportes técnicos",
         to: "/admin/reports",
         icon: FileTextIcon,
         roles: ["admin"],
@@ -189,14 +189,14 @@ function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/")) return "Inicio"
   if (isPathActive(pathname, "/dashboard")) return "Dashboard"
   if (isPathActive(pathname, "/kanban")) return "Tablero Kanban"
-  if (isPathActive(pathname, "/technician/dashboard")) return "Dashboard tecnico"
-  if (isPathActive(pathname, "/technician/kanban")) return "Kanban tecnico"
+  if (isPathActive(pathname, "/technician/dashboard")) return "Dashboard técnico"
+  if (isPathActive(pathname, "/technician/kanban")) return "Kanban técnico"
   if (isPathActive(pathname, "/technician/assignments")) return "Mis asignaciones"
   if (isPathActive(pathname, "/technician/pending")) return "Tickets pendientes"
   if (isPathActive(pathname, "/technician/reports")) return "Mis reportes"
   if (isPathActive(pathname, "/tickets")) return "Tickets"
   if (isPathActive(pathname, "/admin/users")) return "Usuarios"
-  if (isPathActive(pathname, "/admin/reports")) return "Reportes tecnicos"
+  if (isPathActive(pathname, "/admin/reports")) return "Reportes técnicos"
   if (isPathActive(pathname, "/admin/units")) return "Unidades"
   if (isPathActive(pathname, "/admin/services")) return "Servicios"
   if (isPathActive(pathname, "/admin/roles")) return "Roles o cargos"
@@ -291,11 +291,11 @@ function AppShell({ children }: { children?: React.ReactNode }) {
             <button
               type="button"
               onClick={() => navigate(getDefaultRouteForUser(user))}
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-accent text-sidebar-accent-foreground ring-sidebar-ring transition-colors hover:bg-sidebar-accent/90 focus-visible:outline-none focus-visible:ring-2 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-sidebar-accent-foreground ring-sidebar-ring transition-colors hover:bg-sidebar-accent/90 focus-visible:outline-none focus-visible:ring-2 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
               aria-label="Ir al dashboard"
             >
               <img
-                src={collapsed ? "/LogoFCE_reduced.webp" : "/LogoFCE.webp"}
+                src={"/LogoFCE_reduced.png"}
                 alt=""
                 className={cn("w-auto", collapsed ? "h-5" : "h-6")}
               />
@@ -307,7 +307,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
           </div>
         </SidebarHeader>
 
-        <SidebarContent className="px-2 py-4 group-data-[collapsible=icon]:px-1.5">
+        <SidebarContent className="px-2 py-0 group-data-[collapsible=icon]:px-1.5">
           {visibleSections.map((section) => (
             <SidebarGroup key={section.label} className="px-1 py-2">
               <SidebarGroupLabel className="px-2 text-[11px] uppercase tracking-wide text-sidebar-foreground/55">
@@ -453,14 +453,6 @@ function AppShell({ children }: { children?: React.ReactNode }) {
             </SidebarGroup>
           ))}
         </SidebarContent>
-
-        <SidebarFooter className="mt-auto border-t border-sidebar-border/60 px-3 py-4 group-data-[collapsible=icon]:px-1.5">
-          <div className={cn("flex items-center gap-2", collapsed && "justify-center")}>
-            <ModeToggle />
-            {!collapsed && <span className="text-xs text-sidebar-foreground/70">Tema</span>}
-          </div>
-        </SidebarFooter>
-
         <SidebarRail />
       </Sidebar>
 

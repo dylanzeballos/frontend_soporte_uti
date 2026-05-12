@@ -125,7 +125,7 @@ export function TechnicianDashboardPage() {
       <section className="lively-hero rounded-[var(--radius-panel)] px-6 py-7 sm:px-8 sm:py-9">
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="editorial-kicker">Vista tecnica</div>
+            <div className="editorial-kicker">Vista técnica</div>
             <h1 className="mt-5 text-[clamp(2rem,3vw,3rem)] font-bold tracking-[-0.02em] text-foreground">
               Hola, {getUserDisplayName(user)}
             </h1>

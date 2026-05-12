@@ -41,11 +41,14 @@ export function UserNav() {
               {String(user.name || user.email || 'U').charAt(0).toUpperCase()}
             </div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-64">
           <div className="flex items-center justify-start gap-2 p-2">
-            <div className="flex flex-col gap-y-1 leading-none">
-              <p className="font-medium">{user.name || 'Usuario'}</p>
-              <p className="w-[200px] truncate text-xs text-muted-foreground">
+            <div className="flex flex-col gap-y-1 leading-none max-w-[250px]">
+              <p className="font-medium truncate">
+                {user.name || 'Usuario'}
+              </p>
+
+              <p className="text-xs text-muted-foreground break-all">
                 {user.email}
               </p>
             </div>

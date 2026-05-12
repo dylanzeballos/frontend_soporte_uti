@@ -21,7 +21,7 @@ export function Header() {
       <div className="flex h-14 items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <a href="/" className="flex items-center gap-2">
-            <img src="/LogoFCE.webp" alt="UTI" className="h-8 w-auto" />
+            <img src="/LogoFCE.png" alt="UTI" className="h-8 w-auto" />
             <span className="hidden text-lg font-bold tracking-tight sm:block">Gestor Soporte UTI</span>
           </a>
         </div>
