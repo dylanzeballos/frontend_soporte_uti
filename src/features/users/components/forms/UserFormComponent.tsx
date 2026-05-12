@@ -134,17 +134,27 @@ export function UserFormComponent({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="user-corporation">Corporación</Label>
+              <Label htmlFor="user-corporation">Unidad</Label>
               <Select
                 value={values.corporationId || undefined}
                 onValueChange={(value) => setField('corporationId', value ?? '')}
               >
-                <SelectTrigger id="user-corporation">
-                  <SelectValue placeholder="Sin corporación">{selectedCorporationName}</SelectValue>
+                <SelectTrigger
+                  id="user-corporation"
+                  className="h-auto min-h-12 py-2 whitespace-normal *:data-[slot=select-value]:line-clamp-none"
+                >
+                  <SelectValue placeholder="Sin unidad">{selectedCorporationName}</SelectValue>
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent
+                  alignItemWithTrigger={false}
+                  className="w-max max-w-[32rem]"
+                >
                   {corporations.map((corporation) => (
-                    <SelectItem key={corporation.id} value={String(corporation.id)}>
+                    <SelectItem
+                      key={corporation.id}
+                      value={String(corporation.id)}
+                      className="[&_*]:whitespace-normal! [&_*]:break-words!"
+                    >
                       {corporation.name}
                     </SelectItem>
                   ))}
