@@ -154,16 +154,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: 'Credenciales invalidas' }));
-      toast.error(error.message || 'Error de autenticacion');
-      throw new Error(error.message || 'Invalid credentials');
+      const error = await res.json().catch(() => ({ message: 'Credenciales inválidas' }));
+      toast.error(error.message || 'Error de autenticación');
+      throw new Error(error.message || 'Credenciales inválidas');
     }
 
     const data = (await res.json()) as AuthResponse;
     if (!data.accessToken || !data.refreshToken) {
       clearStoredSession();
-      toast.error('Respuesta de autenticacion incompleta');
-      throw new Error('Authentication response is incomplete');
+      toast.error('Respuesta de autenticación incompleta');
+      throw new Error('Respuesta de autenticación incompleta');
     }
 
     localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
@@ -181,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearStoredSession();
     resetProfileRequestCache();
     setState({ user: null, isAuthenticated: false, isLoading: false });
-    throw new Error('No se pudo cargar el perfil del usuario');
+    throw new Error('No se pudo cargar el perfil del usuario.');
   }, []);
 
   const logout = useCallback(async () => {
@@ -201,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearStoredSession();
     resetProfileRequestCache();
     setState({ user: null, isAuthenticated: false, isLoading: false });
-    toast.info('Sesion cerrada');
+    toast.info('Sesión cerrada');
   }, []);
 
   useEffect(() => {
