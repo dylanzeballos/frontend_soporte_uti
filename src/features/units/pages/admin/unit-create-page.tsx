@@ -31,8 +31,8 @@ export function UnitCreatePage() {
       if (!result) return;
       toast.success(`Unidad "${result.name}" registrada correctamente`);
       queryClient.invalidateQueries({ queryKey: ['units'] });
-      reset({ name: '' });
-      setFocus('name');
+      queryClient.invalidateQueries({ queryKey: ['corporations'] });
+      navigate('/admin/units/list');
     },
   });
 
@@ -43,6 +43,8 @@ export function UnitCreatePage() {
       toast.success(`Unidad "${result.name}" actualizada correctamente`);
       queryClient.invalidateQueries({ queryKey: ['units'] });
       queryClient.invalidateQueries({ queryKey: ['unit', unitId] });
+      queryClient.invalidateQueries({ queryKey: ['corporations'] });
+      queryClient.invalidateQueries({ queryKey: ['users-admin'] });
       navigate('/admin/units/list');
     },
   });
