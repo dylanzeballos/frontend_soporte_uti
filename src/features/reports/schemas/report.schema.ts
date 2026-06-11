@@ -82,7 +82,6 @@ export const reportFormSchema = z
     finishedAt: z.string().optional().or(z.literal('')),
     components: z
       .array(reportComponentFormSchema)
-      .min(1, 'Debes agregar al menos un componente')
       .max(8, 'Puedes registrar hasta 8 componentes por reporte'),
   })
   .superRefine((value, context) => {
