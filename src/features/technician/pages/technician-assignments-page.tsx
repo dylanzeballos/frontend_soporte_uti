@@ -24,7 +24,13 @@ import { TicketNewBadge, getNewTicketBorderClass } from '@/features/tickets/comp
 type StatusFilter = 'all' | TicketStatus;
 
 function getDisplayName(ticket: Ticket) {
-  return ticket.emitter?.name || ticket.emitter?.email || ticket.createdBy?.name || ticket.createdBy?.email || 'Sin emisor';
+  const emitterName = [ticket.emitter?.firstName, ticket.emitter?.lastName].filter(Boolean).join(' ').trim();
+  if (emitterName) return emitterName;
+  if (ticket.emitter?.email) return ticket.emitter.email;
+  const creatorName = [ticket.createdBy?.firstName, ticket.createdBy?.lastName].filter(Boolean).join(' ').trim();
+  if (creatorName) return creatorName;
+  if (ticket.createdBy?.email) return ticket.createdBy.email;
+  return 'Sin emisor';
 }
 
 export function TechnicianAssignmentsPage() {

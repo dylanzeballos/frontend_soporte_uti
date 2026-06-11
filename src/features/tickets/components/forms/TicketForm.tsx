@@ -94,10 +94,8 @@ function SelectField({
   allowEmptySelection?: boolean;
 }) {
   const normalizedValue = value === null ? '' : String(value);
-  const hasSelection = value !== null && options.some((option) => option.value === value);
-  const selectedLabel = hasSelection
-    ? options.find((option) => option.value === value)?.label
-    : undefined;
+  const matchedOption = value !== null ? options.find((option) => option.value === value) : undefined;
+  const selectedLabel = matchedOption?.label ?? (value !== null ? String(value) : undefined);
 
   return (
     <div className="space-y-2">

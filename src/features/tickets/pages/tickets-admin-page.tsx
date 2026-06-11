@@ -54,7 +54,12 @@ type ApiLikeUser = User & {
 
 function getUserDisplayName(user: ApiLikeUser): string {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-  return fullName || user.name || user.email;
+  const display = fullName || user.name || user.email;
+  if (!display) {
+    console.warn('[getUserDisplayName] No display name for user', user.id);
+    return `Usuario #${user.id}`;
+  }
+  return display;
 }
 
 function buildUserOptions(users: User[]): TicketSelectOption[] {
