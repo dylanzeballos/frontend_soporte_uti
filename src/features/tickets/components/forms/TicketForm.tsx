@@ -93,9 +93,11 @@ function SelectField({
   emptyLabel: string;
   allowEmptySelection?: boolean;
 }) {
-  const normalizedValue = value === null ? undefined : String(value);
-  const selectedLabel =
-    value === null ? undefined : options.find((option) => option.value === value)?.label;
+  const normalizedValue = value === null ? '' : String(value);
+  const hasSelection = value !== null && options.some((option) => option.value === value);
+  const selectedLabel = hasSelection
+    ? options.find((option) => option.value === value)?.label
+    : undefined;
 
   return (
     <div className="space-y-2">
@@ -108,18 +110,14 @@ function SelectField({
         </SelectTrigger>
         <SelectContent>
           {allowEmptySelection ? <SelectItem value="__none__">{emptyLabel}</SelectItem> : null}
-          {options.length > 0 ? (
-            options.map((option) => (
-              <SelectItem key={option.value} value={String(option.value)}>
-                <span className="flex flex-col">
-                  <span>{option.label}</span>
-                  {option.description ? <span className="text-xs text-muted-foreground">{option.description}</span> : null}
-                </span>
-              </SelectItem>
-            ))
-          ) : (
-            <div className="px-3 py-3 text-sm text-muted-foreground">No hay opciones disponibles.</div>
-          )}
+          {options.map((option) => (
+            <SelectItem key={option.value} value={String(option.value)}>
+              <span className="flex flex-col">
+                <span>{option.label}</span>
+                {option.description ? <span className="text-xs text-muted-foreground">{option.description}</span> : null}
+              </span>
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
       <FormFieldError message={error} />
