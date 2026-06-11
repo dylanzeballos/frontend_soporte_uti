@@ -70,5 +70,6 @@ export function invalidateTicketCaches(queryClient: QueryClient) {
     void queryClient.invalidateQueries({ queryKey });
   }
 
+  void queryClient.invalidateQueries({ queryKey: ['sidebar-counts'] });
   invalidateReportCaches(queryClient);
 }

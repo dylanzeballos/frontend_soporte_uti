@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { useAuth } from '@/components/auth-context';
 import { TicketForm, type TicketSelectOption } from '@/features/tickets/components';
+import { invalidateTicketCaches } from '@/features/tickets/lib/ticket-cache';
 import type { TicketFormValues } from '@/features/tickets/schemas/ticket.schema';
 import { useServices, useTickets } from '@/hooks/useApi';
 
@@ -30,6 +31,7 @@ export function TicketRequestPage() {
       toast.success('Solicitud enviada correctamente');
       void queryClient.invalidateQueries({ queryKey: ['tickets'] });
       void queryClient.invalidateQueries({ queryKey: ['my-tickets', user?.id] });
+      invalidateTicketCaches(queryClient);
     },
   });
 
