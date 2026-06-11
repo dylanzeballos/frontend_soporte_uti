@@ -25,6 +25,7 @@ import {
 } from '@/features/tickets/schemas/ticket.schema';
 import { getDefaultRouteForUser, isAgent } from '@/features/users/schemas';
 import { useTickets } from '@/hooks/useApi';
+import { TicketNewBadge, getNewTicketBorderClass } from '@/features/tickets/components/ticket-new-badge';
 
 type StatusFilter = 'all' | TicketStatus;
 type PriorityFilter = 'all' | TicketPriority;
@@ -179,7 +180,7 @@ export function TechnicianPendingTicketsPage() {
                   assignMutation.isPending && assignMutation.variables === ticket.id;
 
                 return (
-                  <Card key={ticket.id} className="ticket-record-card rounded-[var(--radius-panel)]">
+                  <Card key={ticket.id} className={`ticket-record-card rounded-[var(--radius-panel)] ${getNewTicketBorderClass(ticket)}`}>
                     <CardHeader className="px-5 pb-0 pt-5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-2">
@@ -187,6 +188,7 @@ export function TechnicianPendingTicketsPage() {
                             <Badge className={getStatusColor(ticket.status)}>{getStatusLabel(ticket.status)}</Badge>
                             <Badge className={getPriorityColor(ticket.priority)}>{getPriorityLabel(ticket.priority)}</Badge>
                             <Badge variant="outline">Sin asignar</Badge>
+                            <TicketNewBadge ticket={ticket} />
                           </div>
                           <CardTitle className="text-lg">{ticket.title}</CardTitle>
                           <CardDescription className="line-clamp-2 leading-6">

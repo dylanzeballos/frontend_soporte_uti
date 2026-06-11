@@ -21,6 +21,7 @@ import {
 } from '@/features/tickets/schemas/ticket.schema';
 import { isAgent } from '@/features/users/schemas';
 import { useTickets } from '@/hooks/useApi';
+import { TicketNewBadge, getNewTicketBorderClass } from '@/features/tickets/components/ticket-new-badge';
 
 const adminTicketViews = [
   {
@@ -92,11 +93,14 @@ function UserTicketsPage() {
           ) : tickets.length > 0 ? (
             <div className="grid gap-4 xl:grid-cols-2">
               {tickets.map((ticket) => (
-                <Card key={ticket.id} className="ticket-record-card rounded-[var(--radius-panel)]">
+                <Card key={ticket.id} className={`ticket-record-card rounded-[var(--radius-panel)] ${getNewTicketBorderClass(ticket)}`}>
                   <CardHeader className="px-5 pb-0 pt-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-2">
-                        <CardTitle className="text-lg">{ticket.title}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-lg">{ticket.title}</CardTitle>
+                          <TicketNewBadge ticket={ticket} />
+                        </div>
                         <CardDescription className="line-clamp-2 leading-6">
                           {ticket.description}
                         </CardDescription>

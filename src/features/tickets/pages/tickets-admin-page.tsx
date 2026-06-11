@@ -35,6 +35,7 @@ import {
 import { isAgent, type User } from '@/features/users/schemas';
 import { useServices, useTickets, useUsers } from '@/hooks/useApi';
 import { useRealtime } from '@/lib/realtime/context';
+import { TicketNewBadge, getNewTicketBorderClass } from '@/features/tickets/components/ticket-new-badge';
 
 type TicketFilterState = {
   search: string;
@@ -412,11 +413,14 @@ export function TicketsAdminPage() {
                   assignMutation.variables?.ticketId === ticket.id;
 
                 return (
-                  <Card key={ticket.id} className="ticket-record-card rounded-(--radius-panel)">
+                  <Card key={ticket.id} className={`ticket-record-card rounded-(--radius-panel) ${getNewTicketBorderClass(ticket)}`}>
                     <CardHeader className="px-5 pb-0 pt-5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-2">
-                          <CardTitle className="text-lg">{ticket.title}</CardTitle>
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="text-lg">{ticket.title}</CardTitle>
+                            <TicketNewBadge ticket={ticket} />
+                          </div>
                           <CardDescription className="line-clamp-2 leading-6">
                             {ticket.description}
                           </CardDescription>
