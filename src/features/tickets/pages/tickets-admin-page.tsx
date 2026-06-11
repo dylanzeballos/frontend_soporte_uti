@@ -124,11 +124,13 @@ export function TicketsAdminPage() {
         excludeCreatedById: isMyRequestsView ? undefined : user?.id,
         limit: 100,
       }),
+    placeholderData: (prev) => prev,
   });
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['ticket-form-users'],
     queryFn: async () => listUsers(),
+    placeholderData: (prev) => prev,
   });
 
   const { data: serviceOptions = [] } = useQuery<TicketSelectOption[]>({
@@ -140,6 +142,7 @@ export function TicketsAdminPage() {
         label: service.name,
       }));
     },
+    placeholderData: (prev) => prev,
   });
 
   const updateMutation = useMutation({

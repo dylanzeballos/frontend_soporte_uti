@@ -19,6 +19,7 @@ export function ServicesListPage() {
   const { data: services = [], isLoading } = useQuery<ServiceItem[]>({
     queryKey: ['services'],
     queryFn: list,
+    placeholderData: (prev) => prev,
   });
 
   const deleteMutation = useMutation({

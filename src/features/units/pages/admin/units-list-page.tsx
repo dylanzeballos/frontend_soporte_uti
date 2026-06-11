@@ -19,6 +19,7 @@ export function UnitsListPage() {
   const { data: units = [], isLoading } = useQuery<Unit[]>({
     queryKey: ['units'],
     queryFn: list,
+    placeholderData: (prev) => prev,
   });
 
   const deleteMutation = useMutation({

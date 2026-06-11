@@ -43,6 +43,7 @@ export function TechnicianAssignmentsPage() {
     queryKey: ['technician-assignments', user.id],
     enabled: Boolean(user.id),
     queryFn: async () => list({ assignedToId: user.id, limit: 100 }),
+    placeholderData: (prev) => prev,
   });
 
   const filteredAssignments = useMemo(() => {

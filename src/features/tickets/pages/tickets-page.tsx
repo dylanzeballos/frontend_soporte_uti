@@ -53,6 +53,7 @@ function UserTicketsPage() {
     queryKey: ['my-tickets', user?.id],
     enabled: Boolean(user?.id),
     queryFn: async () => list({ createdById: user?.id, limit: 50 }),
+    placeholderData: (prev) => prev,
   });
 
   return (

@@ -23,6 +23,7 @@ export function TicketRequestPage() {
         label: service.name,
       }));
     },
+    placeholderData: (prev) => prev,
   });
 
   const createMutation = useMutation({

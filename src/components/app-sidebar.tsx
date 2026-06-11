@@ -102,7 +102,7 @@ const navSections: NavSection[] = [
         to: "/dashboard",
         icon: LayoutDashboardIcon,
         roles: ["admin"],
-        countKey: "openTickets",
+        countKey: "unassigned",
       },
     ],
   },

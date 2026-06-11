@@ -59,6 +59,7 @@ export function TechnicianPendingTicketsPage() {
     queryKey: ['technician-pending', user.id],
     enabled: Boolean(user.id),
     queryFn: async () => list({ limit: 100, unassigned: true }),
+    placeholderData: (prev) => prev,
   });
 
   const assignMutation = useMutation({

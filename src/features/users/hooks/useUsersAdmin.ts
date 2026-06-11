@@ -106,33 +106,22 @@ export function useUsersAdmin() {
   const rolesQuery = useQuery({
     queryKey: ['roles'],
     queryFn: listRoles,
+    placeholderData: (prev) => prev,
   });
 
   const corporationsQuery = useQuery({
     queryKey: ['corporations'],
     queryFn: listCorporations,
+    placeholderData: (prev) => prev,
   });
 
   const usersQuery = useQuery({
     queryKey: ['users-admin'],
     queryFn: async () => {
-      const users: User[] = [];
-      let currentPage = 1;
-
-      while (true) {
-        const response = await listPaginated({ page: currentPage, limit: FETCH_LIMIT });
-        users.push(...response.data);
-
-        const totalPages = Math.max(1, Math.ceil(response.total / FETCH_LIMIT));
-        if (currentPage >= totalPages || response.data.length === 0) {
-          break;
-        }
-
-        currentPage += 1;
-      }
-
-      return users;
+      const response = await listPaginated({ page: 1, limit: FETCH_LIMIT });
+      return response.data;
     },
+    placeholderData: (prev) => prev,
   });
 
   const filteredUsers = useMemo(() => {
