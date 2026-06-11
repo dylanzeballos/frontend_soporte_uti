@@ -314,24 +314,30 @@ export function KanbanPage({
 
   return (
     <>
-      <section className="space-y-4">
-        <header className="overflow-hidden rounded-[var(--radius-panel)] border border-primary/15 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_40%),var(--card)] p-5 shadow-[var(--shadow-1)]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-md border bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground">
-                <KanbanSquare className="h-3.5 w-3.5 text-primary" />
-                {isTechnicianView ? 'Flujo tecnico' : 'Operacion de tickets'}
-              </div>
-              <h1 className="mt-3 text-base font-semibold sm:text-lg">{title}</h1>
-              <p className="text-xs text-muted-foreground sm:text-sm">{description}</p>
+      <section className="space-y-6">
+        <section className="lively-hero rounded-(--radius-panel) px-6 py-7 sm:px-8 sm:py-9">
+          <div className="relative z-10">
+            <div className="editorial-kicker">
+              <KanbanSquare className="h-3.5 w-3.5" />
+              {isTechnicianView ? 'Flujo tecnico' : 'Operacion de tickets'}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">
-                {totalTickets} {badgeLabel}
-              </Badge>
-              <Badge variant="outline">{activeColumns} columnas activas</Badge>
-              {isTechnicianView ? <Badge variant="outline">Reporte integrado</Badge> : null}
+            <h1 className="mt-5 text-[clamp(2rem,3vw,3rem)] font-bold tracking-[-0.02em] text-foreground">
+              {title}
+            </h1>
+
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+              {description}
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">
+                  {totalTickets} {badgeLabel}
+                </Badge>
+                <Badge variant="outline">{activeColumns} columnas activas</Badge>
+                {isTechnicianView ? <Badge variant="outline">Reporte integrado</Badge> : null}
+              </div>
 
               <div className="flex rounded-md border bg-muted/40 p-1">
                 <Button
@@ -363,35 +369,35 @@ export function KanbanPage({
                 </Button>
               </div>
             </div>
-          </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="pl-10"
-                placeholder="Buscar por titulo..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="pl-10"
+                  placeholder="Buscar por titulo..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
+
+              <Select value={priorityFilter} onValueChange={(value) => setPriorityFilter(value as PriorityFilter)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por prioridad">
+                    {priorityFilter === 'all' ? 'Todas las prioridades' : getPriorityLabel(priorityFilter)}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las prioridades</SelectItem>
+                  <SelectItem value="low">Baja</SelectItem>
+                  <SelectItem value="medium">Media</SelectItem>
+                  <SelectItem value="high">Alta</SelectItem>
+                  <SelectItem value="urgent">Urgente</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-
-            <Select value={priorityFilter} onValueChange={(value) => setPriorityFilter(value as PriorityFilter)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filtrar por prioridad">
-                  {priorityFilter === 'all' ? 'Todas las prioridades' : getPriorityLabel(priorityFilter)}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las prioridades</SelectItem>
-                <SelectItem value="low">Baja</SelectItem>
-                <SelectItem value="medium">Media</SelectItem>
-                <SelectItem value="high">Alta</SelectItem>
-                <SelectItem value="urgent">Urgente</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
-        </header>
+        </section>
 
         {isLoading ? (
           <Card>
@@ -403,7 +409,7 @@ export function KanbanPage({
           isEmpty ? (
             <EmptyState message={emptyMessage} />
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               {columns.map((column) => {
                 const meta = STATUS_META[column.key];
                 const StatusIcon = meta.icon;
@@ -412,7 +418,7 @@ export function KanbanPage({
                   <article
                     key={column.key}
                     className={cn(
-                      'flex min-h-[520px] flex-col rounded-[var(--radius-panel)] border shadow-[var(--shadow-1)] transition-all',
+                      'flex min-h-[480px] flex-col rounded-(--radius-panel) border shadow-(--shadow-1) transition-all',
                       meta.shell,
                       dragOverStatus === column.key && 'border-primary/60 ring-2 ring-primary/15',
                     )}
@@ -420,11 +426,11 @@ export function KanbanPage({
                     onDrop={(event) => onColumnDrop(event, column.key)}
                     onDragLeave={() => setDragOverStatus(null)}
                   >
-                    <div className="border-b border-border/60 px-4 py-3">
-                      <div className="flex items-center justify-between gap-3">
+                    <div className="border-b border-border/60 px-3 py-2.5 sm:px-4 sm:py-3">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">
                           <div className={cn('rounded-md border bg-background/80 p-1.5', meta.accent)}>
-                            <StatusIcon className="h-4 w-4" />
+                            <StatusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </div>
                           <div className="min-w-0">
                             <h2 className="truncate text-sm font-semibold">{column.title}</h2>
@@ -437,7 +443,7 @@ export function KanbanPage({
                       </div>
                     </div>
 
-                    <div className="flex-1 space-y-3 overflow-y-auto p-3">
+                    <div className="flex-1 space-y-2 overflow-y-auto p-2 sm:space-y-3 sm:p-3">
                       {column.tickets.map((ticket) => {
                         const PriorityIcon = PRIORITY_ICON[ticket.priority];
                         const allowReport = canWriteReport(ticket, appRole, user?.id);
@@ -448,59 +454,60 @@ export function KanbanPage({
                           <Card
                             key={ticket.id}
                             className={cn(
-                              'cursor-grab border-border/70 bg-card/95 shadow-[var(--shadow-1)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-2)] active:cursor-grabbing',
+                              'cursor-grab border-border/70 bg-card/95 shadow-(--shadow-1) transition-all hover:-translate-y-0.5 hover:shadow-(--shadow-2) active:cursor-grabbing',
                               draggedTicketId === ticket.id && 'opacity-60',
                             )}
                             draggable
                             onDragStart={(event) => onCardDragStart(event, ticket.id, column.key)}
                             onDragEnd={resetDragState}
                           >
-                            <CardHeader className="gap-3 pb-2">
-                              <div className="flex items-start gap-2">
-                                <div className="rounded-md border bg-muted/60 p-1 text-muted-foreground">
-                                  <GripVertical className="h-3.5 w-3.5" />
+                            <CardHeader className="gap-2 px-3 pb-1.5 pt-3 sm:px-4 sm:pb-2">
+                              <div className="flex items-start gap-1.5 sm:gap-2">
+                                <div className="mt-0.5 shrink-0 rounded-md border bg-muted/60 p-1 text-muted-foreground">
+                                  <GripVertical className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <div className="flex items-start gap-2">
-                                    <CardTitle className="min-w-0 flex-1 break-all pr-1 text-sm leading-5 text-foreground">
+                                  <div className="flex items-start gap-1.5 sm:gap-2">
+                                    <CardTitle className="min-w-0 flex-1 truncate pr-1 text-sm leading-5 text-foreground">
                                       {ticket.title}
                                     </CardTitle>
-                                    <Badge className={cn('shrink-0 border', getPriorityColor(ticket.priority))}>
-                                      <PriorityIcon className="mr-1 h-3 w-3" />
-                                      {getPriorityLabel(ticket.priority)}
+                                    <Badge className={cn('shrink-0 border text-[10px] sm:text-xs', getPriorityColor(ticket.priority))}>
+                                      <PriorityIcon className="mr-0.5 h-2.5 w-2.5 sm:mr-1 sm:h-3 sm:w-3" />
+                                      <span className="hidden sm:inline">{getPriorityLabel(ticket.priority)}</span>
+                                      <span className="sm:hidden">{getPriorityLabel(ticket.priority).slice(0, 4)}</span>
                                     </Badge>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                                <Badge variant="outline" className="shrink-0">
-                                  <TicketIcon className="mr-1 h-3 w-3" />
+                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground sm:text-[11px]">
+                                <Badge variant="outline" className="shrink-0 text-[10px] sm:text-[11px]">
+                                  <TicketIcon className="mr-0.5 h-2.5 w-2.5 sm:mr-1 sm:h-3 sm:w-3" />
                                   #{ticket.id}
                                 </Badge>
-                                <Badge className={cn('border', getStatusColor(ticket.status))}>
+                                <Badge className={cn('border text-[10px] sm:text-[11px]', getStatusColor(ticket.status))}>
                                   {getStatusLabel(ticket.status)}
                                 </Badge>
                               </div>
                             </CardHeader>
 
-                            <CardContent className="space-y-3 pt-0 text-xs">
-                              <p className="line-clamp-3 leading-5 text-muted-foreground">{ticket.description}</p>
+                            <CardContent className="space-y-2 px-3 pb-3 pt-0 sm:space-y-3 sm:px-4 sm:pb-4">
+                              <p className="line-clamp-2 text-xs leading-5 text-muted-foreground sm:line-clamp-3">{ticket.description}</p>
 
-                              <div className="grid gap-2">
-                                <div className="rounded-md border border-border/60 bg-muted/35 px-3 py-2">
-                                  <div className="mb-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                                    <UserRound className="h-3 w-3" />
+                              <div className="grid gap-1.5 sm:gap-2">
+                                <div className="rounded-md border border-border/60 bg-muted/35 px-2.5 py-1.5 sm:px-3 sm:py-2">
+                                  <div className="mb-0.5 flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground sm:text-[11px]">
+                                    <UserRound className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                     Asignado
                                   </div>
-                                  <p className="break-words font-medium text-foreground">{getAssigneeName(ticket)}</p>
+                                  <p className="truncate text-xs font-medium text-foreground">{getAssigneeName(ticket)}</p>
                                 </div>
-                                <div className="rounded-md border border-border/60 bg-muted/35 px-3 py-2">
-                                  <div className="mb-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                                    <Clock3 className="h-3 w-3" />
+                                <div className="rounded-md border border-border/60 bg-muted/35 px-2.5 py-1.5 sm:px-3 sm:py-2">
+                                  <div className="mb-0.5 flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground sm:text-[11px]">
+                                    <Clock3 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                     Actualizado
                                   </div>
-                                  <p className="text-foreground">{new Date(ticket.updatedAt).toLocaleString('es-BO')}</p>
+                                  <p className="truncate text-xs text-foreground">{new Date(ticket.updatedAt).toLocaleString('es-BO')}</p>
                                 </div>
                               </div>
 
@@ -509,12 +516,12 @@ export function KanbanPage({
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  className="w-full justify-center"
+                                  className="w-full justify-center text-xs"
                                   draggable={false}
                                   onMouseDown={(event) => event.stopPropagation()}
                                   onClick={() => openReport(ticket)}
                                 >
-                                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                                  <ClipboardCheck className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
                                   {ticket.report?.id ? 'Editar reporte' : 'Abrir reporte'}
                                 </Button>
                               ) : allowAdminReportView ? (
@@ -522,12 +529,12 @@ export function KanbanPage({
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  className="w-full justify-center"
+                                  className="w-full justify-center text-xs"
                                   draggable={false}
                                   onMouseDown={(event) => event.stopPropagation()}
                                   onClick={() => openReport(ticket)}
                                 >
-                                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                                  <ClipboardCheck className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
                                   Ver reporte
                                 </Button>
                               ) : showDisabledAdminReport ? (
@@ -535,11 +542,11 @@ export function KanbanPage({
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  className="w-full justify-center"
+                                  className="w-full justify-center text-xs"
                                   draggable={false}
                                   disabled
                                 >
-                                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                                  <ClipboardCheck className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
                                   Sin reporte
                                 </Button>
                               ) : null}
@@ -549,7 +556,7 @@ export function KanbanPage({
                       })}
 
                       {column.tickets.length === 0 ? (
-                        <div className="rounded-lg border border-dashed border-border/70 bg-background/40 p-4 text-xs text-muted-foreground">
+                        <div className="rounded-lg border border-dashed border-border/70 bg-background/40 p-3 text-xs text-muted-foreground sm:p-4">
                           Sin tickets
                         </div>
                       ) : null}
