@@ -169,6 +169,10 @@ export function getStatusColor(status: TicketStatus): string {
   return colors[status];
 }
 
+export function isTicketNew(ticket: Pick<Ticket, 'status' | 'assignedToId'>): boolean {
+  return ticket.status === 'open' && ticket.assignedToId === null;
+}
+
 export function getPriorityColor(priority: TicketPriority): string {
   const colors: Record<TicketPriority, string> = {
     low: 'bg-slate-500/15 text-slate-700 dark:text-slate-300',

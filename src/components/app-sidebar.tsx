@@ -19,7 +19,9 @@ import { useAuth } from "@/components/auth-context"
 import { ModeToggle } from "@/components/mode-toggle"
 import { NotificationCenter } from "@/components/notification-center"
 import { UserNav } from "@/components/user-nav"
+import { CountBadge } from "@/components/ui/count-badge"
 import { getAppUserRole, getDefaultRouteForUser, type AppUserRole, type UserRole } from "@/features/users/schemas"
+import { useSidebarCounts, type SidebarCounts } from "@/hooks/useSidebarCounts"
 import { cn } from "@/lib/utils"
 import {
   Sidebar,
@@ -42,6 +44,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
+type CountKey = 'unassigned' | 'myAssignments' | 'openTickets'
+
 type NavLeaf = {
   title: string
   to?: string
@@ -56,6 +60,7 @@ type NavNode = {
   roles: UserRole[]
   to?: string
   children?: NavLeaf[]
+  countKey?: CountKey
 }
 
 type NavSection = {
@@ -84,6 +89,7 @@ const navSections: NavSection[] = [
         to: "/tickets",
         icon: FileTextIcon,
         roles: ["user"],
+        countKey: "openTickets",
       },
       {
         title: "Tablero Kanban",
@@ -96,6 +102,7 @@ const navSections: NavSection[] = [
         to: "/dashboard",
         icon: LayoutDashboardIcon,
         roles: ["admin"],
+        countKey: "openTickets",
       },
     ],
   },
@@ -107,18 +114,21 @@ const navSections: NavSection[] = [
         to: "/technician/dashboard",
         icon: LayoutDashboardIcon,
         roles: ["agent"],
+        countKey: "openTickets",
       },
       {
         title: "Mis asignaciones",
         to: "/technician/assignments",
         icon: TicketIcon,
         roles: ["agent"],
+        countKey: "myAssignments",
       },
       {
         title: "Tickets pendientes",
         to: "/technician/pending",
         icon: InboxIcon,
         roles: ["agent"],
+        countKey: "unassigned",
       },
       {
         title: "Mis reportes",
@@ -136,6 +146,7 @@ const navSections: NavSection[] = [
         to: "/tickets",
         icon: TicketIcon,
         roles: ["admin"],
+        countKey: "unassigned",
       },
       {
         title: "Gestión de unidades",
@@ -225,6 +236,16 @@ function AppShell({ children }: { children?: React.ReactNode }) {
       ? (location.state as { ticketStatus?: string }).ticketStatus
       : null
   const canMutateRequest = isPendingStatus(ticketStatusFromQuery ?? ticketStatusFromState)
+
+  const { data: counts } = useSidebarCounts()
+
+  const getCount = React.useCallback(
+    (countKey?: CountKey): number => {
+      if (!counts || !countKey) return 0
+      return counts[countKey as keyof SidebarCounts] ?? 0
+    },
+    [counts],
+  )
 
   const visibleSections = React.useMemo(() => {
     if (!user) return []
@@ -430,6 +451,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                             >
                               <Icon />
                               <span>{item.title}</span>
+                              <CountBadge count={getCount(item.countKey)} />
                             </SidebarMenuButton>
                           ) : (
                             <SidebarMenuButton
@@ -442,6 +464,7 @@ function AppShell({ children }: { children?: React.ReactNode }) {
                             >
                               <Icon />
                               <span>{item.title}</span>
+                              <CountBadge count={getCount(item.countKey)} />
                             </SidebarMenuButton>
                           )
                         )}

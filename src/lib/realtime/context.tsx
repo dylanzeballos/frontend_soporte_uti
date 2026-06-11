@@ -160,6 +160,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       }
 
       invalidateTicketCaches(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['sidebar-counts'] });
     },
     [queryClient],
   );
