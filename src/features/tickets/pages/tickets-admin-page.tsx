@@ -494,55 +494,72 @@ export function TicketsAdminPage() {
                           </Badge>
                         </div>
 
-                        {technicianOptions.length > 0 ? (
-                          <div className="mt-3 flex flex-col gap-3 lg:flex-row">
-                            <Select
-                              value={
-                                selectedAssigneeId ??
-                                (ticket.assignedToId ? String(ticket.assignedToId) : undefined)
-                              }
-                              onValueChange={(value) =>
-                                setQuickAssignments((current) => ({
-                                  ...current,
-                                  [ticket.id]: String(value),
-                                }))
-                              }
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Selecciona tecnico o encargado" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {technicianOptions.map((option) => (
-                                  <SelectItem key={option.value} value={String(option.value)}>
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                        {(function () {
+                          const currentId = ticket.assignedToId;
+                          const hasMatch = currentId
+                            ? technicianOptions.some((o) => o.value === currentId)
+                            : false;
+                          const ticketTechnicianOptions = hasMatch
+                            ? technicianOptions
+                            : currentId && ticket.assignedTo
+                              ? [
+                                  {
+                                    value: currentId,
+                                    label: getUserDisplayName(
+                                      ticket.assignedTo as ApiLikeUser,
+                                    ),
+                                  },
+                                  ...technicianOptions,
+                                ]
+                              : technicianOptions;
+                          const noOptions = ticketTechnicianOptions.length === 0;
+                          return noOptions ? (
+                            <p className="mt-3 text-xs text-muted-foreground">
+                              No hay tecnicos o encargados activos disponibles para asignar.
+                            </p>
+                          ) : (
+                            <div className="mt-3 flex flex-col gap-3 lg:flex-row">
+                              <Select
+                                value={selectedAssigneeId ?? (currentId ? String(currentId) : undefined)}
+                                onValueChange={(value) =>
+                                  setQuickAssignments((current) => ({
+                                    ...current,
+                                    [ticket.id]: String(value),
+                                  }))
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Selecciona tecnico o encargado" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ticketTechnicianOptions.map((option) => (
+                                    <SelectItem key={option.value} value={String(option.value)}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
 
-                            <Button
-                              type="button"
-                              className="min-w-40 justify-center"
-                              disabled={
-                                assignMutation.isPending ||
-                                !selectedAssigneeId ||
-                                Number(selectedAssigneeId) === ticket.assignedToId
-                              }
-                              onClick={() => handleQuickAssign(ticket)}
-                            >
-                              <Check className="mr-2 h-4 w-4" />
-                              {isAssigningThisTicket
-                                ? 'Asignando...'
-                                : ticket.assignedToId
-                                  ? 'Reasignar'
-                                  : 'Asignar'}
-                            </Button>
-                          </div>
-                        ) : (
-                          <p className="mt-3 text-xs text-muted-foreground">
-                            No hay tecnicos o encargados activos disponibles para asignar.
-                          </p>
-                        )}
+                              <Button
+                                type="button"
+                                className="min-w-40 justify-center"
+                                disabled={
+                                  assignMutation.isPending ||
+                                  !selectedAssigneeId ||
+                                  Number(selectedAssigneeId) === ticket.assignedToId
+                                }
+                                onClick={() => handleQuickAssign(ticket)}
+                              >
+                                <Check className="mr-2 h-4 w-4" />
+                                {isAssigningThisTicket
+                                  ? 'Asignando...'
+                                  : currentId
+                                    ? 'Reasignar'
+                                    : 'Asignar'}
+                              </Button>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
