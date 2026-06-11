@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ClipboardPenLine } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/components/auth-context';
@@ -10,6 +11,7 @@ import { useServices, useTickets } from '@/hooks/useApi';
 
 export function TicketRequestPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { create } = useTickets();
   const { list: listServices } = useServices();
@@ -33,6 +35,7 @@ export function TicketRequestPage() {
       void queryClient.invalidateQueries({ queryKey: ['tickets'] });
       void queryClient.invalidateQueries({ queryKey: ['my-tickets', user?.id] });
       invalidateTicketCaches(queryClient);
+      navigate('/tickets');
     },
   });
 
