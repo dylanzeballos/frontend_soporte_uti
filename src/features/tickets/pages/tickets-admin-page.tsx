@@ -496,23 +496,15 @@ export function TicketsAdminPage() {
 
                         {(function () {
                           const currentId = ticket.assignedToId;
-                          const hasMatch = currentId
-                            ? technicianOptions.some((o) => o.value === currentId)
-                            : false;
-                          const ticketTechnicianOptions = hasMatch
-                            ? technicianOptions
-                            : currentId && ticket.assignedTo
-                              ? [
-                                  {
-                                    value: currentId,
-                                    label: getUserDisplayName(
-                                      ticket.assignedTo as ApiLikeUser,
-                                    ),
-                                  },
-                                  ...technicianOptions,
-                                ]
-                              : technicianOptions;
-                          const noOptions = ticketTechnicianOptions.length === 0;
+                          function getSelectLabel(): string {
+                            const match = selectedAssigneeId
+                              ? technicianOptions.find((o) => String(o.value) === selectedAssigneeId)
+                              : null;
+                            if (match) return match.label;
+                            if (ticket.assignedTo) return getUserDisplayName(ticket.assignedTo as ApiLikeUser);
+                            return 'Selecciona tecnico o encargado';
+                          }
+                          const noOptions = technicianOptions.length === 0;
                           return noOptions ? (
                             <p className="mt-3 text-xs text-muted-foreground">
                               No hay tecnicos o encargados activos disponibles para asignar.
@@ -529,10 +521,12 @@ export function TicketsAdminPage() {
                                 }
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Selecciona tecnico o encargado" />
+                                  <span className="flex-1 truncate text-left">
+                                    {getSelectLabel()}
+                                  </span>
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {ticketTechnicianOptions.map((option) => (
+                                  {technicianOptions.map((option) => (
                                     <SelectItem key={option.value} value={String(option.value)}>
                                       {option.label}
                                     </SelectItem>
