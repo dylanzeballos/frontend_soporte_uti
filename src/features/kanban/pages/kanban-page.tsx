@@ -96,10 +96,8 @@ const PRIORITY_ICON: Record<TicketPriority, typeof AlertTriangle> = {
 
 function getAssigneeName(ticket: Ticket): string {
   if (!ticket.assignedTo) return 'Sin asignar';
-  const first = ticket.assignedTo.firstName ?? '';
-  const last = ticket.assignedTo.lastName ?? '';
-  const fullName = `${first} ${last}`.trim();
-  return fullName || ticket.assignedTo.name || ticket.assignedTo.email;
+  const fullName = [ticket.assignedTo.firstName, ticket.assignedTo.lastName].filter(Boolean).join(' ').trim();
+  return fullName || ticket.assignedTo.email || 'Sin nombre';
 }
 
 function normalizeStatus(value: string | undefined): TicketStatus {

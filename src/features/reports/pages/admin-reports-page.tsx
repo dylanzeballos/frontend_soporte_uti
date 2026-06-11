@@ -36,7 +36,7 @@ function getActorName(actor?: Report['createdBy'] | null) {
   if (!actor) return 'Sin tecnico';
 
   const fullName = [actor.firstName, actor.lastName].filter(Boolean).join(' ').trim();
-  return fullName || actor.name || actor.email || 'Sin tecnico';
+  return fullName || actor.email || 'Sin tecnico';
 }
 
 function getAssigneeName(report: Report) {
@@ -44,7 +44,7 @@ function getAssigneeName(report: Report) {
   if (!actor) return 'Sin responsable';
 
   const fullName = [actor.firstName, actor.lastName].filter(Boolean).join(' ').trim();
-  return fullName || actor.name || actor.email || 'Sin responsable';
+  return fullName || actor.email || 'Sin responsable';
 }
 
 function isActiveTicketStatus(status?: TicketStatus | null) {

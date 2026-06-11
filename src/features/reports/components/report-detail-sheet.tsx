@@ -59,14 +59,14 @@ function getActorName(actor?: Report['createdBy'] | null) {
   if (!actor) return 'Sin tecnico';
 
   const fullName = [actor.firstName, actor.lastName].filter(Boolean).join(' ').trim();
-  return fullName || actor.name || actor.email || 'Sin tecnico';
+  return fullName || actor.email || 'Sin tecnico';
 }
 
 function getTicketActorName(actor?: TicketActor | null) {
   if (!actor) return 'No registrado';
 
   const fullName = [actor.firstName, actor.lastName].filter(Boolean).join(' ').trim();
-  return fullName || actor.name || actor.email || 'No registrado';
+  return fullName || actor.email || 'No registrado';
 }
 
 export function ReportDetailSheet({

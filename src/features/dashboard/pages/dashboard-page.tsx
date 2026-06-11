@@ -16,7 +16,7 @@ type DashboardUser = User & {
 function getDashboardUserName(user: DashboardUser | null) {
   if (!user) return 'Usuario';
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-  return fullName || user.name || user.email;
+  return fullName || user.email;
 }
 
 function getDashboardUserRole(user: DashboardUser | null) {

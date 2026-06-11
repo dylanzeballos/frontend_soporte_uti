@@ -71,7 +71,7 @@ function getAssigneeName(ticket: Ticket): string {
     .filter(Boolean)
     .join(' ')
     .trim();
-  return fullName || ticket.assignedTo.name || ticket.assignedTo.email;
+  return fullName || ticket.assignedTo.email || 'Sin asignar';
 }
 
 function formatDateTimeLocal(value?: string | null) {

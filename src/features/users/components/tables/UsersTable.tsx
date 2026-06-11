@@ -44,7 +44,7 @@ function displayName(user: User): string {
     .filter(Boolean)
     .join(" ")
     .trim();
-  return fullName || user.name || user.email;
+  return fullName || user.email;
 }
 
 function roleLabel(user: User): string {

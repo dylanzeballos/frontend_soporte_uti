@@ -27,7 +27,7 @@ function getAssigneeName(report: Report) {
   if (!actor) return 'Sin responsable';
 
   const fullName = [actor.firstName, actor.lastName].filter(Boolean).join(' ').trim();
-  return fullName || actor.name || actor.email || 'Sin responsable';
+  return fullName || actor.email || 'Sin responsable';
 }
 
 function formatDate(value?: string | null) {

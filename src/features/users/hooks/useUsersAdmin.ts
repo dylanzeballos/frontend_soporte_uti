@@ -36,7 +36,7 @@ export const emptyUserFormValues: UserFormValues = {
 
 function getDisplayName(user: User): string {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-  return fullName || user.name || user.email;
+  return fullName || user.email;
 }
 
 function getUserCorporationId(user: User): number | null {

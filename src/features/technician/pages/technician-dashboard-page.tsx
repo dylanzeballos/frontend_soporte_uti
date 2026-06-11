@@ -28,7 +28,7 @@ import { useReports, useTickets } from '@/hooks/useApi';
 
 function getUserDisplayName(user: NonNullable<ReturnType<typeof useAuth>['user']>) {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-  return fullName || user.name || user.email;
+  return fullName || user.email;
 }
 
 function formatDate(value: string) {
