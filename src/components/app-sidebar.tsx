@@ -8,6 +8,7 @@ import {
   HouseIcon,
   InboxIcon,
   LayoutDashboardIcon,
+  PackageIcon,
   SendIcon,
   SquareKanbanIcon,
   TicketIcon,
@@ -161,6 +162,12 @@ const navSections: NavSection[] = [
         roles: ["admin"],
       },
       {
+        title: "Gestión de componentes",
+        to: "/admin/components",
+        icon: PackageIcon,
+        roles: ["admin"],
+      },
+      {
         title: "Gestión de roles o cargos",
         to: "/admin/roles",
         icon: BriefcaseBusinessIcon,
@@ -210,6 +217,7 @@ function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/admin/reports")) return "Reportes técnicos"
   if (isPathActive(pathname, "/admin/units")) return "Unidades"
   if (isPathActive(pathname, "/admin/services")) return "Servicios"
+  if (isPathActive(pathname, "/admin/components")) return "Componentes"
   if (isPathActive(pathname, "/admin/roles")) return "Roles o cargos"
   return "Panel"
 }

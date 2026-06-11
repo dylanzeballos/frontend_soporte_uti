@@ -4,6 +4,7 @@ import { AdminReportsPage } from '@/features/reports/pages';
 import { TicketRequestPage, TicketsAdminPage, TicketsPage } from '@/features/tickets/pages';
 import { ServiceCreatePage, ServicesEntryPage, ServicesListPage } from '@/features/services/pages';
 import { RoleCreatePage, RolesEntryPage, RolesListPage } from '@/features/roles/pages';
+import { ComponentCreatePage, ComponentsEntryPage, ComponentsListPage } from '@/features/components/pages';
 import { UnitCreatePage, UnitsEntryPage, UnitsListPage } from '@/features/units/pages';
 import { KanbanPage } from '@/features/kanban/pages/kanban-page';
 import {
@@ -146,6 +147,26 @@ export const routes: AppRoute[] = [
   {
     path: '/admin/roles',
     element: <RolesEntryPage />,
+    protected: true,
+  },
+  {
+    path: '/admin/components/create',
+    element: <ComponentCreatePage />,
+    protected: true,
+  },
+  {
+    path: '/admin/components/:id/edit',
+    element: <ComponentCreatePage />,
+    protected: true,
+  },
+  {
+    path: '/admin/components/list',
+    element: <ComponentsListPage />,
+    protected: true,
+  },
+  {
+    path: '/admin/components',
+    element: <ComponentsEntryPage />,
     protected: true,
   },
 ];

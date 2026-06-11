@@ -435,10 +435,10 @@ export function TicketReportSheet({
                       <div>
                         <div className="flex items-center gap-2">
                           <PackagePlus className="h-4 w-4 text-primary" />
-                          <h3 className="text-sm font-semibold">Componentes a reemplazar</h3>
+                          <h3 className="text-sm font-semibold">Componentes (opcional)</h3>
                         </div>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                          Registra aqui solo las piezas que deben cambiarse en la atencion.
+                          Si no se reemplazo ninguna pieza, deja esta seccion vacia.
                         </p>
                       </div>
 
@@ -575,7 +575,7 @@ export function TicketReportSheet({
                       ) : (
                         <div className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
                           {hasComponents
-                            ? 'Agrega solo las piezas que necesiten reemplazo en este ticket.'
+                            ? 'No se reemplazaron componentes. Si usaste algun repuesto, agregalo aqui.'
                             : 'Aun no hay componentes cargados por administracion.'}
                         </div>
                       )}

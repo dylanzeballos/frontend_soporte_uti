@@ -8,6 +8,7 @@ import type { User, CreateUserInput, UpdateUserInput } from '@/features/users/sc
 import type { LoginInput } from '@/features/auth/schemas/login.schema';
 import type { CreateRoleInput } from '@/features/roles/schemas';
 import type { CreateServiceInput } from '@/features/services/schemas';
+import type { CreateComponentInput } from '@/features/components/schemas';
 import type { CreateUnitInput, Unit, UpdateUnitInput } from '@/features/units/schemas';
 import type {
   ComponentCatalogFilter,
@@ -412,7 +413,32 @@ export function useComponents() {
     return [];
   }, []);
 
-  return { list, isLoading };
+  const findOne = useCallback(async (id: number): Promise<ComponentCatalogItem | null> => {
+    return await fetchApi<ComponentCatalogItem>(`/components/${id}`);
+  }, []);
+
+  const create = useCallback(async (data: CreateComponentInput) => {
+    setIsLoading(true);
+    const result = await fetchApi<ComponentCatalogItem>('/components', 'POST', data);
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  const update = useCallback(async (id: number, data: CreateComponentInput) => {
+    setIsLoading(true);
+    const result = await fetchApi<ComponentCatalogItem>(`/components/${id}`, 'PATCH', data);
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  const remove = useCallback(async (id: number) => {
+    setIsLoading(true);
+    const result = await fetchApi<{ message: string }>(`/components/${id}`, 'DELETE');
+    setIsLoading(false);
+    return result;
+  }, []);
+
+  return { list, findOne, create, update, remove, isLoading };
 }
 
 export function useReports() {
