@@ -4,7 +4,7 @@ import { getAppUserRole, type AppUserRole } from '@/features/users/schemas';
 import { UserNav } from './user-nav';
 
 const navItems = [
-  { label: 'Dashboard', href: '/dashboard', roles: ['admin', 'agent', 'user'] as AppUserRole[] },
+  { label: 'Panel', href: '/dashboard', roles: ['admin', 'agent', 'user'] as AppUserRole[] },
   { label: 'Tickets', href: '/tickets', roles: ['admin', 'agent', 'user'] as AppUserRole[] },
   { label: 'Usuarios', href: '/admin/users', roles: ['admin'] as AppUserRole[] },
 ];

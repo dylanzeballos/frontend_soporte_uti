@@ -54,7 +54,7 @@ interface TicketReportSheetProps {
   onTicketUpdated?: (ticket: Ticket) => void;
 }
 
-const resolutionSuggestions = ['hardware', 'software', 'network', 'maintenance', 'other'] as const;
+const resolutionSuggestions = ['hardware', 'software', 'red', 'mantenimiento', 'instalacion', 'configuracion', 'datos', 'impresion', 'otro'] as const;
 
 const emptyValues: ReportFormValues = {
   summary: '',
@@ -337,7 +337,7 @@ export function TicketReportSheet({
 
                   <section className="form-panel p-5 sm:p-6">
                     <div className="flex items-center gap-2">
-                      <ClipboardCheck className="h-4 w-4 text-primary" />
+                      <ClipboardCheck className="h-4 w-4 text-black dark:text-white" />
                       <h3 className="text-sm font-semibold">Resultado</h3>
                     </div>
 
@@ -378,7 +378,7 @@ export function TicketReportSheet({
                         <Input
                           id="report-resolutionType"
                           list="report-resolution-type-options"
-                          placeholder="Ej. hardware"
+                          placeholder="Ej. cambio de disco, instalacion de software"
                           disabled={!canWrite || isBusy}
                           aria-invalid={Boolean(errors.resolutionType)}
                           {...register('resolutionType')}
@@ -395,7 +395,7 @@ export function TicketReportSheet({
 
                   <section className="form-panel p-5 sm:p-6">
                     <div className="flex items-center gap-2">
-                      <Clock3 className="h-4 w-4 text-primary" />
+                      <Clock3 className="h-4 w-4 text-black dark:text-white" />
                       <h3 className="text-sm font-semibold">Tiempo</h3>
                     </div>
 
@@ -434,7 +434,7 @@ export function TicketReportSheet({
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <PackagePlus className="h-4 w-4 text-primary" />
+                          <PackagePlus className="h-4 w-4 text-black dark:text-white" />
                           <h3 className="text-sm font-semibold">Componentes (opcional)</h3>
                         </div>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">

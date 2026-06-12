@@ -182,7 +182,7 @@ export function ReportDetailSheet({
 
                 <section className="form-panel p-5 sm:p-6">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    <CheckCircle2 className="h-4 w-4 text-black dark:text-white" />
                     <h3 className="text-sm font-semibold">Resultado del reporte</h3>
                   </div>
 
@@ -202,7 +202,7 @@ export function ReportDetailSheet({
 
                 <section className="form-panel p-5 sm:p-6">
                   <div className="flex items-center gap-2">
-                    <Wrench className="h-4 w-4 text-primary" />
+                    <Wrench className="h-4 w-4 text-black dark:text-white" />
                     <h3 className="text-sm font-semibold">Contexto del ticket</h3>
                   </div>
 
@@ -244,7 +244,7 @@ export function ReportDetailSheet({
 
                 <section className="form-panel p-5 sm:p-6">
                   <div className="flex items-center gap-2">
-                    <Clock3 className="h-4 w-4 text-primary" />
+                    <Clock3 className="h-4 w-4 text-black dark:text-white" />
                     <h3 className="text-sm font-semibold">Fechas relevantes</h3>
                   </div>
 
@@ -278,7 +278,7 @@ export function ReportDetailSheet({
 
                 <section className="form-panel p-5 sm:p-6">
                   <div className="flex items-center gap-2">
-                    <PackagePlus className="h-4 w-4 text-primary" />
+                    <PackagePlus className="h-4 w-4 text-black dark:text-white" />
                     <h3 className="text-sm font-semibold">Componentes registrados</h3>
                   </div>
 

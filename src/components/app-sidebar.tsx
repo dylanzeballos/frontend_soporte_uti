@@ -99,7 +99,7 @@ const navSections: NavSection[] = [
         roles: ["admin", "agent"],
       },
       {
-        title: "Dashboard",
+        title: "Panel",
         to: "/dashboard",
         icon: LayoutDashboardIcon,
         roles: ["admin"],
@@ -111,7 +111,7 @@ const navSections: NavSection[] = [
     label: "Técnico",
     items: [
       {
-        title: "Dashboard",
+        title: "Panel",
         to: "/technician/dashboard",
         icon: LayoutDashboardIcon,
         roles: ["agent"],
@@ -205,7 +205,7 @@ function isPathActive(pathname: string, target: string, appRole?: AppUserRole) {
 
 function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/")) return "Inicio"
-  if (isPathActive(pathname, "/dashboard")) return "Dashboard"
+  if (isPathActive(pathname, "/dashboard")) return "Panel"
   if (isPathActive(pathname, "/kanban")) return "Tablero Kanban"
   if (isPathActive(pathname, "/technician/dashboard")) return "Dashboard técnico"
   if (isPathActive(pathname, "/technician/kanban")) return "Kanban técnico"

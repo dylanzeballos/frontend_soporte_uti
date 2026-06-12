@@ -345,7 +345,7 @@ export function KanbanPage({
                   onClick={() => setView('board')}
                 >
                   <KanbanSquare className="mr-2 h-4 w-4" />
-                  Board
+                  Tablero
                 </Button>
                 <Button
                   type="button"
@@ -354,7 +354,7 @@ export function KanbanPage({
                   onClick={() => setView('list')}
                 >
                   <List className="mr-2 h-4 w-4" />
-                  List
+                  Lista
                 </Button>
                 <Button
                   type="button"
@@ -363,7 +363,7 @@ export function KanbanPage({
                   onClick={() => setView('table')}
                 >
                   <Table2 className="mr-2 h-4 w-4" />
-                  Table
+                  Tabla
                 </Button>
               </div>
             </div>
