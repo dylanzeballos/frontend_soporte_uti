@@ -207,7 +207,7 @@ function getPageLabel(pathname: string) {
   if (isPathActive(pathname, "/")) return "Inicio"
   if (isPathActive(pathname, "/dashboard")) return "Panel"
   if (isPathActive(pathname, "/kanban")) return "Tablero Kanban"
-  if (isPathActive(pathname, "/technician/dashboard")) return "Dashboard técnico"
+  if (isPathActive(pathname, "/technician/dashboard")) return "Panel técnico"
   if (isPathActive(pathname, "/technician/kanban")) return "Kanban técnico"
   if (isPathActive(pathname, "/technician/assignments")) return "Mis asignaciones"
   if (isPathActive(pathname, "/technician/pending")) return "Tickets pendientes"
