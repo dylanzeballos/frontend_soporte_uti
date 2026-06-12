@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchApi } from '@/hooks/useApi';
+
 
 export interface SidebarCounts {
   unassigned: number;
