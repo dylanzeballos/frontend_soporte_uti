@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ClipboardPenLine } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -11,6 +12,7 @@ import { useServices, useTickets } from '@/hooks/useApi';
 
 export function TicketRequestPage() {
   const queryClient = useQueryClient();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { create } = useTickets();
@@ -65,6 +67,7 @@ export function TicketRequestPage() {
       </section>
 
       <TicketForm
+        key={location.key}
         variant="request"
         isSubmitting={createMutation.isPending}
         serviceOptions={serviceOptions}
