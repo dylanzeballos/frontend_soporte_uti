@@ -189,8 +189,6 @@ export function TicketForm({
     [setFocus, visibleFieldOrder],
   );
 
-  const titleField = register('title');
-  const descriptionField = register('description');
   const slaField = register('slaMinutes', {
     setValueAs: (value) => {
       if (value === '' || value === null || typeof value === 'undefined') return null;
@@ -220,12 +218,21 @@ export function TicketForm({
             <Label htmlFor="ticket-title" className="text-sm font-medium text-muted-foreground">
               Titulo
             </Label>
-            <Input
-              id="ticket-title"
-              placeholder={isRequestVariant ? 'Ej. No puedo acceder al portal institucional' : 'Ej. Incidente reportado por mesa de ayuda'}
-              aria-invalid={Boolean(errors.title)}
-              {...titleField}
-              ref={registerFieldRef('title', titleField.ref)}
+            <Controller
+              control={control}
+              name="title"
+              render={({ field, fieldState }) => (
+                <Input
+                  id="ticket-title"
+                  placeholder={isRequestVariant ? 'Ej. No puedo acceder al portal institucional' : 'Ej. Incidente reportado por mesa de ayuda'}
+                  aria-invalid={Boolean(fieldState.error)}
+                  name={field.name}
+                  value={field.value ?? ''}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  ref={registerFieldRef('title', field.ref)}
+                />
+              )}
             />
             <FormFieldError message={errors.title?.message} />
           </div>
@@ -263,17 +270,26 @@ export function TicketForm({
             <Label htmlFor="ticket-description" className="text-sm font-medium text-muted-foreground">
               Descripcion
             </Label>
-            <Textarea
-              id="ticket-description"
-              placeholder={
-                isRequestVariant
-                  ? 'Describe el problema y el impacto que te genera.'
-                  : 'Describe el problema, el contexto y cualquier detalle relevante para gestionarlo.'
-              }
-              aria-invalid={Boolean(errors.description)}
-              className="min-h-24"
-              {...descriptionField}
-              ref={registerFieldRef('description', descriptionField.ref)}
+            <Controller
+              control={control}
+              name="description"
+              render={({ field, fieldState }) => (
+                <Textarea
+                  id="ticket-description"
+                  placeholder={
+                    isRequestVariant
+                      ? 'Describe el problema y el impacto que te genera.'
+                      : 'Describe el problema, el contexto y cualquier detalle relevante para gestionarlo.'
+                  }
+                  aria-invalid={Boolean(fieldState.error)}
+                  className="min-h-24"
+                  name={field.name}
+                  value={field.value ?? ''}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  ref={registerFieldRef('description', field.ref)}
+                />
+              )}
             />
             <FormFieldError message={errors.description?.message} />
           </div>
