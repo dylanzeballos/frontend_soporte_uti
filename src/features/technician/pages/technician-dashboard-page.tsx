@@ -23,13 +23,8 @@ import {
   getStatusLabel,
   type Ticket as TicketItem,
 } from '@/features/tickets/schemas/ticket.schema';
-import { getDefaultRouteForUser, isAgent } from '@/features/users/schemas';
+import { getDefaultRouteForUser, getUserPreferredName, isAgent } from '@/features/users/schemas';
 import { useReports, useTickets } from '@/hooks/useApi';
-
-function getUserDisplayName(user: NonNullable<ReturnType<typeof useAuth>['user']>) {
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-  return fullName || user.email;
-}
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('es-BO', {
@@ -127,7 +122,7 @@ export function TechnicianDashboardPage() {
           <div>
             <div className="editorial-kicker">Vista técnica</div>
             <h1 className="mt-5 text-[clamp(2rem,3vw,3rem)] font-bold tracking-[-0.02em] text-foreground">
-              Hola, {getUserDisplayName(user)}
+              Hola, {getUserPreferredName(user)}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
               Aqui tienes un resumen rapido de tus tickets asignados, tus reportes y el flujo de trabajo del dia.

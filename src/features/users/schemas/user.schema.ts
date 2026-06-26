@@ -66,6 +66,33 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type UserRole = z.infer<typeof roleNameSchema>;
 export type AppUserRole = 'admin' | 'agent' | 'user';
 
+function getFullName(user: Pick<User, 'firstName' | 'lastName'> | null | undefined): string {
+  return [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+}
+
+export function getUserDisplayName(user: Pick<User, 'firstName' | 'lastName' | 'name' | 'email'> | null | undefined): string {
+  if (!user) return 'Usuario';
+
+  const fullName = getFullName(user);
+  return fullName || user.name?.trim() || user.email || 'Usuario';
+}
+
+export function getUserPreferredName(user: Pick<User, 'firstName' | 'lastName' | 'name' | 'email'> | null | undefined): string {
+  if (!user) return 'Usuario';
+
+  const firstName = user.firstName?.trim();
+  if (firstName) return firstName;
+
+  const displayName = getUserDisplayName(user);
+  if (displayName.includes('@')) {
+    const [emailName] = displayName.split('@');
+    return emailName || 'Usuario';
+  }
+
+  const [preferredName] = displayName.split(/\s+/);
+  return preferredName || 'Usuario';
+}
+
 export function getUserRoleName(user: Pick<User, 'role'> | null | undefined): string | null {
   if (!user?.role) return null;
   if (typeof user.role === 'string') return user.role;

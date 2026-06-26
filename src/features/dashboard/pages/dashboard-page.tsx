@@ -5,19 +5,11 @@ import { useTickets } from '@/hooks/useApi';
 import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Ticket as TicketType } from '@/features/tickets/schemas/ticket.schema';
-import { getAppUserRole, type User } from '@/features/users/schemas';
+import { getAppUserRole, getUserPreferredName, type User } from '@/features/users/schemas';
 
 type DashboardUser = User & {
-  firstName?: string;
-  lastName?: string;
   role?: unknown;
 };
-
-function getDashboardUserName(user: DashboardUser | null) {
-  if (!user) return 'Usuario';
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-  return fullName || user.email;
-}
 
 function getDashboardUserRole(user: DashboardUser | null) {
   if (!user) return 'Sin rol';
@@ -63,7 +55,7 @@ export function DashboardPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">
-          Bienvenido, {getDashboardUserName(dashboardUser)}
+          Bienvenido, {getUserPreferredName(dashboardUser)}
         </h1>
       </div>
 

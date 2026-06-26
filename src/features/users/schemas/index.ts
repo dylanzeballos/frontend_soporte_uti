@@ -3,6 +3,8 @@ export type { AppUserRole, User, CreateUserInput, UpdateUserInput, UserRole } fr
 export {
   getAppUserRole,
   getDefaultRouteForUser,
+  getUserDisplayName,
+  getUserPreferredName,
   getUserRoleName,
   hasRole,
   isAdmin,

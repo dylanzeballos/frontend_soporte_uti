@@ -145,7 +145,9 @@ export function TechnicianPendingTicketsPage() {
 
           <Select value={status} onValueChange={(value) => setStatus((value as StatusFilter) ?? 'all')}>
             <SelectTrigger>
-              <SelectValue placeholder="Estado" />
+              <SelectValue placeholder="Estado">
+                {status === 'all' ? 'Todos los estados' : getStatusLabel(status)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los estados</SelectItem>
@@ -159,7 +161,9 @@ export function TechnicianPendingTicketsPage() {
 
           <Select value={priority} onValueChange={(value) => setPriority((value as PriorityFilter) ?? 'all')}>
             <SelectTrigger>
-              <SelectValue placeholder="Prioridad" />
+              <SelectValue placeholder="Prioridad">
+                {priority === 'all' ? 'Todas las prioridades' : getPriorityLabel(priority)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas las prioridades</SelectItem>

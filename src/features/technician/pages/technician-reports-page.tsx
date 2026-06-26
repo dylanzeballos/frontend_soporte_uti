@@ -113,7 +113,9 @@ export function TechnicianReportsPage() {
 
           <Select value={status} onValueChange={(value) => setStatus(value as StatusFilter)}>
             <SelectTrigger>
-              <SelectValue placeholder="Estado" />
+              <SelectValue placeholder="Estado">
+                {status === 'all' ? 'Todos los estados' : getStatusLabel(status)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los estados</SelectItem>

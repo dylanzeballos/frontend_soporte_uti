@@ -54,6 +54,8 @@ function normalizeUser(apiUser: ApiUser): User {
   return {
     id: Number(apiUser.id ?? 0),
     email: String(apiUser.email ?? ''),
+    firstName: apiUser.firstName ?? undefined,
+    lastName: apiUser.lastName ?? undefined,
     name: String(apiUser.name ?? fallbackName ?? 'Usuario'),
     role: normalizedRole,
     isActive: Boolean(apiUser.isActive ?? true),
