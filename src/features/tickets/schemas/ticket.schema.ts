@@ -21,12 +21,18 @@ export const ticketPriorityOptions = [
   { value: 'urgent', label: 'Urgente' },
 ] as const satisfies ReadonlyArray<{ value: z.infer<typeof ticketPriorityEnum>; label: string }>;
 
+const ticketCorporationReferenceSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+});
+
 const ticketUserReferenceSchema = z.object({
   id: z.number(),
   email: z.string().email(),
   name: z.string().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  corporation: ticketCorporationReferenceSchema.nullable().optional(),
 });
 
 const ticketServiceReferenceSchema = z.object({

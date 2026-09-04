@@ -415,6 +415,7 @@ export function TicketsAdminPage() {
                 const emitter = ticket.emitter
                   ? getUserDisplayName(ticket.emitter as ApiLikeUser)
                   : 'No definido';
+                const emitterUnit = ticket.emitter?.corporation?.name ?? 'Sin unidad';
                 const selectedAssigneeId = quickAssignments[ticket.id];
                 const isAssigningThisTicket =
                   assignMutation.isPending &&
@@ -471,9 +472,9 @@ export function TicketsAdminPage() {
                           </div>
                         </div>
                         <div className="editorial-inset rounded-md p-3.5">
-                          <div className="editorial-label">SLA</div>
-                          <div className="mt-1 font-medium text-foreground">
-                            {ticket.slaMinutes ? `${ticket.slaMinutes} min` : 'Sin SLA'}
+                          <div className="editorial-label">Unidad</div>
+                          <div className="mt-1 break-words font-medium text-foreground">
+                            {emitterUnit}
                           </div>
                         </div>
                       </div>
